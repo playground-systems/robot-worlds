@@ -60,6 +60,8 @@ def main():
     parser.add_argument("--world")
     parser.add_argument("--revalidate", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--min-objects", type=int, default=30)
+    parser.add_argument("--max-objects", type=int, default=120)
     args = parser.parse_args()
     root = Path(args.output)
     root.mkdir(parents=True, exist_ok=True)
@@ -78,7 +80,8 @@ def main():
     else:
         world = generate(Path(args.prompt).read_text(), output=root / "worlds",
                          client=RelayClient("generation"), max_repairs=3,
-                         min_objects=30, max_objects=120, on_event=event)
+                         min_objects=args.min_objects, max_objects=args.max_objects,
+                         scene_profile="large" if args.max_objects > 120 else "standard", on_event=event)
     write_json(root / "world-selection.json", {"world_id": world.id, "path": str(world.path), "validation": world.manifest["validation"]})
     print("RW_WORLD " + json.dumps({"path": str(world.path), "status": world.manifest["validation"]["status"]}), flush=True)
     if world.manifest["validation"]["status"] != "ready":

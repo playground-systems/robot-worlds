@@ -5,6 +5,7 @@ import numpy as np
 from PIL import Image
 from test_physics import block_and_support, world
 
+from robot_worlds.models import SceneObject
 from robot_worlds.runtime import Runtime
 
 
@@ -34,3 +35,23 @@ def test_live_overview_has_separate_resolution_and_does_not_advance_physics(nati
     finally:
         runtime.close()
     assert runtime._renderer is None and runtime._overview_renderer is None
+
+
+def test_native_spectator_eye_stays_inside_the_wall_at_delivery_position(native_rendering):
+    spec = world(block_and_support())
+    spec.bounds = (12, 8, 3)
+    spec.robot_start = (3.55, .77, 1.57)
+    spec.objects.append(SceneObject(id="east_wall", label="East wall", kind="box",
+                                    position=(5.95, 0, 1.5), size=(.1, 8, 3)))
+    runtime = Runtime(spec, render=True)
+    try:
+        before = runtime.snapshot()
+        runtime.render(view="overview")
+        cameras = runtime._overview_renderer.scene.camera
+        eye = (np.asarray(cameras[0].pos) + np.asarray(cameras[1].pos))/2
+        assert eye[0] < 5.9-.25
+        assert np.linalg.norm(eye-np.array([3.55, .77, .8])) < 4
+        np.testing.assert_array_equal(runtime.data.qpos, before["qpos"])
+        assert runtime.data.time == before["time"]
+    finally:
+        runtime.close()

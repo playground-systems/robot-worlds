@@ -9,3 +9,5 @@ The SDK emits `live_frame`, `policy_started`, `action_started`, `step` and `task
 For development on a remote simulation host, `tools/demo/run_remote_mission.py` relays bounded model decisions over SSH and can mirror live frames into a local workbench with `--live-root`. It transfers the complete run evidence before marking that local job complete. This harness requires the documented experiment guard on the remote host; it is not a general compute provisioning service.
 
 The native viewer uses estimated surface finishes, procedural flooring and studio lighting. These affect appearance, not collision geometry, friction, mass or rubric thresholds. The actor camera remains 640 × 480; the spectator camera is 960 × 720.
+
+Future spectator frames ray-test the scene before placing the camera. The camera moves closer when a wall blocks its preferred position and tries another angle if that would create an unusable close-up. Scene walls remain present and the actor camera is unchanged. Existing recorded replay images retain their original viewpoints.

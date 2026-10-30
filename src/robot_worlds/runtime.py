@@ -39,7 +39,7 @@ def runtime_implementation_identity(robot: str, action_contract: list[dict]) -> 
     nonbehavioral edit. Missing resources/version metadata fail closed. These
     hashes identify an implementation; they do not attest to an untampered host.
     """
-    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py"]
+    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py", "spectator.py"]
     dependencies = ["mujoco", "numpy", "pillow", "pydantic"]
     if robot == "g1":
         modules.append("g1_runtime.py")
@@ -905,6 +905,21 @@ class Runtime:
             self._renderer = mujoco.Renderer(self.model, height=480, width=640)
         return self._renderer
 
+    def _spectator_obstruction(self, origin, direction, maximum):
+        """Ray-test actual scene surfaces, stepping past robot visual/collision geoms."""
+        traveled = 0.0
+        hit = np.empty(1, dtype=np.int32)
+        for _ in range(64):
+            distance = mujoco.mj_ray(self.model, self.data, origin+traveled*direction,
+                                    direction, None, True, -1, hit)
+            if distance < 0 or traveled+distance > maximum:
+                return None
+            traveled += distance
+            if int(hit[0]) in self._geom_objects or self.model.geom(int(hit[0])).name == "floor":
+                return traveled
+            traveled += 1e-5
+        return 0.0  # An unresolved dense ray is not evidence of clearance.
+
     def render(self, *, view="robot", azimuth=135, elevation=-25, distance=4, lookat=None):
         renderer = self._get_renderer(overview=view != "robot")
         renderer.disable_depth_rendering()
@@ -914,7 +929,12 @@ class Runtime:
             camera = mujoco.MjvCamera()
             camera.type = mujoco.mjtCamera.mjCAMERA_FREE
             camera.lookat[:] = lookat if lookat is not None else [*self.data.qpos[:2], 0.8]
-            camera.azimuth, camera.elevation, camera.distance = azimuth, elevation, distance
+            from .spectator import clear_camera
+            near = self.model.vis.map.znear * self.model.stat.extent
+            clearance = max(.25, near*math.tan(math.radians(self.model.vis.global_.fovy)/2)*5/3)
+            camera.azimuth, camera.elevation, camera.distance = clear_camera(
+                camera.lookat, distance, azimuth, elevation, self._spectator_obstruction,
+                clearance=clearance)
         renderer.update_scene(self.data, camera=camera)
         pixels = renderer.render().copy()
         output = io.BytesIO()

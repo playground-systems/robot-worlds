@@ -32,6 +32,9 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--remote-output", required=True)
     parser.add_argument("--world")
+    parser.add_argument("--prompt", default="tools/demo/factory-mission.txt", help="Prompt file on the remote worker")
+    parser.add_argument("--min-objects", type=int, default=30)
+    parser.add_argument("--max-objects", type=int, default=120)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--backend", choices=["api", "codex"], default="api")
     parser.add_argument("--live-root")
@@ -63,7 +66,8 @@ def main():
     spent = {k: 0.0 for k in clients}
     limits = {"generation": 2.0, "policy": 5.0}
     remote = [args.remote_root + "/.venv/bin/python", "-u", "tools/demo/mission_worker.py",
-              "--output", args.remote_output, "--seed", str(args.seed)]
+              "--output", args.remote_output, "--seed", str(args.seed), "--prompt", args.prompt,
+              "--min-objects", str(args.min_objects), "--max-objects", str(args.max_objects)]
     if args.world:
         remote += ["--world", args.world]
     if args.revalidate:
