@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.env
+.env.*
+!.env.example
+worlds/
+runs/
+*.egg-info/
+.DS_Store
+.robot-worlds/
+MUJOCO_LOG.TXT
+dist/
+build/

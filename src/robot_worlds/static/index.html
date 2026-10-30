@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Robot Worlds</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script type="importmap">{"imports":{"three":"/static/vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="topbar">
+    <a href="/" class="brand" aria-label="Robot Worlds home"><span class="brand-mark" aria-hidden="true">R<span>W</span></span><span>Robot Worlds <small>LOCAL WORKSPACE</small></span></a>
+    <div class="topbar-center"><span class="status-dot"></span> Your machine. Your worlds.</div>
+    <div id="connection" class="connection">Connecting…</div>
+  </header>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <button class="button new-world" id="new-world"><span>＋</span> New environment</button>
+      <div class="section-label">WORLD VERSIONS <span id="world-count">0</span></div>
+      <nav id="world-list" class="item-list" aria-label="Generated worlds"><p class="sidebar-empty">No generated worlds yet.</p></nav>
+      <div class="section-label runs-label">EVALUATIONS <span id="run-count">0</span></div>
+      <nav id="run-list" class="item-list" aria-label="Evaluation runs"><p class="sidebar-empty">Your policy runs will appear here.</p></nav>
+      <div id="reference-section" hidden><div class="section-label runs-label">REFERENCE STUDIES</div><nav id="reference-list" class="item-list" aria-label="Source reference studies"></nav></div><div class="sidebar-footer"><span class="version-tag">INITIAL RUNTIME</span><p>Worlds and evaluation artifacts stay on this machine. Generation and agent inference use your model key.</p></div>
+    </aside>
+    <main class="workspace">
+      <div class="workspace-header">
+        <div><div class="eyebrow" id="workspace-eyebrow">TEXT → PHYSICS → EVIDENCE</div><h1 id="world-title">Build a world worth testing.</h1></div>
+        <div class="workspace-actions"><span class="badge" id="world-status" hidden></span><button class="button" id="refine-button" disabled>Refine</button><button class="button primary" id="evaluate-button" disabled>Evaluate policy <span>↗</span></button></div>
+      </div>
+      <div class="notice" id="notice" role="status" hidden></div>
+      <section class="job-panel" id="job-panel" hidden aria-live="polite"><div class="job-top"><span class="spinner"></span><strong id="job-title">Working</strong><span id="job-state" class="mono"></span><button class="text-button" id="cancel-job">Cancel</button></div><ol id="job-events"></ol></section>
+      <div class="work-area" id="work-area">
+        <section class="stage">
+          <div class="stage-toolbar"><div class="segmented" aria-label="World view"><button id="physical-tab" class="active" disabled>Physical view</button><button id="layout-tab" disabled>3D layout</button></div><span id="viewport-info" class="mono muted">No environment loaded</span><button class="icon-button" id="fit-view" title="Fit the 3D scene" disabled>⤢</button></div>
+          <div class="viewport empty" id="viewport">
+            <canvas id="scene-canvas" aria-label="Interactive scene layout" hidden></canvas><div id="scene-labels" aria-hidden="true"></div>
+            <img id="physical-image" alt="Native physics render of the generated world" hidden>
+            <div class="empty-state" id="empty-state"><div class="empty-symbol" aria-hidden="true"><i></i><i></i><i></i></div><div class="eyebrow">START WITH AN IDEA</div><h2>Describe a place.<br>Give the robot a task.</h2><p>Generate the scene, inspect its physical behavior,<br>then evaluate an agent against an editable rubric.</p><div class="empty-steps"><span>01 Describe</span><b>→</b><span>02 Validate</span><b>→</b><span>03 Evaluate</span></div></div>
+            <div class="viewport-caption" id="viewport-caption" hidden></div><div class="selection-label" id="selection-label" hidden></div>
+          </div>
+          <div class="composer"><form id="generate-form"><label for="prompt" id="prompt-label">What should the robot do, and where?</label><textarea id="prompt" rows="3" maxlength="20000" required placeholder="Describe the environment, the objects and the task. Include the spaces the robot must move between and any required order of work."></textarea><div class="composer-footer"><div class="model-settings"><label>Model <input id="model" value="gpt-6-astra" aria-label="Generation and policy model"></label><label>Reasoning <select id="reasoning" aria-label="Reasoning effort"><option>low</option><option selected>medium</option><option>high</option><option>xhigh</option><option>max</option></select></label></div><button class="button primary" type="submit" id="generate-button">Generate world <span>↗</span></button></div></form><details class="generation-options"><summary>Generation settings &amp; budgets</summary><div class="form-grid"><label>Scene scale<select id="scene-profile"><option value="standard">Focused scene</option><option value="large">Large facility</option></select></label><label>Model spend limit (USD)<input id="generation-cost" type="number" min="0.1" max="1000" step="0.1" value="5"></label><label>Model time limit (seconds)<input id="generation-seconds" type="number" min="10" max="3600" value="600"></label></div><p class="small muted">Large facilities use repeated physical assemblies. Budget exhaustion preserves the latest candidate and its unresolved checks.</p></details><div class="asset-upload"><label for="asset-files">Custom meshes <span class="muted">optional · OBJ, STL, MSH · 20 MiB each</span></label><input id="asset-files" type="file" multiple accept=".obj,.stl,.msh"><ul id="asset-list" aria-label="Attached meshes"></ul></div><div class="composer-note">Your prompt defines the scene. Unresolved validation checks remain visible.</div></div>
+        </section>
+        <aside class="inspector"><div class="inspector-tabs"><button class="active" data-inspect="task">Task & rubric</button><button data-inspect="scene">Scene</button><button data-inspect="validation">Validation</button></div><div class="inspector-body" id="inspector-body"><div class="inspector-empty"><span class="inspector-icon">◇</span><h3>A world with a purpose.</h3><p>The generated task, measurable checks and validation results will appear here.</p></div></div></aside>
+      </div>
+      <section id="report-area" class="report-area" hidden><div class="report-toolbar"><span class="eyebrow">RECORDED EVALUATION</span><a class="text-button" id="report-new-tab" target="_blank" rel="noopener">Open report ↗</a></div><iframe id="report-frame" title="Evaluation report and recorded replay"></iframe></section>
+    </main>
+  </div>
+  <dialog id="evaluate-dialog"><form id="evaluate-form"><div class="dialog-eyebrow">RUN YOUR AGENT</div><h2>Evaluate this world.</h2><p>The agent sees camera and robot observations. Its tools execute through controllers; the rubric grades recorded state.</p><div class="policy-card"><span class="policy-icon">↗</span><div><strong>LLM robot-use agent</strong><small id="policy-model-label">gpt-6-astra · medium reasoning</small></div><span class="badge ready">LOCAL SIMULATION</span></div><div class="form-grid"><label>Episodes<input id="episodes" type="number" value="1" min="1" max="20" required></label><label>Decisions per episode<input id="max-steps" type="number" value="30" min="1" max="300" required></label><label>Simulation budget (s)<input id="max-sim-seconds" type="number" value="120" min="1" max="3600" required></label><label>Initial seed<input id="seed" type="number" value="0" min="0" required></label><label>Model spend per episode (USD)<input id="policy-cost" type="number" value="5" min="0.1" max="1000" step="0.1" required></label><label>Model time per episode (s)<input id="policy-seconds" type="number" value="600" min="10" max="3600" required></label></div><p class="small muted">Spend and time limits apply to each episode. One episode is a diagnostic attempt. Every episode resets the simulation, controller and policy memory.</p><div class="dialog-footer"><button type="button" class="button" id="close-evaluate">Cancel</button><button type="submit" class="button primary" id="start-evaluate">Evaluate 1 episode ↗</button></div></form></dialog>
+  <script type="module" src="/static/app.js"></script>
+</body></html>
