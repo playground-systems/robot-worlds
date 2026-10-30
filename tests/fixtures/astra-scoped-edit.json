@@ -1,0 +1,514 @@
+{
+  "provenance": {
+    "kind": "Internal engineering fixture; recorded live model patch, not an onboarding demo",
+    "model": "gpt-6-astra",
+    "recorded_at": "2026-10-30",
+    "source_sha256": "5958c8b6fd74d4d96e742dd69ced18f93b510192b9530d96fbfdb0e3582efda1"
+  },
+  "source": {
+    "schema_version": "1.0",
+    "name": "Compact Workshop Navigation Evaluation",
+    "description": "An 8 m by 6 m factory workshop with a leg-supported parts table on the left, a separate leg-supported inspection table on the right, and a wide connected central aisle. A loose metal workpiece rests on the parts table.",
+    "task": "Using TIAGo++, drive from the clear start pose at (x=0.0 m, y=-2.0 m, yaw=1.571 rad) to the inspection approach area centered at (x=1.2 m, y=0.5 m). The navigation target accepts robot-base origins within x=[0.8, 1.6] m and y=[0.0, 1.0] m. Remain inside this area continuously for at least 0.5 seconds and finish there. Any final yaw is acceptable. The inspection table is immediately to the east of this area. Navigate through the open central aisle; do not manipulate the tables or workpiece. No manufacturing or inspection process is required.",
+    "robot": "tiago++",
+    "bounds": [
+      8.0,
+      6.0,
+      3.0
+    ],
+    "robot_start": [
+      0.0,
+      -2.0,
+      1.5707963268
+    ],
+    "objects": [
+      {
+        "id": "north_wall",
+        "label": "Workshop north wall",
+        "kind": "box",
+        "position": [
+          0.0,
+          2.95,
+          1.4
+        ],
+        "size": [
+          8.0,
+          0.1,
+          2.8
+        ],
+        "color": [
+          0.75,
+          0.77,
+          0.79
+        ],
+        "mass": 1000.0,
+        "movable": false,
+        "friction": 0.6,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "south_wall",
+        "label": "Workshop south wall",
+        "kind": "box",
+        "position": [
+          0.0,
+          -2.95,
+          1.4
+        ],
+        "size": [
+          8.0,
+          0.1,
+          2.8
+        ],
+        "color": [
+          0.75,
+          0.77,
+          0.79
+        ],
+        "mass": 1000.0,
+        "movable": false,
+        "friction": 0.6,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "west_wall",
+        "label": "Workshop west wall",
+        "kind": "box",
+        "position": [
+          -3.95,
+          0.0,
+          1.4
+        ],
+        "size": [
+          0.1,
+          5.8,
+          2.8
+        ],
+        "color": [
+          0.75,
+          0.77,
+          0.79
+        ],
+        "mass": 1000.0,
+        "movable": false,
+        "friction": 0.6,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "east_wall",
+        "label": "Workshop east wall",
+        "kind": "box",
+        "position": [
+          3.95,
+          0.0,
+          1.4
+        ],
+        "size": [
+          0.1,
+          5.8,
+          2.8
+        ],
+        "color": [
+          0.75,
+          0.77,
+          0.79
+        ],
+        "mass": 1000.0,
+        "movable": false,
+        "friction": 0.6,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "parts_table_top",
+        "label": "Left parts table tabletop",
+        "kind": "box",
+        "position": [
+          -2.7,
+          0.5,
+          0.78
+        ],
+        "size": [
+          1.6,
+          1.0,
+          0.08
+        ],
+        "color": [
+          0.35,
+          0.4,
+          0.45
+        ],
+        "mass": 30.0,
+        "movable": false,
+        "friction": 0.6,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "parts_table_leg_sw",
+        "label": "Parts table southwest leg",
+        "kind": "box",
+        "position": [
+          -3.35,
+          0.15,
+          0.37
+        ],
+        "size": [
+          0.08,
+          0.08,
+          0.74
+        ],
+        "color": [
+          0.22,
+          0.25,
+          0.28
+        ],
+        "mass": 3.0,
+        "movable": false,
+        "friction": 0.7,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "parts_table_leg_se",
+        "label": "Parts table southeast leg",
+        "kind": "box",
+        "position": [
+          -2.05,
+          0.15,
+          0.37
+        ],
+        "size": [
+          0.08,
+          0.08,
+          0.74
+        ],
+        "color": [
+          0.22,
+          0.25,
+          0.28
+        ],
+        "mass": 3.0,
+        "movable": false,
+        "friction": 0.7,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "parts_table_leg_nw",
+        "label": "Parts table northwest leg",
+        "kind": "box",
+        "position": [
+          -3.35,
+          0.85,
+          0.37
+        ],
+        "size": [
+          0.08,
+          0.08,
+          0.74
+        ],
+        "color": [
+          0.22,
+          0.25,
+          0.28
+        ],
+        "mass": 3.0,
+        "movable": false,
+        "friction": 0.7,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "parts_table_leg_ne",
+        "label": "Parts table northeast leg",
+        "kind": "box",
+        "position": [
+          -2.05,
+          0.85,
+          0.37
+        ],
+        "size": [
+          0.08,
+          0.08,
+          0.74
+        ],
+        "color": [
+          0.22,
+          0.25,
+          0.28
+        ],
+        "mass": 3.0,
+        "movable": false,
+        "friction": 0.7,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "metal_workpiece",
+        "label": "Small loose steel workpiece",
+        "kind": "box",
+        "position": [
+          -2.2,
+          0.5,
+          0.845
+        ],
+        "size": [
+          0.1,
+          0.07,
+          0.05
+        ],
+        "color": [
+          0.65,
+          0.67,
+          0.7
+        ],
+        "mass": 2.75,
+        "movable": true,
+        "friction": 0.5,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "inspection_table_top",
+        "label": "Right inspection table tabletop",
+        "kind": "box",
+        "position": [
+          2.8,
+          0.5,
+          0.78
+        ],
+        "size": [
+          1.4,
+          1.0,
+          0.08
+        ],
+        "color": [
+          0.55,
+          0.6,
+          0.64
+        ],
+        "mass": 26.0,
+        "movable": false,
+        "friction": 0.6,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "inspection_table_leg_sw",
+        "label": "Inspection table southwest leg",
+        "kind": "box",
+        "position": [
+          2.25,
+          0.15,
+          0.37
+        ],
+        "size": [
+          0.08,
+          0.08,
+          0.74
+        ],
+        "color": [
+          0.22,
+          0.25,
+          0.28
+        ],
+        "mass": 3.0,
+        "movable": false,
+        "friction": 0.7,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "inspection_table_leg_se",
+        "label": "Inspection table southeast leg",
+        "kind": "box",
+        "position": [
+          3.35,
+          0.15,
+          0.37
+        ],
+        "size": [
+          0.08,
+          0.08,
+          0.74
+        ],
+        "color": [
+          0.22,
+          0.25,
+          0.28
+        ],
+        "mass": 3.0,
+        "movable": false,
+        "friction": 0.7,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "inspection_table_leg_nw",
+        "label": "Inspection table northwest leg",
+        "kind": "box",
+        "position": [
+          2.25,
+          0.85,
+          0.37
+        ],
+        "size": [
+          0.08,
+          0.08,
+          0.74
+        ],
+        "color": [
+          0.22,
+          0.25,
+          0.28
+        ],
+        "mass": 3.0,
+        "movable": false,
+        "friction": 0.7,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      },
+      {
+        "id": "inspection_table_leg_ne",
+        "label": "Inspection table northeast leg",
+        "kind": "box",
+        "position": [
+          3.35,
+          0.85,
+          0.37
+        ],
+        "size": [
+          0.08,
+          0.08,
+          0.74
+        ],
+        "color": [
+          0.22,
+          0.25,
+          0.28
+        ],
+        "mass": 3.0,
+        "movable": false,
+        "friction": 0.7,
+        "parent_id": null,
+        "joint": null,
+        "mesh_path": null
+      }
+    ],
+    "regions": [
+      {
+        "id": "inspection_approach",
+        "label": "Editable inspection-area navigation target",
+        "position": [
+          1.2,
+          0.5,
+          0.5
+        ],
+        "size": [
+          0.8,
+          1.0,
+          1.0
+        ]
+      }
+    ],
+    "rubric": [
+      {
+        "predicate": "robot_in_region",
+        "object_id": null,
+        "target_id": "inspection_approach",
+        "threshold": null,
+        "tolerance": 0.03,
+        "value": null,
+        "id": "reach_and_remain_at_inspection",
+        "description": "The robot origin enters the inspection approach region from outside and remains inside continuously for at least 0.5 seconds at the end of the run. Edit the referenced region to adjust the navigation target.",
+        "duration": 0.5,
+        "after": [],
+        "required": true,
+        "mode": "final",
+        "alternative_group": null,
+        "intent": "achieve"
+      }
+    ],
+    "process_cycles": [],
+    "assumptions": [
+      "Bounds specify full workshop dimensions: 8 m in X, 6 m in Y, and 3 m in Z. The runtime supplies a rigid floor at Z=0; no duplicate floor collider is added.",
+      "Left and right correspond to negative and positive world X. Wall thickness lies inside the workshop footprint. Wall pieces meet without overlapping.",
+      "Both tables use separate rigid tabletop and leg colliders. Legs touch the floor and tabletop undersides without penetration; the interiors under the tabletops remain open.",
+      "Furniture is fixed in place. Listed furniture masses are nominal estimates; the steel workpiece is a freely movable rigid body with estimated mass 2.75 kg. Friction coefficients are approximate dry-contact values.",
+      "The loose workpiece initially rests with its bottom at the parts-table surface height of 0.82 m. It is physical context only and has no manipulation rubric.",
+      "The main aisle between tabletop edges is 4.0 m wide and connects the clear start to the inspection target. TIAGo++ is assumed to navigate with its arms stowed within an approximately 0.8 m-wide footprint.",
+      "The inspection region is a non-colliding volume testing the robot origin, not the entire robot. Its XY bounds are disclosed in the task, and the start is outside it.",
+      "Remaining in the target means continuous region occupancy, not a separately measured zero-velocity condition. No material processing, inspection-quality measurement, or process cycle is simulated.",
+      "Unspecified masses, friction coefficients and material appearance are estimates, not measured properties."
+    ],
+    "source_prompt": "Create a compact 8m by 6m factory workshop for TIAGo++. The left side has a parts table with a small loose metal workpiece, and the right side has a separate inspection table. Build both tables from legs and a tabletop, use realistic contact geometry and leave a wide connected aisle. For this initial evaluation the task is only to drive from a clear start position to the inspection area and remain there for 0.5 seconds. Describe the navigation target coordinates in the robot task so the policy can navigate without privileged rubric access. Include the tables and workpiece as physical context, but do not require manipulation in this initial navigation task. Use an editable robot_in_region rubric with an initially unsatisfied target region; no process cycles.",
+    "unvalidated_requirements": []
+  },
+  "prompt": "Move only metal_workpiece 0.25 metres west along its table. Keep its height, size, color, mass, friction and all other objects and task requirements unchanged.",
+  "scope": [
+    "metal_workpiece"
+  ],
+  "patch": {
+    "operations": [
+      {
+        "op": "update_object",
+        "id": "metal_workpiece",
+        "fields": [
+          "position"
+        ],
+        "values": {
+          "label": null,
+          "kind": null,
+          "position": [
+            -2.45,
+            0.5,
+            0.845
+          ],
+          "size": null,
+          "color": null,
+          "mass": null,
+          "movable": null,
+          "friction": null,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null
+        }
+      }
+    ]
+  },
+  "expected_changes": [
+    {
+      "entity_id": "metal_workpiece",
+      "entity_kind": "objects",
+      "property": "position",
+      "before": [
+        -2.2,
+        0.5,
+        0.845
+      ],
+      "after": [
+        -2.45,
+        0.5,
+        0.845
+      ]
+    }
+  ]
+}

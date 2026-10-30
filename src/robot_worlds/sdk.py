@@ -143,7 +143,7 @@ class World:
     def from_spec(cls, spec: WorldSpec | dict, output: str | Path = "worlds", *,
                   asset_root: str | Path | None = None, parent_id: str | None = None,
                   validate: bool = True, runtime_factory: Callable | None = None,
-                  validation_profile: str = "strict") -> World:
+                  validation_profile: str = "strict", edit_metadata: dict | None = None) -> World:
         """Freeze and probe a supplied specification.
 
         ``fixed_reference`` permits overlap only between bodies whose complete
@@ -219,6 +219,11 @@ class World:
                                "limitations": ["Static geometry and a reset probe do not prove task reachability, completeness of natural-language interpretation, or policy solvability.",
                                                "Material properties are estimated unless independently measured; temporal measurements have the recorded sampling resolution."]},
             }
+            if edit_metadata is not None:
+                manifest["identity_version"] = 3
+                manifest["edit"] = copy.deepcopy(edit_metadata)
+                if manifest["edit"].get("parent_world_id") != parent_id:
+                    raise ValueError("Edit metadata must identify the immutable parent world")
             if validation_profile == "fixed_reference":
                 manifest["validation"]["limitations"].extend([
                     "Fixed-reference profile allows overlapping geometry only where both complete body ancestries are world-welded; robot and movable/articulated collision checks remain enabled.",
@@ -229,6 +234,13 @@ class World:
                     runtime = (runtime_factory or _runtime)(spec, render=True, asset_root=stage, seed=0)
                     state = runtime.snapshot()
                     canonical(state)
+                    from robot_worlds.reset_diagnostics import settling_check
+                    settling = settling_check(getattr(runtime, "reset_diagnostics", None))
+                    canonical(settling)
+                    checks.append(settling)
+                    errors.extend(settling["errors"])
+                    if settling.get("status") == "unavailable":
+                        manifest["validation"]["limitations"].append("Custom runtime did not expose reset/settling history; only final reset-state checks were available.")
                     reset_errors = []
                     for obj in spec.objects:
                         actual = state.get("objects", {}).get(obj.id)
@@ -286,6 +298,8 @@ class World:
             # promoted by creating a new validated version without mutating it.
             identity = {"spec": payload, "assets": assets, "robot_assets": robot_assets,
                         "validation": manifest["validation"], "runtime": manifest.get("runtime", {})}
+            if manifest["identity_version"] == 3:
+                identity["edit"] = manifest["edit"]
             manifest["id"] = digest(identity)
             destination = root / manifest["id"][:20]
             write_json(stage / "world.json", payload)
@@ -302,14 +316,28 @@ class World:
             shutil.rmtree(stage, ignore_errors=True)
             raise
 
-    def refine(self, prompt: str, *, output: str | Path | None = None, **kwargs) -> World:
-        request = (
-            f"Refine the existing world. Preserve the original task requirements unless the requested change explicitly changes them.\n"
-            f"Original request: {self._spec.source_prompt}\nChange: {prompt}\n"
-            f"Existing specification: {self._spec.model_dump_json()}"
-        )
-        return generate(request, output=output or self.path.parent, parent_id=self.id,
-                        asset_root=self.path, **kwargs)
+    def refine(self, prompt: str, *, scope: list[str] | None = None,
+               allow_task_changes: bool = False, allow_physics_changes: bool = False,
+               output: str | Path | None = None, **kwargs) -> World:
+        """Create a validated patch version; preserve every unmodified entity.
+
+        Explicit scope is an exact ID allowlist, including added IDs. It never
+        unlocks protected task or physics changes by itself. Assembly parts are
+        materialized before editing so their persistent IDs remain authoritative.
+        """
+        from robot_worlds.editing import edit_world
+        return edit_world(self, prompt, kind="refine", scope=scope,
+                          allow_task_changes=allow_task_changes,
+                          allow_physics_changes=allow_physics_changes, output=output, **kwargs)
+
+    def repair(self, prompt: str | None = None, *, scope: list[str] | None = None,
+               allow_task_changes: bool = False, allow_physics_changes: bool = False,
+               output: str | Path | None = None, **kwargs) -> World:
+        """Repair geometry/pose failures without weakening task or physics."""
+        from robot_worlds.editing import edit_world
+        return edit_world(self, prompt, kind="repair", scope=scope,
+                          allow_task_changes=allow_task_changes,
+                          allow_physics_changes=allow_physics_changes, output=output, **kwargs)
 
     def with_rubric(self, rubric: list, *, output: str | Path | None = None,
                     runtime_factory: Callable | None = None) -> World:
@@ -590,8 +618,13 @@ def load(path: str | Path) -> World:
             raise ValueError(f"World asset was modified: {member}")
     identity = {"spec": stored_spec, "assets": manifest["assets"],
                 "robot_assets": manifest["robot_assets"]}
-    if manifest.get("identity_version") == 2:
+    if manifest.get("identity_version") in {2, 3}:
         identity.update(validation=manifest["validation"], runtime=manifest.get("runtime", {}))
+        if manifest["identity_version"] == 3:
+            edit = manifest.get("edit")
+            if not isinstance(edit, dict) or edit.get("parent_world_id") != manifest.get("parent_id"):
+                raise ValueError("Edited world is missing its parent-bound edit metadata")
+            identity["edit"] = edit
     else:
         raise ValueError("Legacy world validation is not integrity-protected; create a new world version")
     if digest(identity) != manifest["id"]:

@@ -21,6 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from robot_worlds.artifacts import file_digest, inside, public_error, read_json, utc_now, write_json
+from robot_worlds.models import Identifier
 
 
 class RequestModel(BaseModel):
@@ -46,6 +47,25 @@ class GenerateRequest(RequestModel):
         if self.min_objects > self.max_objects:
             raise ValueError("min_objects must not exceed max_objects")
         return self
+
+
+class RefineRequest(GenerateRequest):
+    scope: list[Identifier] | None = Field(default=None, min_length=1, max_length=1000)
+    allow_task_changes: bool = False
+    allow_physics_changes: bool = False
+
+    @model_validator(mode="after")
+    def unique_scope(self):
+        if self.scope is not None and len(self.scope) != len(set(self.scope)):
+            raise ValueError("scope must contain unique entity identifiers")
+        return self
+
+
+class RepairRequest(RefineRequest):
+    prompt: str = Field(default="Fix unresolved validation failures while preserving the task and physical properties.",
+                        min_length=1, max_length=32000)
+    allow_task_changes: Literal[False] = False
+    allow_physics_changes: Literal[False] = False
 
 
 class EvaluateRequest(RequestModel):
@@ -102,10 +122,11 @@ def _job_worker(root_string: str, job_id: str, kind: str, payload: dict) -> None
             world = generate(**payload, output=root / "worlds", on_event=event, cancelled=cancelled)
             job.update(world_id=world.id, status="completed",
                        validation=world.manifest["validation"])
-        elif kind == "refine":
+        elif kind in {"refine", "repair"}:
             world = load(_world_directory(root, payload.pop("world_id")))
-            revised = world.refine(**payload, output=root / "worlds", on_event=event, cancelled=cancelled)
-            job.update(world_id=revised.id, status="completed", validation=revised.manifest["validation"])
+            revised = getattr(world, kind)(**payload, output=root / "worlds", on_event=event, cancelled=cancelled)
+            job.update(world_id=revised.id, status="completed", validation=revised.manifest["validation"],
+                       edit=revised.manifest.get("edit"))
         elif kind == "rubric":
             world = load(_world_directory(root, payload["world_id"]))
             revised = world.with_rubric(payload["rubric"], output=root / "worlds")
@@ -308,8 +329,12 @@ def create_app(data_dir: str | Path = ".robot-worlds", *, executor_factory=None)
                 continue
             try:
                 manifest, spec = read_json(path), read_json(path.parent / "world.json")
+                edit = manifest.get("edit") or {}
                 items.append({"id": manifest["id"], "name": spec["name"], "task": spec["task"],
-                              "validation": manifest["validation"], "created_at": manifest["created_at"]})
+                              "validation": manifest["validation"], "created_at": manifest["created_at"],
+                              "parent_id": manifest.get("parent_id"),
+                              "edit": {"kind": edit.get("kind"), "prompt": edit.get("prompt", "")[:240],
+                                       "counts": edit.get("counts", {})} if edit else None})
             except (OSError, ValueError, KeyError):
                 continue
         return items
@@ -373,9 +398,14 @@ def create_app(data_dir: str | Path = ".robot-worlds", *, executor_factory=None)
         return submit("generate", generation_payload(request))
 
     @app.post("/api/worlds/{world_id}/refine", status_code=202)
-    def refine_job(world_id: str, request: GenerateRequest):
+    def refine_job(world_id: str, request: RefineRequest):
         _world_directory(root, world_id)
         return submit("refine", {"world_id": world_id, **generation_payload(request)})
+
+    @app.post("/api/worlds/{world_id}/repair", status_code=202)
+    def repair_job(world_id: str, request: RepairRequest):
+        _world_directory(root, world_id)
+        return submit("repair", {"world_id": world_id, **generation_payload(request)})
 
     @app.post("/api/worlds/{world_id}/rubric", status_code=202)
     def rubric_job(world_id: str, request: RubricRequest):

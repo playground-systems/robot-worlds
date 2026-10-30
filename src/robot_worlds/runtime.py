@@ -38,7 +38,7 @@ def runtime_implementation_identity(robot: str, action_contract: list[dict]) -> 
     nonbehavioral edit. Missing resources/version metadata fail closed. These
     hashes identify an implementation; they do not attest to an untampered host.
     """
-    modules = ["runtime.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py"]
+    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py"]
     dependencies = ["mujoco", "numpy", "pillow", "pydantic"]
     if robot == "g1":
         modules.append("g1_runtime.py")
@@ -454,10 +454,25 @@ class Runtime:
                 self.data.joint("joint_" + obj.id).qpos[0] = getattr(joint, "initial", 0.0)
         mujoco.mj_forward(self.model, self.data)
         # Settling is part of initialization, before task time begins.
-        for _ in range(300):
-            mujoco.mj_step(self.model, self.data)
+        self._settle_reset()
         self.data.time = 0
         self._sample()
+
+    def _settle_reset(self, *, before_step=None):
+        from .reset_diagnostics import ResetObserver
+
+        observer = ResetObserver(self)
+        for _ in range(300):
+            if before_step is not None:
+                before_step()
+            mujoco.mj_step(self.model, self.data)
+            observer.sample()
+        self._reset_diagnostics = observer.finish()
+
+    @property
+    def reset_diagnostics(self):
+        """Privileged initialization evidence, never included in observations."""
+        return copy.deepcopy(self._reset_diagnostics)
 
     def _yaw(self):
         w, x, y, z = self.data.qpos[3:7]

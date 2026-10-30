@@ -13,7 +13,7 @@ def package_tree(tmp_path, monkeypatch):
     root = tmp_path / "installed-package"
     root.mkdir()
     for name in (
-        "runtime.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "g1_runtime.py"
+        "runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "g1_runtime.py"
     ):
         (root / name).write_text(f"# installed source for {name}\n")
     monkeypatch.setattr(runtime.resources, "files", lambda package: root)
@@ -32,7 +32,7 @@ def test_runtime_identity_is_independent_of_installation_path(package_tree, tmp_
     assert str(package_tree) not in str(first) and str(copied) not in str(second)
 
 
-@pytest.mark.parametrize("module", ["runtime.py", "rubric.py", "models.py", "robot_assets.py"])
+@pytest.mark.parametrize("module", ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py"])
 def test_controller_sensor_snapshot_or_process_source_edit_changes_identity(package_tree, module):
     before = runtime.runtime_implementation_identity("tiago++", runtime.TOOLS)
     (package_tree / module).write_text("# changed installed implementation\n")

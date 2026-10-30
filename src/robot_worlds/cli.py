@@ -126,11 +126,38 @@ def inspect(world: Path):
 
 
 @app.command()
-def refine(world: Path, prompt: str, model: str = "gpt-6-astra", max_repairs: int = 2):
-    """Create a new version while preserving the previous world and results."""
+def refine(world: Path, prompt: str, model: str = "gpt-6-astra", max_repairs: int = 2,
+           scope: list[str] = typer.Option([], help="Entity allowed to change; repeat to select more."),
+           allow_task_changes: bool = False, allow_physics_changes: bool = False,
+           max_cost_usd: float = 5, max_model_seconds: float = 600):
+    """Edit named scene entities and save a validated version with its actual diff."""
     from robot_worlds.sdk import load
-    revised = load(world).refine(prompt, model=model, max_repairs=max_repairs, on_event=_progress)
+    revised = load(world).refine(prompt, model=model, max_repairs=max_repairs, on_event=_progress,
+        scope=scope or None, allow_task_changes=allow_task_changes,
+        allow_physics_changes=allow_physics_changes,
+        client_options={"max_cost_usd": max_cost_usd, "max_seconds": max_model_seconds})
+    _show_edit(revised)
+
+
+@app.command()
+def repair(world: Path, prompt: str = "Fix unresolved validation failures while preserving the task and physical properties.",
+           model: str = "gpt-6-astra", max_repairs: int = 2,
+           scope: list[str] = typer.Option([], help="Entity allowed to change; repeat to select more."),
+           max_cost_usd: float = 5, max_model_seconds: float = 600):
+    """Diagnose and repair a saved scene without weakening its mission or physics."""
+    from robot_worlds.sdk import load
+    revised = load(world).repair(prompt, model=model, max_repairs=max_repairs, on_event=_progress,
+        scope=scope or None,
+        client_options={"max_cost_usd": max_cost_usd, "max_seconds": max_model_seconds})
+    _show_edit(revised)
+
+
+def _show_edit(revised):
     typer.echo(str(revised.path))
+    typer.echo(json.dumps({"changes": revised.manifest.get("edit"),
+                           "validation": revised.manifest["validation"]}, indent=2))
+    if revised.manifest["validation"]["status"] != "ready":
+        raise typer.Exit(2)
 
 
 @app.command()

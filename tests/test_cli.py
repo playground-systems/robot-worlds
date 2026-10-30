@@ -53,6 +53,38 @@ def test_default_serial_llm_and_report_open(dispatch):
     assert str(dispatch.report.path / "report.html") in result.output
 
 
+@pytest.mark.parametrize("command", ["refine", "repair"])
+def test_scene_edit_commands_forward_scope_and_budgets(dispatch, command):
+    child = SimpleNamespace(path=Path("worlds/new-version"),
+        manifest={"validation": {"status": "ready"}, "edit": {"counts": {"changed": 1}}})
+    method = Mock(return_value=child)
+    setattr(dispatch.world, command, method)
+    args = [command, "saved-world"]
+    if command == "refine":
+        args += ["Move inspection table east", "--allow-physics-changes"]
+    args += ["--scope", "table", "--scope", "chair", "--max-cost-usd", "0.7",
+             "--max-model-seconds", "45"]
+    result = dispatch.runner.invoke(app, args)
+    assert result.exit_code == 0, result.output
+    kwargs = method.call_args.kwargs
+    assert kwargs["scope"] == ["table", "chair"]
+    assert kwargs["client_options"] == {"max_cost_usd": .7, "max_seconds": 45}
+    if command == "refine":
+        assert kwargs["allow_physics_changes"] is True
+        assert kwargs["allow_task_changes"] is False
+    else:
+        assert "allow_physics_changes" not in kwargs
+    assert "new-version" in result.output and '"changed": 1' in result.output
+
+
+def test_scene_edit_cli_reports_an_unvalidated_candidate_as_incomplete(dispatch):
+    dispatch.world.refine = Mock(return_value=SimpleNamespace(path=Path("worlds/candidate"),
+        manifest={"validation": {"status": "unvalidated"}, "edit": {"changes": []}}))
+    result = dispatch.runner.invoke(app, ["refine", "saved-world", "Move table"])
+    assert result.exit_code == 2
+    assert "candidate" in result.output and "unvalidated" in result.output
+
+
 @pytest.mark.parametrize("worker_flags,workers,backend", [
     (["--workers", "3"], 3, "auto"),
     (["--graphics-backend", "egl"], 1, "egl"),

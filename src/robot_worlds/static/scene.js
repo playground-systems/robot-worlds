@@ -10,7 +10,7 @@ export class WorldViewer {
     this.labels = labels;
     this.onSelect = onSelect;
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#141820');
+    this.scene.background = new THREE.Color('#1e1e1e');
     this.camera = new THREE.PerspectiveCamera(42, 1, 0.02, 500);
     this.camera.up.set(0, 0, 1);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });

@@ -166,9 +166,7 @@ class G1Runtime(Runtime):
             if obj.joint:
                 self.data.joint("joint_" + obj.id).qpos[0] = obj.joint.initial
         mujoco.mj_forward(self.model, self.data)
-        for _ in range(300):
-            self._before_step()
-            mujoco.mj_step(self.model, self.data)
+        self._settle_reset(before_step=self._before_step)
         self.data.time = 0
         self._next_policy_time = 0
         self._phase = 0

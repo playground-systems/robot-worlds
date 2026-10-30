@@ -34,6 +34,7 @@ Generation can return an **unvalidated** world. Inspect `world.manifest["validat
 ## What runs
 
 - **Generation:** Astra produces a scene and rubric, checks their references and geometry, compiles and settles the physical world, and repairs failures within a bounded number of attempts. Every saved version has a content address.
+- **Editing and repair:** text requests patch persistent scene entities, preserve prior versions and produce computed before/after diffs. Optional scope limits which objects can change; repair preserves the task and physical properties. [Scene editing](docs/scene-editing.md) explains the contracts.
 - **Robot tools:** the agent selects bounded motion, arm, gripper and sensing actions. Controllers execute these actions in MuJoCo. Object motion comes from physical contact.
 - **Evaluation:** local checks grade the recorded state. Criteria support object identity, contact, containment, grasping, temporal order, holding duration and alternatives. Inference wall time is separate from simulated time.
 - **Inspection:** the browser shows the generated layout, native simulator images, validation findings, an editable rubric and an evidence-linked report. Worlds and runs export as ZIP archives.
