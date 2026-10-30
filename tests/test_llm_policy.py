@@ -13,7 +13,7 @@ from robot_worlds.llm import (
     strict_schema,
     validate_action,
 )
-from robot_worlds.policy import LLMAgent, PolicyBudgetExceeded
+from robot_worlds.policy import LLMAgent, PolicyBudgetExceeded, PolicyError
 
 TOOLS = [
     {
@@ -389,6 +389,135 @@ def test_agent_exposes_and_resets_episode_cost_provenance():
     assert agent.transcript[0]["budget"]["pricing"]["model"] == "gpt-6-astra"
     agent.reset({"task": "Independent episode"})
     assert agent.usage["cost"]["charged_usd"] == 0
+
+
+def test_policy_identity_records_behavior_limits_and_only_hashes_client_source(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "never-serialize-an-api-key")
+    client, _ = transport(response(calls=[function_call()]), max_input_chars=24000)
+    agent = LLMAgent(client=client, history_steps=2, max_steps=7, max_seconds=42)
+    agent.reset({"task": "Carry a workpiece"})
+    identity = agent.provenance
+    frozen_fingerprint = identity["fingerprint"]
+    assert len(identity["fingerprint"]) == len(identity["instructions_sha256"]) == 64
+    assert identity["settings"] == {
+        "model": "gpt-6-astra", "reasoning": "medium", "max_steps": 7,
+        "max_seconds": 42, "history_steps": 2,
+    }
+    assert identity["client"]["settings"]["max_input_chars"] == 24000
+    assert identity["client"]["settings"]["max_output_tokens"] == client.max_output_tokens
+    assert identity["client"]["transport_status"] == "opaque_injected_transport"
+    assert identity["configuration_status"] == "opaque_client_configuration_unvalidated"
+    assert "never-serialize-an-api-key" not in str(identity)
+    assert "_client" not in identity["client"]
+    assert {"policy.py", "llm.py", "artifacts.py"} <= identity["implementation"]["sources"].keys()
+    # Returned metadata cannot mutate the frozen record.
+    identity["settings"]["history_steps"] = 99
+    assert agent.provenance["settings"]["history_steps"] == 2
+    agent.act({"tools": TOOLS})
+    assert agent.provenance["fingerprint"] == frozen_fingerprint
+
+
+@pytest.mark.parametrize("endpoint", [None, "https://model-gateway.example/v1/"])
+def test_lazy_openai_transport_creation_preserves_frozen_identity(endpoint, monkeypatch):
+    import os
+
+    import openai
+
+    fake = FakeResponses(response(calls=[function_call()]), response(calls=[function_call()]))
+
+    class OpenAI:
+        def __init__(self, **kwargs):
+            self.base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1") + "/"
+            self.responses = fake
+
+    OpenAI.__module__ = "openai"
+    monkeypatch.setattr(openai, "OpenAI", OpenAI)
+    monkeypatch.setenv("OPENAI_API_KEY", "not-a-live-key")
+    if endpoint is None:
+        monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
+    else:
+        monkeypatch.setenv("OPENAI_BASE_URL", endpoint)
+    client = ResponsesClient()
+    agent = LLMAgent(client=client)
+    frozen = agent.provenance
+    assert client._client is None
+    agent.act({"tools": TOOLS})
+    assert client._client is not None
+    assert agent._current_provenance() == frozen
+    agent.act({"tools": TOOLS})
+    assert len(fake.requests) == 2
+
+
+@pytest.mark.parametrize("change", ["history", "input-limit", "instructions", "task"])
+def test_changed_policy_behavior_requires_an_explicit_reset(change, monkeypatch):
+    import robot_worlds.policy as policy_module
+
+    client, fake = transport(response(calls=[function_call()]))
+    agent = LLMAgent(client=client)
+    if change == "history":
+        agent.history_steps += 1
+    elif change == "input-limit":
+        client.max_input_chars -= 1
+    elif change == "instructions":
+        monkeypatch.setattr(policy_module, "_INSTRUCTIONS", "Changed policy instructions")
+    else:
+        agent.context["task"] = "A changed task"
+    with pytest.raises(PolicyError, match="changed after reset"):
+        agent.act({"tools": TOOLS})
+    assert not fake.requests and not fake.count_requests
+    agent.reset({"task": "A new episode explicitly adopts the changed behavior"})
+    agent.act({"tools": TOOLS})
+    assert len(fake.requests) == 1
+
+
+@pytest.mark.parametrize(
+    ("limits", "completed_decisions"),
+    [
+        ({"max_cost_usd": 0.001}, 0),
+        ({"max_calls": 1}, 1),
+        ({"max_total_output_tokens": 32}, 1),
+    ],
+    ids=["spend", "calls", "output-tokens"],
+)
+def test_agent_normalizes_model_budget_exhaustion_after_preserving_audit(
+    limits, completed_decisions
+):
+    client, fake = transport(response(calls=[function_call()], tokens=32), **limits)
+    agent = LLMAgent(client=client, max_steps=5)
+    agent.reset({"task": "Reach the inspection station"})
+    for _ in range(completed_decisions):
+        agent.act({"tools": TOOLS, "time": 0})
+        agent.record_result({"status": "executed", "distance_traveled": 0.18})
+
+    with pytest.raises(PolicyBudgetExceeded) as exhausted:
+        agent.act({"tools": TOOLS, "time": 1})
+
+    assert isinstance(exhausted.value.__cause__, LLMBudgetExceeded)
+    assert str(exhausted.value) == str(exhausted.value.__cause__)
+    assert len(fake.requests) == completed_decisions
+    assert agent.usage["calls"] == completed_decisions
+    assert agent.usage["policy_steps"] == completed_decisions + 1
+    assert len(agent.transcript) == completed_decisions + 1
+    record = agent.transcript[-1]
+    assert record["error"] == {"type": "LLMBudgetExceeded"}
+    assert record["observation"]["task"] == "Reach the inspection station"
+    assert record["usage"] == {}  # No stale usage from the previous decision.
+    assert record["budget"] == agent.budget
+    assert record["inference_seconds"] >= 0
+    assert "selected_action" not in record
+    if completed_decisions:
+        assert agent.transcript[0]["tool_result"]["distance_traveled"] == 0.18
+
+
+def test_agent_keeps_transport_failure_distinct_from_budget_termination():
+    client, _ = transport(RuntimeError("Authorization: secret provider response"))
+    agent = LLMAgent(client=client)
+    with pytest.raises(LLMError) as failed:
+        agent.act({"tools": TOOLS})
+    assert not isinstance(failed.value, PolicyBudgetExceeded)
+    assert agent.transcript[-1]["error"] == {"type": "LLMError"}
+    assert "secret provider" not in str(failed.value)
+    assert agent.usage["cost"]["unreconciled_usd"] > 0
 
 
 class FakeDecisionClient:

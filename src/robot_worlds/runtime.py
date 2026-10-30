@@ -6,17 +6,57 @@ state; its solutions become bounded position-servo targets in the live simulator
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import io
 import math
+import sys
 import xml.etree.ElementTree as ET
+from importlib import metadata, resources
 from pathlib import Path
 
 import mujoco
 import numpy as np
 from PIL import Image
 
+from .artifacts import digest
 from .robot_assets import ROBOT_MANIFESTS, robot_asset_path
+
+SENSOR_CONTRACT = {
+    "kind": "ideal_semantic_rgbd_and_proprioception",
+    "camera": "robot_rgbd",
+    "image_size": [640, 480],
+    "object_positions": "visible_segmented_surface_estimates",
+    "vision_requires_render": True,
+}
+
+
+def runtime_implementation_identity(robot: str, action_contract: list[dict]) -> dict:
+    """Hash installed package resources, not checkout paths or manual labels.
+
+    Whole-module hashes conservatively invalidate validation after even a
+    nonbehavioral edit. Missing resources/version metadata fail closed. These
+    hashes identify an implementation; they do not attest to an untampered host.
+    """
+    modules = ["runtime.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py"]
+    dependencies = ["mujoco", "numpy", "pillow", "pydantic"]
+    if robot == "g1":
+        modules.append("g1_runtime.py")
+        dependencies.append("onnxruntime")
+    elif robot != "tiago++":
+        raise ValueError(f"Cannot fingerprint unsupported robot {robot!r}")
+    package = resources.files("robot_worlds")
+    return {
+        "version": 1,
+        "sources": {
+            name: hashlib.sha256(package.joinpath(name).read_bytes()).hexdigest()
+            for name in sorted(modules)
+        },
+        "dependencies": {name: metadata.version(name) for name in sorted(dependencies)},
+        "python": {"implementation": sys.implementation.name, "version": list(sys.version_info[:3])},
+        "action_contract": copy.deepcopy(action_contract),
+        "sensor_contract": copy.deepcopy(SENSOR_CONTRACT),
+    }
 
 
 def _vec(values):
@@ -97,6 +137,8 @@ class Runtime:
         self._fixture_members = {}
         self.asset_path = robot_asset_path(spec.robot)
         self._render_enabled = render
+        self._implementation = runtime_implementation_identity(spec.robot, self.tools)
+        self._implementation_fingerprint = digest(self._implementation)
         self._renderer = None
         self._last_result = None
         self.trace = []
@@ -938,6 +980,9 @@ class Runtime:
             "seed": self.seed,
             "model_fingerprint": self._model_fingerprint,
             "action_contract": self.tools,
+            "sensor_contract": copy.deepcopy(SENSOR_CONTRACT),
+            "implementation": copy.deepcopy(self._implementation),
+            "implementation_fingerprint": self._implementation_fingerprint,
         }
 
     def restore_snapshot(self, snapshot):

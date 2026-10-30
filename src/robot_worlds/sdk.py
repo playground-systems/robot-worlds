@@ -59,6 +59,59 @@ def _runtime_manifest(runtime) -> dict:
     return manifest() if callable(manifest) else manifest
 
 
+def _trace_evidence(path: Path, trace: list, episode: dict, result: dict, *, complete: bool) -> dict:
+    """Freeze collection metadata; hashes detect changes, not malicious re-signing."""
+    runtime = episode.get("runtime", {})
+    return {
+        "version": 1, "sha256": file_digest(path), "sample_count": len(trace),
+        "start_time": trace[0].get("time") if trace and isinstance(trace[0], dict) else None,
+        "end_time": trace[-1].get("time") if trace and isinstance(trace[-1], dict) else None,
+        "complete": complete, "model_fingerprint": runtime.get("model_fingerprint"),
+        "implementation_fingerprint": runtime.get("implementation_fingerprint"),
+        "physical_id": result["physical_id"], "seed": episode["seed"],
+        "episode_index": episode["index"], "source_run_id": result["id"],
+    }
+
+
+def _verified_regrade_trace(path: Path, episode: dict, result: dict, world: World) -> list:
+    evidence = episode.get("trace_evidence")
+    if not isinstance(evidence, dict) or evidence.get("version") != 1:
+        raise ValueError("Legacy or missing trace integrity metadata; insufficient evidence for offline regrading")
+    if evidence.get("complete") is not True:
+        raise ValueError("Recorded trajectory is incomplete; insufficient evidence for offline regrading")
+    source_run = episode.get("worker_run_id", result.get("evidence_origin_run_id", result["id"]))
+    source_index = 0 if episode.get("worker_run_id") else episode["index"]
+    bindings = {"source_run_id": source_run, "episode_index": source_index,
+                "seed": episode["seed"], "physical_id": result["physical_id"]}
+    if any(evidence.get(key) != value for key, value in bindings.items()):
+        raise ValueError("Trace collection provenance does not match this episode")
+    if not path.is_file() or file_digest(path) != evidence.get("sha256"):
+        raise ValueError("Recorded trace is missing or its hash changed since collection")
+    trace = read_json(path)
+    if not isinstance(trace, list) or not trace or len(trace) != evidence.get("sample_count"):
+        raise ValueError("Recorded trace sample count does not match collection evidence")
+    times = [state.get("time") if isinstance(state, dict) else None for state in trace]
+    if any(isinstance(t, bool) or not isinstance(t, (int, float)) or not math.isfinite(t) for t in times):
+        raise ValueError("Recorded trace contains invalid simulation timestamps")
+    if any(b < a for a, b in zip(times, times[1:])):
+        raise ValueError("Recorded trace is not ordered by simulation time")
+    if times[0] != evidence.get("start_time") or times[-1] != evidence.get("end_time"):
+        raise ValueError("Recorded trace time span does not match collection evidence")
+    if abs(times[0]) > 1e-9 or times[-1] != episode.get("sim_seconds"):
+        raise ValueError("Recorded trace does not cover reset through the final episode state")
+    runtime = episode.get("runtime", {})
+    expected_runtime = world.manifest.get("runtime", {})
+    fingerprint = evidence.get("model_fingerprint")
+    if not fingerprint or fingerprint != runtime.get("model_fingerprint") or fingerprint != expected_runtime.get("model_fingerprint"):
+        raise ValueError("Recorded trace model fingerprint is missing or incompatible with the frozen world")
+    if any(state.get("model_fingerprint") != fingerprint for state in trace):
+        raise ValueError("Recorded trace contains states from an unknown or different physical model")
+    implementation = evidence.get("implementation_fingerprint")
+    if not implementation or implementation != runtime.get("implementation_fingerprint") or implementation != expected_runtime.get("implementation_fingerprint"):
+        raise ValueError("Recorded trace runtime implementation differs from its frozen world")
+    return trace
+
+
 def _wilson(success: int, count: int) -> list[float] | None:
     if not count:
         return None
@@ -148,9 +201,10 @@ class World:
                 shutil.copyfile(source, target)
             checks = [{"check": "schema", "passed": True}]
             skipped_fixed_pairs = []
+            connectivity = {}
             errors = assembly_errors + asset_errors + list(validate_spec(
                 spec, asset_root=stage, validation_profile=validation_profile,
-                skipped_fixed_pairs=skipped_fixed_pairs))
+                skipped_fixed_pairs=skipped_fixed_pairs, connectivity_diagnostics=connectivity))
             skipped_fixed_pairs.sort()
             checks.append({"check": "geometry_and_rubric", "passed": not errors, "errors": errors.copy()})
             manifest = {
@@ -159,6 +213,7 @@ class World:
                 "assets": assets, "robot_assets": robot_assets,
                 "physical_id": digest({"physical_spec": _physical_spec(payload), "assets": assets, "robot_assets": robot_assets}),
                 "validation": {"status": "preview", "profile": validation_profile, "checks": checks,
+                               "connectivity": connectivity,
                                "skipped_fixed_overlap_pairs": skipped_fixed_pairs,
                                "skipped_fixed_overlap_count": len(skipped_fixed_pairs),
                                "limitations": ["Static geometry and a reset probe do not prove task reachability, completeness of natural-language interpretation, or policy solvability.",
@@ -273,7 +328,7 @@ class World:
                  policy_factory: Callable | None = None,
                  replay_fps: float = 5, max_replay_frames: int = 600) -> Report:
         from robot_worlds.llm import audit_value, validate_action
-        from robot_worlds.policy import LLMAgent, PolicyBudgetExceeded
+        from robot_worlds.policy import LLMAgent, PolicyBudgetExceeded, PolicyError, policy_record
         from robot_worlds.rubric import grade
         if (not isinstance(episodes, int) or isinstance(episodes, bool) or episodes < 1
                 or not isinstance(max_steps, int) or isinstance(max_steps, bool) or max_steps < 1
@@ -288,6 +343,9 @@ class World:
         frozen = load(self.path)
         if frozen.manifest["validation"]["status"] != "ready":
             raise WorldNotReady(json.dumps(frozen.manifest["validation"]))
+        expected_runtime = frozen.manifest.get("runtime", {})
+        if any(not expected_runtime.get(key) for key in ("model_fingerprint", "implementation_fingerprint")):
+            raise WorldNotReady("Frozen runtime fingerprints are missing; create and validate a new world version")
         if _robot_assets(frozen._spec.robot) != frozen.manifest["robot_assets"]:
             raise WorldNotReady("Installed robot assets changed; create and validate a new world version")
         run_id = uuid.uuid4().hex
@@ -303,9 +361,10 @@ class World:
                          "replay_fps": replay_fps, "max_replay_frames": max_replay_frames,
                          "sampling_note": "Repeated deterministic seeds are not independent task diversity or a guarantee of statistical precision."},
             "environment": {"packages": package_versions(), "platform": platform.platform()},
-            "policy": {"class": f"{type(policy).__module__}.{type(policy).__qualname__}" if policy is not None else "factory" if policy_factory else "robot_worlds.policy.LLMAgent",
-                       "model": getattr(policy, "model", None), "reasoning": getattr(policy, "reasoning", None),
-                       "declared_provenance": audit_value(getattr(policy, "provenance", {}))},
+            "policy": policy_record(policy) if policy is not None else {
+                "class": "factory" if policy_factory else "robot_worlds.policy.LLMAgent",
+                "identity_status": "resolved_per_episode_before_first_action",
+            },
             "episodes": [],
         }
         def emit(event):
@@ -340,18 +399,19 @@ class World:
                 runtime = (runtime_factory or _runtime)(frozen.spec, render=render,
                     asset_root=frozen.path, seed=episode["seed"], max_sim_seconds=max_sim_seconds)
                 episode["runtime"] = _runtime_manifest(runtime)
-                expected_runtime = frozen.manifest.get("runtime", {})
-                changed = [key for key in ("engine", "engine_version", "timestep", "controller", "model_fingerprint", "policy_sha256", "policy_source_revision", "policy_frequency_hz")
+                changed = [key for key in ("engine", "engine_version", "timestep", "controller", "model_fingerprint", "implementation_fingerprint", "trace_interval", "clock", "action_contract", "sensor_contract", "policy_sha256", "policy_source_revision", "policy_frequency_hz")
                            if key in expected_runtime and episode["runtime"].get(key) != expected_runtime[key]]
                 if changed:
                     raise WorldNotReady("Runtime contract changed since validation; create a new world version: " + ", ".join(changed))
                 phase = "policy"
                 episode_policy = policy if policy is not None else policy_factory() if policy_factory else LLMAgent(max_steps=max_steps)
-                episode["policy"] = {"class": f"{type(episode_policy).__module__}.{type(episode_policy).__qualname__}",
-                                     "model": getattr(episode_policy, "model", None), "reasoning": getattr(episode_policy, "reasoning", None),
-                                     "declared_provenance": audit_value(getattr(episode_policy, "provenance", {}))}
                 episode_policy.reset({"task": frozen._spec.task, "robot": frozen._spec.robot,
                                       "action_contract": episode["runtime"].get("action_contract")})
+                episode["policy"] = policy_record(episode_policy)
+                if policy_factory is None and episode_index == 0:
+                    result["policy"] = copy.deepcopy(episode["policy"])
+                # Persist resolved source/settings before the policy's first act().
+                write_json(folder / "result.json", result)
                 phase = "runtime"
                 for step in range(max_steps):
                     if cancellation_requested():
@@ -369,6 +429,8 @@ class World:
                         (episode_dir / name).write_bytes(image)
                         episode["frames"].append({"time": current_time, "path": f"{episode_dir.name}/{name}"})
                     phase = "policy"
+                    if policy_record(episode_policy) != episode["policy"]:
+                        raise PolicyError("Policy identity changed after its episode configuration was frozen")
                     tick = time.monotonic()
                     try:
                         action = episode_policy.act(observation)
@@ -426,6 +488,7 @@ class World:
                         episode["sim_seconds"] = float(last["time"])
                         canonical(trace)
                         write_json(episode_dir / "trace.json", trace)
+                        episode["trace_evidence"] = _trace_evidence(episode_dir / "trace.json", trace, episode, result, complete=True)
                         episode["rubric"] = grade(frozen.spec, trace)
                     except Exception as exc:
                         episode["grading_error"] = public_error(exc)
@@ -442,6 +505,7 @@ class World:
                                 break
                         trace = safe
                         write_json(episode_dir / "trace.json", safe)
+                        episode["trace_evidence"] = _trace_evidence(episode_dir / "trace.json", safe, episode, result, complete=False)
                     try:
                         if render and last is not None:
                             name = "final.png"
@@ -477,6 +541,7 @@ class World:
                                 episode["status"] = "simulation_error"
                 else:
                     write_json(episode_dir / "trace.json", [])
+                    episode["trace_evidence"] = _trace_evidence(episode_dir / "trace.json", [], episode, result, complete=False)
                 if policy_factory is not None and episode_policy is not None and hasattr(episode_policy, "close"):
                     try:
                         episode_policy.close()
@@ -614,6 +679,12 @@ class Report:
         (self.path / "report.html").write_text(render_report(self.result, read_json(self.path / "world" / "world.json")))
 
     def regrade(self, world: World, *, output: str | Path | None = None) -> Report:
+        """Apply rubric edits to verified evidence from a compatible frozen runtime.
+
+        Both compiled-model and implementation fingerprints must remain identical.
+        Controller/source or compiled physics changes require a new evaluation;
+        rubric-only edits with unchanged runtime fingerprints remain supported.
+        """
         from robot_worlds.rubric import grade
         original = self.result
         original_world = load(self.path / "world")
@@ -624,19 +695,34 @@ class Report:
             raise WorldNotReady("Regrading requires a validated rubric/world version")
         if original["physical_id"] != world.manifest["physical_id"]:
             raise ValueError("Regrading requires the same physical world; run a new evaluation")
+        recorded_runtime = original_world.manifest.get("runtime", {})
+        target_runtime = world.manifest.get("runtime", {})
+        incompatible = [key for key in ("model_fingerprint", "implementation_fingerprint")
+                        if not recorded_runtime.get(key) or not target_runtime.get(key)
+                        or recorded_runtime[key] != target_runtime[key]]
+        if incompatible:
+            raise ValueError("Regrading requires a compatible frozen world with matching compiled-model and runtime implementation fingerprints; "
+                             "controller/source or physics changes require a new evaluation: " + ", ".join(incompatible))
         destination = Path(output or self.path.parent) / uuid.uuid4().hex
         shutil.copytree(self.path, destination)
         shutil.rmtree(destination / "world")
         shutil.copytree(world.path, destination / "world")
         revised = copy.deepcopy(original)
         revised.update(id=destination.name, parent_run_id=original["id"], world_id=world.id,
-                       created_at=utc_now(), status="running", regraded=True)
+                       created_at=utc_now(), status="running", regraded=True,
+                       evidence_origin_run_id=original.get("evidence_origin_run_id", original["id"]))
         for episode in revised["episodes"]:
             trace_path = destination / f"episode-{episode['index']:03d}" / "trace.json"
             try:
-                if not trace_path.exists():
-                    raise ValueError("Recorded trace is missing; previous scores cannot be reused")
-                episode["rubric"] = grade(world.spec, read_json(trace_path))
+                trace = _verified_regrade_trace(trace_path, episode, original, original_world)
+            except Exception as exc:
+                episode.pop("rubric", None)
+                episode["evidence_validation"] = {"status": "insufficient_evidence", "error": public_error(exc)}
+                episode.update(status="grading_error", grading_error=public_error(exc))
+                continue
+            episode["evidence_validation"] = {"status": "verified", "trace_sha256": episode["trace_evidence"]["sha256"]}
+            try:
+                episode["rubric"] = grade(world.spec, trace)
             except Exception as exc:
                 episode.pop("rubric", None)
                 episode.update(status="grading_error", grading_error=public_error(exc))

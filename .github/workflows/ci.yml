@@ -27,6 +27,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libgl1 libegl1 xvfb xauth
       - name: Lint
         run: uv run --frozen ruff check src tests
+      - name: Viewer resource cleanup
+        run: node --test tests/scene-resources.test.mjs
       - name: Test on macOS
         if: runner.os == 'macOS'
         run: uv run --frozen pytest -q

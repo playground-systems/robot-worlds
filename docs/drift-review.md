@@ -1,12 +1,12 @@
-# Drift review and bounded hands-on protocol
+# Drift hands-on review
 
-Research date: 2026-10-30. This note distinguishes **documented** product behavior, **observed** behavior in our session, and **proposed tests**. An authenticated native trial now demonstrates a small physical wheel-drive scene and one independently verified narrow edit. Factory composition and the remaining capability tests are still pending.
+Research date: 2026-10-30. This note distinguishes **documented** product behavior, **observed** behavior in our session, and **proposed tests**. An authenticated native trial now demonstrates a small physical wheel-drive scene and one independently verified narrow edit. Factory composition exposed physical and layout failures despite a reported pass; one targeted repair round passed an independent follow-up audit.
 
 ## Evidence so far
 
 **Observed:** the official 2.0.1 amd64 package downloaded and extracted successfully. Its CLI stayed silent through bounded help/startup attempts in this Mac's existing Docker x86 emulation; no CLI authentication URL or simulation was reached. The container was removed. Exact environment, package hash, attempts and limitations are in [the runtime check](drift-runtime-check.md).
 
-**Observed remotely, reported by the parent agent:** the existing RTX 4000 was unavailable. A temporary RTX 4090 started at 18:17:54 UTC on 2026-10-30, at $0.89/hour compute plus $0.007/hour disk, within the approved $10 total ceiling. The exact same official 2.0.1 package/hash runs natively: `drift --help` exits successfully, and interactive startup reaches a CLI-specific Google sign-in link. The process uses an isolated non-root user and a separate empty project, without host model credentials. The user completed sign-in, and an authenticated native session generated and ran the small MuJoCo scene described below. The parent agent owns the pod, browser and experiment, including saving results and removing the resource. No identifiers, authentication links or account details are recorded here.
+**Observed remotely:** the existing RTX 4000 was unavailable. A temporary RTX 4090 started at 18:17:54 UTC on 2026-10-30, at $0.89/hour compute plus $0.007/hour disk, within the approved $10 total ceiling. The exact same official 2.0.1 package/hash runs natively: `drift --help` exits successfully, and interactive startup reaches a CLI-specific Google sign-in link. The process uses an isolated non-root user and a separate empty project, without host model credentials. The user completed sign-in, and an authenticated native session generated and ran the small MuJoCo scene described below. The trial includes saving results and removing the temporary resource. No identifiers, authentication links or account details are recorded here. After backups, the temporary pod was stopped and removed at approximately 19:16 UTC; the provider returned 404 and the console no longer listed it. Compute plus disk was less than $0.88 by a conservative elapsed-time calculation, not a final invoice. Existing pods were unchanged.
 
 **Observed CLI discrepancy:** `--no-resume` appears in native help, but interactive startup warns that it is unknown and skips it. Treat the effective behavior as unverified rather than assuming the flag works.
 
@@ -19,9 +19,9 @@ This research pass started no local servers, containers, simulations, builds or 
 
 **Observed pass, narrow follow-up:** the requested change moved only `obstacle_a` from x = 0.4 m to x = 0.9 m. Our saved-file diff contains exactly that one-line change; the controller SHA-256 is identical before and after. The rerun again contains 76 pose samples over 3 simulated seconds and the same measured displacement. The audit also confirms earlier outputs were preserved. This demonstrates one correct incremental scene edit; it does not establish correctness for arbitrary edits or general reproducibility across machines.
 
-**Observed recovery with a misleading intermediate signal:** according to the parent agent's live transcript inspection, the initial validation command printed “Validated” alongside `No module named mujoco` because it missed the installed virtual environment. Drift subsequently used the correct environment and completed the real run. A positive status word alone was therefore insufficient evidence of validation.
+**Observed recovery with a misleading intermediate signal:** the initial validation command printed “Validated” alongside `No module named mujoco` because it missed the installed virtual environment. Drift subsequently used the correct environment and completed the real run. A positive status word alone was therefore insufficient evidence of validation.
 
-**Critical verification boundary:** the parent agent observed Drift's own `git diff` attempt fail because the directory was not a Git repository, followed by an echoed, manually constructed diff. That printed diff is not an independent verifier. The correctness claim above rests on our comparison of the saved baseline and edited files, controller hashes and retained outputs. A convincing narrative can accompany a correct edit without being valid evidence of it.
+**Critical verification boundary:** Drift's own `git diff` attempt failed because the directory was not a Git repository, and was followed by an echoed, manually constructed diff. That printed diff is not an independent verifier. The correctness claim above rests on our comparison of the saved baseline and edited files, controller hashes and retained outputs. A convincing narrative can accompany a correct edit without being valid evidence of it.
 
 **Measurement limits:** the saved controller reads cached body transforms after `mj_step`, so pose/contact state can lag the logged integration timestamp by one 2 ms timestep. Its floor plane has visually bounded extents but physically infinite plane collision; the apparent 6 × 4 m floor is not a bounded enclosure. An empty numerical-warning list would establish only the checks that controller actually performs, not complete stability, collision safety or task success.
 
@@ -39,7 +39,31 @@ These paths are relative to the project root under the ignored `.robot-worlds/dr
 | Independent audit and exact diff | `independent-audit.json`, `scene.diff` | Audit includes pose-log hashes and explicit limitations. |
 | Pose/contact records | `baseline/logs/`, `edited/logs/` | CSV headers excluded from counts above. |
 
-**Next trial, result pending:** the parent agent requested a 20 × 12 m factory with six workcells, racks, inspection, tools and shipping areas, a 1.5 m aisle, detailed asset composition, and a 2-second settling run without robots. No factory-generation, aisle-clearance or settling success is claimed here yet. Robot-library selection, reference-image fidelity, resource-guard recovery and independent rubric behavior have not been exercised by the small drive/edit trial.
+## Observed factory trial
+
+**Generated and rendered, but failed physical/layout requirements:** the request specified a 20 × 12 m factory with six connected workcells, two storage rows, inspection, tools, shipping, a connected 1.5 m route, movable parts and a two-second settling check. Drift created 86 bodies, 106 geometries and four free bodies using native primitives. It also produced a checker, asset-provenance notes and a 1280 × 720 overview. An initial rendering failure was repaired by increasing the offscreen buffer. The result is a useful block layout, not Airsup-level visual fidelity.
+
+Drift reported `OVERALL_OK: True`. Its checker looked for finite state, warnings and deep contacts at the end of settling. Our independent audit of a frozen source revision found:
+
+| Check | Measured result |
+| --- | --- |
+| Initial placement | The inspection tote starts 0.42 m inside the desk. |
+| Settling trajectory | The tote moves 4.91 m in two seconds, reaching 8.32 m/s. |
+| Geometry type | The cart, inspection tote and shipping box default to spheres because their shared default omits `type="box"`. Three size values do not establish box geometry. |
+| Shipping placement | The shipping box starts 0.20 m inside pallet cargo. |
+| Connected route | A continuous row of benches leaves only 0.25 m gaps to the walls, ruling out the requested in-room 1.5 m passage. |
+| Simulator warnings | None, despite the physical/layout failures. |
+
+The audit source, frozen MJCF, compiled geometry, contacts, trajectories and initial/final images are saved under `factory-audit/9447550199c9a260/`; the audit script is in its parent directory. The snapshot hash is recorded in its README. These findings apply to that revision; a later rendering-buffer change did not repair geometry. A separate `factory-repaired/` request preserves the original and asks for corrected types, supported initial poses, a connected cross-aisle and checks throughout settling. The independent follow-up audit passed those four targeted repairs:
+
+- The three intended movable box geoms now compile as boxes; no initial solver penetration exceeds 1 mm.
+- Inspection tote and shipping box drift about 0.08 mm by the end of two seconds, with maximum excursion about 0.165 mm and peak speed 0.0196 m/s. The cart settles downward about 2 cm; its wheel-floor transient penetration peaks at 4.15 mm.
+- A swept 0.75 m radius route, including turns, clears all collision AABBs and walls in both initial and settled states. Minimum clearance is exactly 0.75 m at the benches: the 1.5 m route has no extra margin.
+- The original source hash is unchanged. The repaired source, copied locally and independently audited, has hash `b470d95d36de0871197cbf7c148a6de10eae8e1f418d272034ae11ef9a670167`.
+
+This is a successful targeted repair, not complete scene validity. Fixed rack solids still overlap stored totes, so general storage/manipulation fidelity remains unresolved. The repaired render also retains a distant camera and a front wall that obscures some equipment. Evidence is saved under `factory-repaired/` and `factory-audit/b470d95d36de0871/`.
+
+Robot-library selection, reference-image reconstruction, resource-guard overload recovery and independently executable task-rubric generation were not exercised.
 
 ## What the official sources establish
 
@@ -59,69 +83,15 @@ The reviewed documentation demonstrates claims about scene checks, control scrip
 
 A caution when adapting diagnostic recipes: MuJoCo can infer mass/inertia from geometry; an explicit inertial element is not universally mandatory. Also, `condim=1` still represents frictionless **contact**, rather than disabling contact. Treat a tool's diagnostic narrative as a hypothesis to test against simulator state. [MuJoCo inertia inference](https://mujoco.readthedocs.io/en/stable/XMLreference.html#compiler-inertiafromgeom), [contact dimensions](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-geom-condim).
 
-## Trial protocol and remaining probes
+## Trial boundaries
 
-This is the original test design and acceptance criteria. The observations above record the completed baseline and obstacle-edit subset; other steps remain proposed, not passed. Use one disposable project and short headless MuJoCo runs. Record the exact software versions, model/source revisions, commands, timestamps and paid-resource lifetime. A 45–60 minute engineering timebox leaves ample room beneath the approved ceiling at the quoted compute rate; include actual disk and any separately disclosed service charges. Do not buy a subscription or upgrade to continue a failed test. Save useful evidence and remove the pod at the end.
+The trial used one disposable native Linux project, an isolated non-root account, short headless MuJoCo runs and explicit file/command review. It covered small scene generation, one narrow edit and one factory repair request. It did not test robot-library staging, image-to-scene reconstruction, learned policies, task-rubric generation or deliberate resource overload. Time spent includes manual approval pauses; it is not a latency benchmark.
 
-### 1. Reach a real CLI session and preserve a baseline
-
-Follow the documented first-launch flow: launch Drift in the disposable project, have the user complete the CLI-specific Google URL, and confirm the active account with `/profile`. Browser dashboard sign-in alone is not evidence that the CLI authenticated. [Quickstart](https://docs.godrift.ai/getting-started/quickstart).
-
-Record `/version`, the MuJoCo version, CPU/GPU details and initial resource availability. Use interactive mode first. Put trial constraints in project context: MuJoCo only; no ROS/Isaac installation; short headless runs; named entities; no teleportation or welded grasp shortcuts; preserve unrelated files; disclose unsupported requests. Do not place credentials in that file.
-
-**Original test prompt:** “Create a 6 m by 4 m MuJoCo scene with a simple wheeled robot, three separately named stationary obstacles, and a named target floor region. Advance physics for 3 simulated seconds under a modest drive command. Save MJCF, controller, timestamped chassis pose/contact logs, and one overview image. Report actual displacement and any stability warnings.”
-
-Record time to first plan, first loadable scene, first image and first stepped physics result separately. Inspect compiled bodies/actuators and the logged trajectory independently. A still image or an exit code alone does not pass. If setup fails, allow one diagnosis/repair round and preserve the failure evidence.
-
-### 2. Test narrow edits without rebuilding the meaning of the scene
-
-Save a baseline file inventory and checksums. Apply these changes separately, saving a new artifact snapshot and diff after each:
-
-1. Change only the named robot wheel-contact friction to a specified value; rerun the same duration and controls.
-2. Move one named obstacle by a specified displacement while preserving the other obstacle poses, robot model, actuator configuration and task.
-3. Add a named camera and log its frames without altering the physical experiment.
-
-For each edit, verify requested changes in the compiled model, compare unrelated entity names/poses and inspect the actual trace. Record unexplained regeneration, disappearing objects, renamed targets, invented measurements and newly introduced failures. A successful run after deleting the difficult object is a failed edit test.
-
-### 3. Separate robot discovery from physical capability
-
-Use `/robots`, inspect the offered formats, and stage one small supported manipulator or wheeled model. Record asset license/source revision, files copied, and the declared action/sensor interface. Inspect preview as a usability feature only. Then run full physics for 3–5 seconds and attempt a simple bounded motion with joint/base state logs.
-
-If choosing a humanoid, classify static standing separately from walking. If choosing an arm, classify free-space reaching separately from grasping, carrying and releasing. Preserve any missing-controller or unsupported-policy limitation instead of silently substituting another robot. No claim about popularity follows from library size.
-
-### 4. Use a reference with known ground truth
-
-Provide a small, self-authored PNG floorplan: a 6 × 4 m room, one clearly marked doorway, two labeled tables, a cabinet, a clear aisle and one colored target object. Attach it using the documented path-prefix syntax. Ask Drift to state its inferred inventory and dimensions before constructing the scene, and to mark any unobservable mass/material values as assumptions.
-
-Check relative placement, doorway clearance, object count, labeled dimensions and robot start against the reference. Request a single later change while preserving the remaining layout. Ask a follow-up about the image without reattaching, then explicitly distinguish session memory from information it persisted in files. Do not grade photorealism as proof of collision, inertia or reachability fidelity.
-
-### 5. Probe diagnostics and resource handling without creating an overload
-
-Make a copy of the baseline and introduce one controlled error, such as an invalid include filename. Ask Drift to diagnose it from actual logs, repair only that error, and rerun the original check. Confirm the missing reference and the corrected artifact rather than accepting a generic explanation.
-
-If a display is available, open one lightweight viewer and request a second; record whether Drift asks to replace/cancel instead of accumulating viewers. Inspect its process listing before and after exit. Keep headless runs short. **Do not deliberately exhaust VRAM/RAM or disable the guard.** Record critical-load recovery as “not exercised” unless a safe, supported fault-injection mechanism exists. Hardware telemetry unavailable should remain a visible uncertainty, even though Drift documents fail-open behavior.
-
-### 6. Ask for an evaluator artifact and test its boundaries
-
-Use a task that is actually supported by the chosen robot/controller. For manipulation, request moving a specific named object onto a physical support, released and stable for one second, after visiting a prerequisite station. If no compatible manipulation controller exists, stop that part of the test rather than using pose writes; a simpler navigation-only task can still test identity/order handling.
-
-Ask for a local executable evaluator that takes a saved state/event trace, with explicit entity bindings, ordering/duration rules, missing-evidence behavior and per-check witness timestamps. Freeze its definition before collecting comparison traces. Evaluate independently prepared cases:
-
-| Case | Expected evaluation property |
-| --- | --- |
-| No actions | Does not earn achievement credit. |
-| Correct movement, wrong object | Fails identity binding. |
-| Goal reached before prerequisite | Does not acquire retroactive ordering credit. |
-| Brief goal contact followed by slip | Fails the required hold duration/final condition. |
-| Goal attained then undone | Fails final-state requirements while preserving historical evidence. |
-| Needed sensor/state omitted | Reports insufficient evidence, not an invented pass. |
-| Plausible successful trace | Passes with inspectable witnesses if all conditions actually hold. |
-
-Do not accept “the agent says it succeeded,” a visually plausible video, or a task-specific script that sets its own success flag as equivalent to an independent evaluator. If Drift supplies only validation prose or a controller log, record exactly that and leave this capability unproven.
+Useful future probes are a known-dimension reference floorplan, a supported research robot under physical control, and an executable task grader tested against wrong-object, ordering, unstable-placement and missing-evidence counterexamples. They remain untested, not failed.
 
 ## What we should adapt from the actual results
 
-**Implement narrow, entity-specific edits with saved before/after versions.** The obstacle edit preserved the controller and prior outputs in this observed case. Our product should expose the requested entity/property change and a computed artifact diff, then retain the rerun evidence. Do not infer that all future edits will preserve invariants without checking them.
+**Implement narrow, entity-specific edits with saved before/after versions.** The obstacle edit preserved the controller and prior outputs; the factory repair preserved its original scene and addressed externally measured defects in a separate version. Our product should expose the requested entity/property change and a computed artifact diff, then retain the rerun evidence. Do not infer that all future edits will preserve invariants without checking them.
 
 **Make verification independent of generated explanations.** Compute hashes and diffs from persisted files in application code. Accept a validation stage only after the expected command succeeds and its structured outputs exist. Display execution environment, command outcome and evidence separately from the agent's text. The misleading validation word and hand-constructed diff directly motivate this requirement.
 
@@ -129,7 +99,9 @@ Do not accept “the agent says it succeeded,” a visually plausible video, or 
 
 **Keep capability states explicit.** This trial earned “generic robot physically drove” and “one narrow edit preserved unrelated artifacts.” It did not earn “research robot supported,” “factory task solved” or “rubric validated.” Show preview, compile, stepped physics, task checks and missing evidence separately.
 
-**Still candidates, not hands-on findings:** persistent project conventions, relational factory composition, reference-image inventories, robot-library staging, and one-viewer/resource cleanup. The official docs motivate these features; additional trials must justify stronger conclusions. Preserve inferred-property disclosures and verify physical clearance independently.
+**Validate layout and the entire settling trajectory.** Factory composition worked at the primitive-layout level, but checking only the final state hid a severe initial overlap and ejection. Clearance must be measured against physical geometry; a labeled aisle is not evidence of connectivity. Record object types from the compiled model, initial penetration, peak speed/displacement and route checks separately.
+
+**Still candidates, not hands-on findings:** persistent project conventions, reference-image inventories, robot-library staging, and one-viewer/resource cleanup. The official docs motivate these features; additional trials must justify stronger conclusions. Preserve inferred-property disclosures and verify physical clearance independently.
 
 **Keep our evaluation contract:** a frozen world/task/rubric version, actor/evaluator separation, replayable state evidence and counterexample-tested grading. Neither the reviewed documentation nor this drive/edit trial establishes equivalent rubric behavior in Drift.
 

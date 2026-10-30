@@ -12,6 +12,8 @@ The public flow is `generate(prompt) → World`, `load(path) → World`, and `wo
 
 World identity includes the specification, asset hashes, robot assets, validation and runtime evidence. Refinement and rubric edits create new versions. The separate physical identity permits regrading a new rubric against the same recorded physical world; a changed physical identity requires another evaluation.
 
+Static connectivity diagnostics can reject navigation targets separated by fixed box geometry under the declared 0.8 m diameter, 1.6 m tall planar clearance contract. Articulated/movable objects, uncertain shapes and bounded computation limits remain explicit. An optimistic route or an unknown diagnostic does not certify task solvability.
+
 ## Physical execution and policy boundary
 
 `runtime.py` and `g1_runtime.py` provide MuJoCo simulation, robot controllers, observations, bounded tools, privileged snapshots and native rendering. TIAGo++ uses wheel control and local arm IK. G1 uses a learned locomotion controller, arm servos and Dex1-1 contact grippers. Exact assets, revisions, controller hashes and disclosed approximations appear in manifests. Object motion and grasping come from contact; no tool call awards success or attaches a workpiece invisibly.
@@ -20,11 +22,13 @@ Policies implement `reset(context)`, `act(observation)` and optionally `record_r
 
 The SDK resets each episode's runtime, controllers, policy memory and monitors. Simulation is stepped; model inference wall time is recorded separately. Actions execute through controllers, and their measured results return to the policy. Runtime, policy, grading and cancellation outcomes remain distinct from task success.
 
+Runtime identity hashes installed controller/sensor modules, dependency versions and action/sensor contracts. Evaluation rejects a changed implementation even when its XML and manual controller label are unchanged. Older worlds without that identity need revalidation. Policy records capture source hashes and declared behavior settings before the first action; opaque custom clients and remote service internals remain explicitly unvalidated.
+
 ## Rubrics and evidence
 
 `rubric.py` grades recorded state with supported local predicates and temporal rules. Criteria bind persistent IDs to physical measurements, required ordering, durations, final or historical outcomes, maintenance constraints and alternatives. Initially true achievements cannot earn no-op credit. Missing measurements remain unknown; definite counterevidence still establishes failure. Timed process abstractions require physical loading and preserve workpiece identity, with prerequisites monitored at every physics step.
 
-Runs retain the frozen world, protocol, package/controller provenance, traces, policy transcript and usage, tool results, criterion measurements and replay frames. Reports link criteria to completion, missing-data or decisive failure evidence. Offline regrading reads saved measurements rather than previous verdicts. Recorded traces are trusted simulator data, not tamper-proof attestations. See [rubric semantics and limits](review-rubric.md).
+Runs retain the frozen world, protocol, package/controller provenance, traces, policy transcript and usage, tool results, criterion measurements and replay frames. Reports link criteria to completion, missing-data or decisive failure evidence. Offline regrading verifies the collection hash, sample count, reset-to-terminal time span and world/runtime/episode identity before recomputing scores. Missing or altered evidence cannot reuse an earlier verdict. The target rubric world must retain the same compiled-model and runtime fingerprints; controller/source changes require a new evaluation. These checks detect changed artifacts; they do not attest against an attacker rewriting both trace and metadata. See [rubric semantics and limits](review-rubric.md).
 
 ## Budgets, workers and hardware
 

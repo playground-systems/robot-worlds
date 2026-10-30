@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import inspect
+import os
+import sys
 import time
+from importlib import metadata, resources
 from typing import Any
 
-from robot_worlds.llm import ResponsesClient, audit_value, validate_action
+from robot_worlds.artifacts import digest
+from robot_worlds.llm import LLMBudgetExceeded, ResponsesClient, audit_value, validate_action
 
 
 class PolicyError(RuntimeError):
@@ -14,7 +20,7 @@ class PolicyError(RuntimeError):
 
 
 class PolicyBudgetExceeded(PolicyError):
-    """The episode's decision or elapsed-time limit was reached."""
+    """The episode's decision, elapsed-time or model-resource limit was reached."""
 
 
 PUBLIC_OBSERVATION_KEYS = frozenset(
@@ -45,6 +51,67 @@ motions when uncertain. The independent evaluator judges completion; you cannot
 edit the world, task, rubric or simulator state. If a finish/done tool is exposed,
 it ends your attempt and does not declare success. Do not request unavailable
 tools or privileged evaluator information."""
+
+
+def _class_identity(value: Any) -> dict:
+    cls = type(value)
+    identity = {"class": f"{cls.__module__}.{cls.__qualname__}"}
+    try:
+        # Only the hash is persisted: external source can contain API literals.
+        identity["source_sha256"] = hashlib.sha256(inspect.getsource(cls).encode()).hexdigest()
+    except (OSError, TypeError):
+        identity["source_sha256"] = None
+    return identity
+
+
+def _package_identity(modules: tuple[str, ...], dependencies: tuple[str, ...]) -> dict:
+    package = resources.files("robot_worlds")
+    return {
+        "sources": {
+            name: hashlib.sha256(package.joinpath(name).read_bytes()).hexdigest()
+            for name in sorted(modules)
+        },
+        "dependencies": {name: metadata.version(name) for name in sorted(dependencies)},
+        "python": {"implementation": sys.implementation.name, "version": list(sys.version_info[:3])},
+    }
+
+
+def policy_record(policy: Any) -> dict:
+    """Freeze source identity and explicit configuration without serializing clients.
+
+    Arbitrary in-process settings and remote service weights cannot be inferred
+    safely. Their limited coverage remains explicit rather than claiming a fully
+    reproducible policy from a class name or an endpoint alone.
+    """
+    source = _class_identity(policy)
+    declared = audit_value(copy.deepcopy(getattr(policy, "provenance", {})))
+    if isinstance(policy, LLMAgent):
+        identity = declared
+    else:
+        identity = {
+            "version": 1,
+            "source": source,
+            "declared_configuration": declared,
+            "configuration_status": "caller_declared_configuration_unvalidated",
+        }
+        if source["class"] == "robot_worlds.remote_policy.RemotePolicy":
+            identity["adapter"] = _package_identity(
+                ("remote_policy.py", "policy.py", "llm.py", "artifacts.py"), ("httpx",)
+            )
+            identity["adapter_settings"] = {
+                name: getattr(policy, name)
+                for name in ("timeout", "max_seconds", "max_steps", "max_request_bytes", "max_response_bytes")
+            }
+            identity["endpoint_sha256"] = hashlib.sha256(policy.base_url.encode()).hexdigest()
+            identity["configuration_status"] = "adapter_captured_remote_service_unvalidated"
+        identity["fingerprint"] = digest(identity)
+    return {
+        "class": source["class"],
+        "model": getattr(policy, "model", None),
+        "reasoning": getattr(policy, "reasoning", None),
+        "declared_provenance": declared,
+        "identity": copy.deepcopy(identity),
+    }
 
 
 class LLMAgent:
@@ -104,6 +171,54 @@ class LLMAgent:
         self._started = time.monotonic()
         if hasattr(self.client, "reset_budget"):
             self.client.reset_budget()
+        self._frozen_provenance = self._current_provenance()
+
+    def _current_provenance(self) -> dict:
+        implementation = _package_identity(
+            ("policy.py", "llm.py", "artifacts.py"), ("openai", "httpx", "pydantic")
+        )
+        client = _class_identity(self.client)
+        builtin = type(self.client) is ResponsesClient
+        configuration_status = "opaque_client_configuration_unvalidated"
+        if builtin:
+            client["settings"] = {
+                name: copy.deepcopy(getattr(self.client, name))
+                for name in (
+                    "model", "reasoning", "timeout", "max_output_tokens", "max_calls",
+                    "max_total_output_tokens", "max_seconds", "max_input_chars", "max_images",
+                    "max_image_bytes", "max_cost_usd", "pricing",
+                )
+            }
+            transport = self.client._client
+            native = transport is None or (
+                type(transport).__module__ == "openai" and type(transport).__name__ == "OpenAI"
+            )
+            client["transport_status"] = "openai_sdk" if native else "opaque_injected_transport"
+            if native:
+                endpoint = (
+                    str(transport.base_url) if transport is not None
+                    else os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+                )
+                client["endpoint_sha256"] = hashlib.sha256(endpoint.rstrip("/").encode()).hexdigest()
+                configuration_status = "builtin_behavior_captured_transport_options_unvalidated"
+        payload = {
+            "version": 1,
+            "implementation": implementation,
+            "policy_source": _class_identity(self),
+            "instructions_sha256": hashlib.sha256(_INSTRUCTIONS.encode()).hexdigest(),
+            "context_sha256": digest(self.context),
+            "settings": {
+                "model": self.model, "reasoning": self.reasoning, "max_steps": self.max_steps,
+                "max_seconds": self.max_seconds, "history_steps": self.history_steps,
+            },
+            "client": client,
+            "configuration_status": configuration_status,
+        }
+        return {**payload, "fingerprint": digest(payload)}
+
+    @property
+    def provenance(self) -> dict:
+        return copy.deepcopy(self._frozen_provenance)
 
     @property
     def usage(self) -> dict:
@@ -118,6 +233,8 @@ class LLMAgent:
         }
 
     def act(self, observation: dict) -> dict:
+        if self._current_provenance()["fingerprint"] != self._frozen_provenance["fingerprint"]:
+            raise PolicyError("The robot policy implementation or configuration changed after reset")
         if self.steps >= self.max_steps or time.monotonic() - self._started >= self.max_seconds:
             raise PolicyBudgetExceeded("The robot agent episode budget is exhausted")
         if not isinstance(observation, dict):
@@ -154,6 +271,8 @@ class LLMAgent:
                 budget=self.budget,
             )
             self.transcript.append(record)
+            if isinstance(error, LLMBudgetExceeded):
+                raise PolicyBudgetExceeded(str(error)) from error
             raise
         record.update(
             selected_action=audit_value(action),

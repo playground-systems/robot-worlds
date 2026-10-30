@@ -21,6 +21,7 @@ from .runtime import HAND, NUMBER, TOOLS, RobotPhysicalFailure, Runtime, _tool
 class G1Runtime(Runtime):
     def _build_xml(self):
         self._policy_path = self.asset_path / "policy.onnx"
+        self._policy_sha256 = hashlib.sha256(self._policy_path.read_bytes()).hexdigest()
         options = ort.SessionOptions()
         options.intra_op_num_threads = 1
         self._policy = ort.InferenceSession(
@@ -363,7 +364,7 @@ class G1Runtime(Runtime):
         result.update(
             controller="unitree-g1-dex1-velocity-onnx-with-arm-override-v1",
             policy_frequency_hz=50,
-            policy_sha256=hashlib.sha256(self._policy_path.read_bytes()).hexdigest(),
+            policy_sha256=self._policy_sha256,
             policy_source_revision="1425b15f73bd4095f0df53709d7c389c3eb9e790",
             arm_control="Torque-limited IK servos with bias compensation and nominal commanded-arm policy feature masking; actual IMU and leg feedback control balance",
         )

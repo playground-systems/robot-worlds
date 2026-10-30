@@ -16,6 +16,8 @@ export function disposeMaterials(materials, seen = new Set()) {
 export function disposeTree(root) {
   const seen = new Set();
   root.traverse(node => {
+    // Instance matrix/color buffers belong to the mesh, not its geometry.
+    if (node.isInstancedMesh) node.dispose();
     if (node.geometry && !seen.has(node.geometry)) {
       seen.add(node.geometry);
       node.geometry.dispose();

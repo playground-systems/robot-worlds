@@ -3,7 +3,9 @@
 import pytest
 
 from robot_worlds.artifacts import read_json, write_json
+from robot_worlds.llm import LLMBudgetExceeded, LLMError
 from robot_worlds.models import WorldSpec
+from robot_worlds.policy import LLMAgent
 from robot_worlds.sdk import World, WorldNotReady, generate, load
 
 
@@ -23,11 +25,14 @@ class FakeRuntime:
         self.closed = False
         self.position = list(world.objects[0].position)
         self.trace = [self.snapshot()]
-        self.manifest = {"engine": "FAKE_ORCHESTRATION_TEST_ONLY", "seed": seed}
+        self.manifest = {"engine": "FAKE_ORCHESTRATION_TEST_ONLY", "seed": seed,
+                         "model_fingerprint": "1" * 64, "implementation_fingerprint": "2" * 64,
+                         "action_contract": self.observe()["tools"],
+                         "sensor_contract": {"fixture": "fake_observations_only"}}
         self.instances.append(self)
 
     def snapshot(self):
-        return {"time": self.time, "objects": {"part": {"position": self.position[:], "size": [.2, .2, .2], "quaternion": [1, 0, 0, 0], "held_by": None, "contacts": [], "velocity": [0, 0, 0]}}, "robot": {"position": [0, 0, 0]}}
+        return {"time": self.time, "objects": {"part": {"position": self.position[:], "size": [.2, .2, .2], "quaternion": [1, 0, 0, 0], "held_by": None, "contacts": [], "velocity": [0, 0, 0]}}, "robot": {"position": [0, 0, 0]}, "model_fingerprint": "1" * 64}
 
     def observe(self):
         return {"time": self.time, "tools": [{"name": "test_move", "description": "test only", "parameters": {"type": "object", "properties": {}, "required": [], "additionalProperties": False}}]}
@@ -127,6 +132,60 @@ def test_unknown_tool_is_policy_error_not_task_failure(tmp_path):
     assert report.result["episodes"][0]["status"] == "policy_error"
     assert report.summary["valid"] == 0
     assert report.summary["success_rate"] is None
+    assert all(runtime.closed for runtime in FakeRuntime.instances)
+
+
+@pytest.mark.parametrize("limit", ["model-spend", "output-token"])
+def test_llm_budget_exhaustion_is_a_valid_failed_episode(tmp_path, limit):
+    class ExhaustedClient:
+        usage = {"calls": 0}
+        last_usage = {}
+        budget = {"limit": limit}
+
+        def choose_action(self, *args):
+            raise LLMBudgetExceeded(f"The {limit} budget is exhausted")
+
+    policy = LLMAgent(client=ExhaustedClient())
+    report = ready(tmp_path).evaluate(
+        policy, render=False, output=tmp_path / "runs", runtime_factory=FakeRuntime
+    )
+    episode = report.result["episodes"][0]
+    assert report.result["status"] == "completed"
+    assert episode["status"] == "completed"
+    assert episode["termination"] == "policy_budget"
+    assert episode["rubric"]["status"] == "failed"
+    assert not episode["rubric"]["success"]
+    assert report.summary["attempted"] == report.summary["valid"] == 1
+    assert report.summary["successes"] == report.summary["invalid_or_interrupted"] == 0
+    assert report.summary["success_rate"] == 0
+    assert episode["steps"] == []
+    assert read_json(report.path / "episode-000" / "trace.json")
+    transcript = read_json(report.path / "episode-000" / "transcript.json")
+    assert transcript[0]["error"] == {"type": "LLMBudgetExceeded"}
+    assert transcript[0]["budget"]["limit"] == limit
+    assert episode["policy_usage"]["policy_steps"] == 1
+    assert all(runtime.closed for runtime in FakeRuntime.instances)
+
+
+def test_llm_auth_or_transport_failure_remains_an_invalid_policy_episode(tmp_path):
+    class FailedClient:
+        def choose_action(self, *args):
+            raise LLMError("OpenAI Responses request failed (AuthenticationError, HTTP 401)")
+
+    report = ready(tmp_path).evaluate(
+        LLMAgent(client=FailedClient()),
+        render=False,
+        output=tmp_path / "runs",
+        runtime_factory=FakeRuntime,
+    )
+    episode = report.result["episodes"][0]
+    assert episode["status"] == "policy_error"
+    assert "termination" not in episode
+    assert report.summary["valid"] == 0
+    assert report.summary["invalid_or_interrupted"] == 1
+    assert report.summary["success_rate"] is None
+    transcript = read_json(report.path / "episode-000" / "transcript.json")
+    assert transcript[0]["error"] == {"type": "LLMError"}
     assert all(runtime.closed for runtime in FakeRuntime.instances)
 
 
@@ -324,6 +383,106 @@ def test_changed_runtime_version_cannot_silently_reuse_validation(tmp_path):
     assert report.result["episodes"][0]["status"] == "simulation_error"
     assert report.summary["valid"] == 0
     assert policy.contexts == []
+
+
+@pytest.mark.parametrize(
+    "change", ["implementation", "actions", "sensors", "missing_implementation"]
+)
+def test_changed_runtime_implementation_rejects_before_policy_reset(tmp_path, change):
+    class ChangedRuntime(FakeRuntime):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            if change == "implementation":
+                self.manifest["implementation_fingerprint"] = "3" * 64
+            elif change == "actions":
+                self.manifest["action_contract"] = []
+            elif change == "sensors":
+                self.manifest["sensor_contract"] = {"fixture": "different_sensor"}
+            else:
+                self.manifest.pop("implementation_fingerprint")
+
+    policy = Policy()
+    report = ready(tmp_path).evaluate(
+        policy, render=False, output=tmp_path / "runs", runtime_factory=ChangedRuntime
+    )
+    episode = report.result["episodes"][0]
+    assert episode["status"] == "simulation_error"
+    assert episode["error"]["type"] == "WorldNotReady"
+    assert report.summary["valid"] == 0
+    assert policy.contexts == []
+    assert episode["steps"] == []
+    assert all(runtime.closed for runtime in FakeRuntime.instances)
+
+
+def test_legacy_ready_world_requires_revalidation_of_runtime_implementation(tmp_path):
+    class LegacyRuntime(FakeRuntime):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.manifest.pop("implementation_fingerprint")
+
+    world = ready(tmp_path, runtime_factory=LegacyRuntime)
+    assert world.manifest["validation"]["status"] == "ready"
+    policy = Policy()
+    with pytest.raises(WorldNotReady, match="fingerprints are missing"):
+        world.evaluate(policy, output=tmp_path / "runs", runtime_factory=FakeRuntime)
+    assert policy.contexts == []
+    assert len(FakeRuntime.instances) == 1  # No evaluation runtime was started.
+
+
+@pytest.mark.parametrize("use_factory", [False, True])
+def test_resolved_llm_policy_identity_is_saved_before_first_decision(tmp_path, use_factory):
+    class InspectingClient:
+        model = "fixture-model"
+        reasoning = "low"
+        api_key = "never-serialize-client-credential"
+
+        def choose_action(self, *args):
+            run_path = next((tmp_path / "runs").glob("*/result.json"))
+            saved = read_json(run_path)
+            identity = saved["episodes"][0]["policy"]["identity"]
+            assert len(identity["fingerprint"]) == 64
+            assert len(identity["instructions_sha256"]) == 64
+            assert identity["settings"]["history_steps"] == 2
+            assert identity["settings"]["model"] == "fixture-model"
+            assert identity["configuration_status"] == "opaque_client_configuration_unvalidated"
+            assert self.api_key not in str(saved)
+            return {"tool": "finish", "arguments": {}}
+
+    policy = LLMAgent(client=InspectingClient(), history_steps=2)
+    kwargs = {"policy_factory": lambda: policy} if use_factory else {"policy": policy}
+    report = ready(tmp_path).evaluate(
+        **kwargs, render=False, output=tmp_path / "runs", runtime_factory=FakeRuntime
+    )
+    assert report.summary["valid"] == 1, report.result
+    episode = report.result["episodes"][0]
+    assert episode["termination"] == "policy_finished"
+    assert episode["policy"]["model"] == "fixture-model"
+    assert episode["policy"]["identity"] == policy.provenance
+    if not use_factory:
+        assert report.result["policy"] == episode["policy"]
+
+
+def test_policy_cannot_change_declared_configuration_between_actions(tmp_path):
+    class ChangingPolicy(Policy):
+        version = 1
+
+        @property
+        def provenance(self):
+            return {"configuration_version": self.version}
+
+        def act(self, observation):
+            action = super().act(observation)
+            self.version += 1
+            return action
+
+    report = ready(tmp_path).evaluate(
+        ChangingPolicy(), render=False, output=tmp_path / "runs", runtime_factory=FakeRuntime
+    )
+    episode = report.result["episodes"][0]
+    assert episode["status"] == "policy_error"
+    assert "identity changed" in episode["error"]["message"]
+    assert len(episode["steps"]) == 1
+    assert report.summary["valid"] == 0
 
 
 def test_cancelled_generation_retains_latest_preview_and_audit(tmp_path):

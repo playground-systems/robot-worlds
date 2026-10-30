@@ -84,3 +84,7 @@ No controller changes were needed for this validation. All validation processes 
 After the full-suite snapshot, the API and CLI were wired to the existing batch executor and `evaluate_batch` was exported from the package. Focused remote checks passed: 25 server/UI/dispatch tests and 17 CLI tests, with Ruff passing. These checks verify option forwarding, independent-episode budgets, cancellation, serial compatibility and credential references; they do not add a new physical benchmark.
 
 A distribution build and fresh Linux Python 3.13 environment install also passed. From outside the source tree, the installed `robot-worlds --help` succeeded, package imports resolved under the fresh environment’s `site-packages`, and the G1 asset directory was present. Build/install and CLI-help logs are retained under `.robot-worlds/gpu-check/`. The repository still requires hosted CI and a reviewable PR.
+
+## Review-fix verification
+
+After adding runtime/policy identity, trace-integrity checks and connectivity diagnostics, the remote machine passed 109 focused identity/policy/SDK/regrading tests, 18 physical/batch integration tests, 70 generator/API/CLI boundary tests, and 39 connectivity/generator/large-scene tests. The last two selections overlap; these counts are not an aggregate suite total. Ruff passed. A lightweight Node regression also verified shared scene-resource and instanced-buffer disposal. Full hosted CI is tracked on the implementation PR.
