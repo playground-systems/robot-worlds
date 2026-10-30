@@ -18,6 +18,8 @@ uv run robot-worlds serve
 
 Open **http://127.0.0.1:8765**. Enter a scene and task, inspect the generated geometry and rubric, then start an evaluation. The workbench stores worlds, job progress and reports under `.robot-worlds/`. A failed validation preserves its candidate and explains the failed checks.
 
+See [setup and model access](docs/setup.md) for offline `doctor` checks, paid API requirements and clean installation.
+
 ```python
 from robot_worlds import generate, LLMAgent
 
@@ -63,4 +65,6 @@ Tests use generated engineering fixtures and bounded fake transports where appro
 ROBOT_WORLDS_LIVE_API=1 uv run pytest tests/test_llm_live.py
 ```
 
-The root code is MIT licensed. Robot models, controller weights and vendored browser libraries retain their own licenses and source attribution beside the assets.
+Read [Contributing](CONTRIBUTING.md) for focused checks, [Security](SECURITY.md) for reporting, and [release preparation](docs/releasing.md) for packaging gates.
+
+The root code is MIT licensed. Robot models, controller weights and vendored browser libraries retain their own licenses and source attribution beside the assets. The [third-party inventory](THIRD_PARTY_NOTICES.md) records the pinned sources and retained terms.

@@ -31,6 +31,9 @@ dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/robot_worlds"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"THIRD_PARTY_NOTICES.md" = "robot_worlds/THIRD_PARTY_NOTICES.md"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 

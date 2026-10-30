@@ -1,0 +1,31 @@
+name: Bug report
+description: Report a reproducible generation, physics, editing, grading or setup problem.
+body:
+  - type: markdown
+    attributes:
+      value: Do not include API keys, policy tokens or private images. Use private vulnerability reporting for security issues.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Expected and observed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Smallest reproduction
+      description: Include prompt, edit scope, commands and relevant validation/criterion evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Version and offline diagnostics
+      description: Commit or package version, plus sanitized robot-worlds doctor --json. State graphics backend and policy model separately.
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Sanitized evidence
+      description: Relevant error type, measured state, timestamps or screenshots. Inspect exported bundles before attaching them.

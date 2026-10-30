@@ -19,7 +19,7 @@ Vec3 = tuple[Number, Number, Number]
 Color = Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
 Size3 = tuple[Positive, Positive, Positive]
 Identifier = Annotated[str, Field(pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,79}$")]
-Predicate = Literal["in_region", "on_top", "near", "holding", "released", "robot_in_region", "joint_at", "process_complete"]
+Predicate = Literal["in_region", "on_top", "near", "holding", "released", "carried_distance", "robot_in_region", "joint_at", "process_complete"]
 
 
 class Model(BaseModel):
@@ -107,7 +107,7 @@ class Condition(Model):
 
 
 class ProcessPrerequisite(Condition):
-    predicate: Literal["in_region", "on_top", "near", "joint_at"]
+    predicate: Literal["in_region", "on_top", "near", "joint_at", "released"]
 
 
 class ProcessCycle(Model):

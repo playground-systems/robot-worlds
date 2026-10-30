@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
 The main guard is required in standalone scripts because workers use Python's `spawn` method. Each episode gets a fresh process, policy/reset, native MuJoCo simulator and graphics context. Seeds are assigned by episode index before scheduling, so completion order does not change which episode gets which seed. Worker results, errors and partial artifacts are retained, and the aggregate report rewrites frame paths into their correct episode directories.
 
-The default is one worker. More workers trade memory and CPU/graphics contention for concurrency; the implementation permits 1–32 workers. This is native **CPU physics**. On Linux with a supported NVIDIA driver, `graphics_backend="egl"` selects offscreen EGL rendering; it does not switch physics to a GPU or make GPU feature-parity claims. NVIDIA execution and scaling have not been validated for this implementation. macOS uses `graphics_backend="auto"`.
+The default is one worker. More workers trade memory and CPU/graphics contention for concurrency; the implementation permits 1–32 workers. This is native **CPU physics**. On Linux with a supported NVIDIA driver, `graphics_backend="egl"` selects offscreen EGL rendering; it does not switch physics to a GPU. [NVIDIA validation](gpu-validation.md) records actual RTX 4090 rendering, physical regressions and a one-versus-two-worker comparison. macOS uses `graphics_backend="auto"`.
 
 Parallel policies are declarative configurations for the built-in `LLMAgent` or `RemotePolicy`, not arbitrary pickled Python objects. LLM configuration accepts the agent's model/reasoning/request/token/time/cost limits. Cost caps are **per episode**: four episodes with a $1 cap have a combined reservation ceiling of $4. Divide a desired total policy budget across episodes. Actual API usage/reservations remain in each episode's policy usage record. Environment-generation cost is separate.
 
@@ -36,7 +36,7 @@ A local engineering test on an Apple M1 Pro ran two independent episodes with re
 | 1 | 5.000 s | 0.400 |
 | 2 | 1.605 s | 1.246 |
 
-These are individual sequential measurements from a development machine, including process startup and with potentially different cache/other-work conditions. They are evidence that both configurations execute, not a general speedup guarantee. The native Mac renderer emitted an `ARB_clip_control` depth-precision warning; this result is not a claim of camera-depth equivalence across graphics backends. Re-run `uv run pytest tests/test_batch.py -s` for the current environment. NVIDIA measurements remain pending.
+These are individual sequential measurements from a development machine, including process startup and with potentially different cache/other-work conditions. They are evidence that both configurations execute, not a general speedup guarantee. The native Mac renderer emitted an `ARB_clip_control` depth-precision warning; this result is not a claim of camera-depth equivalence across graphics backends. Re-run `uv run pytest tests/test_batch.py -s` for the current environment. The separate [NVIDIA comparison](gpu-validation.md#one-versus-two-workers) measured 1.87× throughput with two workers on one small workload; it does not establish general scaling or hosted-policy throughput.
 
 ## Local API route
 

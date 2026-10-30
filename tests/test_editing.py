@@ -48,7 +48,7 @@ def test_task_cannot_be_weakened_without_permission(sample):
 def test_repair_cannot_delete_the_problem(sample, field, op):
     original, _ = sample
     oid = getattr(original, field)[0].id
-    candidate = apply_patch(original, {"operations": [{"op": op, "id": oid}]})
+    candidate = apply_patch(original, {"operations": [{"op": op, "id": oid}]}, allow_task_changes=True)
     with pytest.raises(ValueError, match="cannot remove original entities"):
         enforce_protections(original, candidate, preserve_entities=True)
 

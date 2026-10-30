@@ -558,7 +558,7 @@ class Runtime:
     def _process_snapshot(self):
         cycles = self.spec.process_cycles
         # Monitors run every physics step, independently of 20Hz replay samples.
-        pairs, _ = self._contact_state()
+        pairs, held = self._contact_state()
         needed = {
             identifier
             for c in cycles
@@ -579,6 +579,7 @@ class Runtime:
                 "quaternion": self.data.xquat[bid].tolist(),
                 "size": list(obj.size),
                 "contacts": [b if a == oid else a for a, b in pairs if oid in (a, b)],
+                "held_by": next((hand for hand, obj_id in held if obj_id == oid), None),
             }
             if obj.joint:
                 values["joint_position"] = float(self.data.joint("joint_" + oid).qpos[0])

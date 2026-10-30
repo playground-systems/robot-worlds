@@ -6,7 +6,7 @@
   <script type="importmap">{"imports":{"three":"/static/vendor/three.module.js"}}</script>
 </head>
 <body>
-<div class="app-shell">
+<div class="app-shell show-left">
   <nav class="app-rail" aria-label="Workspace panels">
     <a class="rail-brand" href="/" title="Robot Worlds">RW</a>
     <button class="rail-button" data-panel="world" aria-label="World versions and layers" title="World"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h4"/></svg><span>World</span></button>
@@ -16,7 +16,7 @@
     <span class="rail-local" title="Self-hosted workspace">LOCAL</span>
   </nav>
   <aside class="left-panel">
-    <header class="file-header"><div><h1 id="world-title">Untitled world</h1><div class="eyebrow" id="workspace-eyebrow">Robot Worlds · local workspace</div></div><span id="world-status" class="badge" hidden></span></header>
+    <header class="file-header"><div><h1 id="world-title">Untitled world</h1><div class="eyebrow" id="workspace-eyebrow">Robot Worlds · local workspace</div></div><span id="world-status" class="badge" hidden></span><button id="close-left" class="icon-button mobile-control" aria-label="Close panel and show canvas" title="Show canvas">×</button></header>
     <section class="workspace-panel" id="panel-world" data-workspace-panel="world" hidden>
       <div class="panel-section panel-heading"><strong>World versions</strong><button class="icon-button" id="new-world" title="New environment" aria-label="New environment">＋</button><span id="world-count" class="count">0</span></div>
       <nav id="world-list" class="item-list version-list" aria-label="World versions"></nav>
@@ -44,14 +44,14 @@
   <main class="workspace">
     <div class="work-area" id="work-area"><section class="stage"><div class="viewport empty" id="viewport">
       <canvas id="scene-canvas" aria-label="Interactive scene layout" hidden></canvas><div id="scene-labels" aria-hidden="true"></div><img id="physical-image" alt="Native physics render of this world" hidden>
-      <div class="canvas-heading"><span id="viewport-info" class="mono muted">No environment loaded</span></div>
+      <div class="canvas-heading"><div><span id="view-state" class="view-state" hidden></span><span id="viewport-info" class="mono muted">No environment loaded</span></div><button id="inspector-toggle" class="button mobile-inspector" aria-expanded="false" aria-label="Open inspector">Inspect</button></div>
       <div class="empty-state" id="empty-state"><span class="empty-cross" aria-hidden="true">＋</span><p>Your world appears here.</p></div>
       <div class="viewport-caption" id="viewport-caption" hidden></div><div class="selection-label" id="selection-label" hidden></div>
-      <div class="stage-toolbar"><div class="segmented" aria-label="World view"><button id="physical-tab" class="active" disabled>Physical</button><button id="layout-tab" disabled>3D layout</button></div><span class="toolbar-divider"></span><button class="icon-button" id="fit-view" title="Fit the 3D scene" aria-label="Fit the 3D scene" disabled>⤢</button><span class="orbit-hint" id="orbit-hint" hidden>Drag to orbit</span></div>
+      <div class="stage-toolbar"><div class="segmented" aria-label="World view"><button id="physical-tab" class="active" disabled>Physical</button><button id="layout-tab" disabled>3D layout</button></div><span class="toolbar-divider"></span><button class="icon-button" id="fit-view" title="Fit the 3D scene" aria-label="Fit the 3D scene" disabled>⤢</button><button class="icon-button" id="focus-object" title="Fit selected object" aria-label="Fit selected object" disabled>⌖</button><button class="toolbar-button" id="top-view" title="View from above" disabled>Top</button><button class="toolbar-button" id="cutaway-view" aria-pressed="false" title="Hide detected walls in layout only" disabled>Cutaway</button><span class="orbit-hint" id="orbit-hint" hidden>Drag to orbit</span></div>
     </div></section></div>
     <section id="report-area" class="report-area" hidden><div class="report-toolbar"><span>Evaluation report</span><a class="text-button" id="report-new-tab" target="_blank" rel="noopener">Open in new tab ↗</a></div><iframe id="report-frame" title="Evaluation report and recorded replay"></iframe></section>
   </main>
-  <aside class="inspector"><div class="inspector-header"><span>Inspect</span><button class="button primary" id="evaluate-button" disabled>Evaluate <span>▷</span></button></div><div class="inspector-tabs"><button data-inspect="scene" class="active">Object</button><button data-inspect="task">Task</button><button data-inspect="validation">Checks</button><button data-inspect="changes">Changes</button></div><div class="inspector-body" id="inspector-body"><p class="muted">Select an object to inspect its properties.</p></div></aside>
+  <aside class="inspector"><div class="inspector-header"><button id="close-inspector" class="icon-button mobile-inspector" aria-label="Close inspector">×</button><span>Inspect</span><button class="button primary" id="evaluate-button" disabled>Evaluate <span>▷</span></button></div><div class="inspector-tabs"><button data-inspect="scene" class="active">Object</button><button data-inspect="task">Task</button><button data-inspect="validation">Checks</button><button data-inspect="changes">Changes</button></div><div class="inspector-body" id="inspector-body"><p class="muted">Select an object to inspect its properties.</p></div></aside>
 </div>
   <dialog id="evaluate-dialog"><form id="evaluate-form"><div class="dialog-eyebrow">RUN YOUR AGENT</div><h2>Evaluate this world.</h2><p>The agent sees camera and robot observations. Its tools execute through controllers; the rubric grades recorded state.</p><div class="policy-card"><span class="policy-icon">↗</span><div><strong>LLM robot-use agent</strong><small id="policy-model-label">gpt-6-astra · medium reasoning</small></div><span class="badge ready">LOCAL SIMULATION</span></div><div class="form-grid"><label>Episodes<input id="episodes" type="number" value="1" min="1" max="20" required></label><label>Decisions per episode<input id="max-steps" type="number" value="30" min="1" max="300" required></label><label>Simulation budget (s)<input id="max-sim-seconds" type="number" value="120" min="1" max="3600" required></label><label>Initial seed<input id="seed" type="number" value="0" min="0" required></label><label>Model spend per episode (USD)<input id="policy-cost" type="number" value="5" min="0.1" max="1000" step="0.1" required></label><label>Model time per episode (s)<input id="policy-seconds" type="number" value="600" min="10" max="3600" required></label></div><p class="small muted">Spend and time limits apply to each episode. One episode is a diagnostic attempt. Every episode resets the simulation, controller and policy memory.</p><div class="dialog-footer"><button type="button" class="button" id="close-evaluate">Cancel</button><button type="submit" class="button primary" id="start-evaluate">Evaluate 1 episode ↗</button></div></form></dialog>
   <script type="module" src="/static/app.js"></script>

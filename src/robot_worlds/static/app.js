@@ -1,7 +1,7 @@
 import { WorldViewer } from './scene.js';
 
 const $ = id => document.getElementById(id);
-const state = { world: null, worldId: null, worlds: [], runs: [], tab: 'scene', panel: 'agent', selectedObject: null, layerLimit: 120, mode: 'physical', jobId: null, eventSeen: new Set(), key: false, editing: false, isPreview: false, viewer: null, editMode: null, scope: [], lineage: [], lineageLoading: false, lineageError: '', submitting: false, jobContext: null, assets: [] };
+const state = { world: null, navigation: 0, worldId: null, worlds: [], runs: [], tab: 'scene', panel: 'agent', selectedObject: null, layerLimit: 120, mode: 'physical', jobId: null, eventSeen: new Set(), key: false, editing: false, isPreview: false, viewer: null, viewerSpec: null, reference: false, editMode: null, scope: [], lineage: [], lineageLoading: false, lineageError: '', submitting: false, jobContext: null, assets: [] };
 const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
 const pretty = value => JSON.stringify(value, null, 2);
 const shorten = (value, n = 18) => String(value || '').slice(0, n);
@@ -55,6 +55,9 @@ function renderLists() {
     item.append(el('span', 'item-icon', '↗'), text); item.onclick = () => openReport(run.id); $('run-list').append(item);
   }
 }
+function disposeViewer() { state.viewer?.dispose(); state.viewer = null; state.viewerSpec = null; }
+window.addEventListener('pagehide', disposeViewer);
+window.addEventListener('pageshow', event => { if (!event.persisted || !currentSpec()) return; if (state.reference) { const id = new URLSearchParams(location.search).get('reference'); if (id) openReference(id).catch(error => notice(error.message)); } else if ($('report-area').hidden) setView(state.mode); });
 function getViewer() {
   if (state.viewer) return state.viewer;
   try { state.viewer = new WorldViewer($('scene-canvas'), $('scene-labels'), object => selectObject(object)); }
@@ -62,27 +65,48 @@ function getViewer() {
   return state.viewer;
 }
 function displaySpec(spec, preview = false) {
-  state.isPreview = preview;
+  state.isPreview = preview; state.reference = false;
   document.querySelector('.app-shell').classList.remove('showing-report');
+  $('report-frame').src = 'about:blank';
   $('report-area').hidden = true; $('work-area').hidden = false; $('viewport').classList.remove('empty'); $('empty-state').hidden = true;
   $('world-title').textContent = spec.name || 'Generating world'; $('workspace-eyebrow').textContent = preview ? 'Candidate · checking physics' : `Robot Worlds · ${shorten(state.worldId, 8)}`;
   $('viewport-info').textContent = `${spec.bounds?.[0] || '?'} × ${spec.bounds?.[1] || '?'} m · ${spec.objects?.length || 0} objects · ${spec.robot || 'robot pending'}`;
   $('physical-tab').disabled = preview; $('layout-tab').disabled = false; $('fit-view').disabled = false;
   $('world-status').hidden = false; const status = preview ? 'preview' : statusOf(state.world); $('world-status').className = 'badge ' + status; $('world-status').textContent = status;
   renderLayers();
-  getViewer()?.setSpec(spec, state.worldId && !preview ? `/api/worlds/${encodeURIComponent(state.worldId)}/files/` : null); renderInspector();
+  renderInspector();
   if (preview) setView('layout');
-  else { $('physical-image').src = `/api/worlds/${encodeURIComponent(state.worldId)}/preview.png`; setView(state.viewer ? 'layout' : 'physical'); }
+  else { $('physical-image').src = `/api/worlds/${encodeURIComponent(state.worldId)}/preview.png`; setView('layout'); }
   controls();
 }
+function syncViewControls() {
+  const layout = state.mode === 'layout', viewer = state.viewer, interactive = layout && !!viewer;
+  $('fit-view').disabled = !interactive; $('focus-object').disabled = !interactive || !state.selectedObject || state.reference;
+  $('top-view').disabled = !interactive || state.reference; $('cutaway-view').disabled = !interactive || !viewer?.shellCount || state.reference;
+  $('cutaway-view').setAttribute('aria-pressed', String(!!viewer?.cutaway));
+  $('cutaway-view').textContent = viewer?.cutaway ? 'Show walls' : 'Cutaway';
+  $('cutaway-view').title = viewer?.shellCount ? `Hide ${viewer.shellCount} inferred fixed wall/roof objects in the layout only. Collision geometry is unchanged.` : 'No fixed wall or roof objects detected';
+  $('orbit-hint').hidden = !interactive;
+  $('view-state').hidden = !currentSpec();
+  $('view-state').textContent = state.reference ? 'STATIC REFERENCE' : layout ? (state.isPreview ? 'CANDIDATE LAYOUT' : 'LAYOUT · NOT A ROLLOUT') : 'SAVED NATIVE FRAME';
+  $('viewport-caption').textContent = state.reference ? 'Frozen source visuals · lighting may differ · no simulated behavior.' : layout ? (viewer?.cutaway ? `${viewer.shellCount} inferred wall/roof objects hidden for inspection. ` : '') + 'Reference configuration · robot start marker · joints have not been simulated. ' + (viewer?.appearanceNotice || '') : 'Saved MuJoCo validation image · not a live simulation or evidence of task success.';
+}
 function setView(mode) {
-  state.mode = mode; const layout = mode === 'layout';
-  $('fit-view').disabled = !layout; $('orbit-hint').hidden = !layout;
+  const layout = mode === 'layout';
+  if (layout && currentSpec()) {
+    const viewer = getViewer();
+    if (viewer && state.viewerSpec !== currentSpec()) {
+      viewer.setSpec(currentSpec(), state.worldId && !state.isPreview ? `/api/worlds/${encodeURIComponent(state.worldId)}/files/` : null);
+      state.viewerSpec = currentSpec(); viewer.select(state.selectedObject);
+    }
+    if (!viewer && !state.isPreview && state.worldId) { setView('physical'); return; }
+  }
+  state.mode = mode;
   $('scene-canvas').hidden = !layout; $('scene-labels').hidden = !layout; $('physical-image').hidden = layout;
   $('physical-tab').classList.toggle('active', !layout); $('layout-tab').classList.toggle('active', layout);
-  $('viewport-caption').hidden = false;
-  $('viewport-caption').textContent = layout ? 'Interactive layout · drag to orbit, scroll to zoom · robot start marker; custom meshes use declared bounds.' : 'Native MuJoCo render · physical scene and installed robot model.';
-  if (layout) { state.viewer?.invalidate(); if (!state.viewer) $('viewport-caption').textContent = '3D layout requires WebGL. Use the physical view when available.'; }
+  $('physical-tab').setAttribute('aria-pressed', String(!layout)); $('layout-tab').setAttribute('aria-pressed', String(layout));
+  $('viewport-caption').hidden = false; state.viewer?.setActive(layout); syncViewControls();
+  if (layout && !state.viewer) $('viewport-caption').textContent = '3D layout requires WebGL. Saved native frames remain available when present.';
 }
 $('physical-image').onerror = () => {
   if (!state.worldId) return;
@@ -90,7 +114,9 @@ $('physical-image').onerror = () => {
 };
 async function openWorld(id) {
   if (state.jobId || state.submitting) return;
+  const navigation = ++state.navigation;
   const world = await api(`/api/worlds/${encodeURIComponent(id)}`);
+  if (navigation !== state.navigation) return;
   $('layer-filter').value = ''; state.layerLimit = 120;
   state.world = world; state.worldId = id; state.editing = false; state.selectedObject = null; state.scope = []; state.assets = []; renderAssets();
   $('selection-label').hidden = true;
@@ -100,7 +126,7 @@ async function openWorld(id) {
 }
 function openReport(id) {
   if (state.jobId || state.submitting) return;
-  setPanel('runs');
+  state.navigation++; setPanel('runs'); state.viewer?.setActive(false);
   document.querySelector('.app-shell').classList.add('showing-report');
   $('work-area').hidden = true; $('report-area').hidden = false; $('world-title').textContent = `Evaluation ${shorten(id, 10)}`; $('workspace-eyebrow').textContent = 'RECORDED BEHAVIOR / LOCAL GRADING'; $('world-status').hidden = true;
   const path = `/api/runs/${encodeURIComponent(id)}/report`;
@@ -111,11 +137,14 @@ function openReport(id) {
 function currentSpec() { return state.world?.spec; }
 
 function setPanel(panel) {
-  state.panel = panel;
+  state.panel = panel; const shell = document.querySelector('.app-shell'); shell.classList.add('show-left'); shell.classList.remove('show-inspector'); $('inspector-toggle').setAttribute('aria-expanded', 'false');
   document.querySelectorAll('[data-workspace-panel]').forEach(node => { node.hidden = node.dataset.workspacePanel !== panel; });
   document.querySelectorAll('[data-panel]').forEach(button => { const active = button.dataset.panel === panel; button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active)); });
 }
 document.querySelectorAll('[data-panel]').forEach(button => { button.onclick = () => { setPanel(button.dataset.panel); if (button.dataset.panel === 'agent') $('prompt').focus(); }; });
+$('close-left').onclick = () => document.querySelector('.app-shell').classList.remove('show-left');
+$('inspector-toggle').onclick = () => { const shell = document.querySelector('.app-shell'); shell.classList.add('show-inspector'); shell.classList.remove('show-left'); $('inspector-toggle').setAttribute('aria-expanded', 'true'); };
+$('close-inspector').onclick = () => { document.querySelector('.app-shell').classList.remove('show-inspector'); $('inspector-toggle').setAttribute('aria-expanded', 'false'); };
 $('assets-to-agent').onclick = () => { setPanel('agent'); $('prompt').focus(); };
 $('layer-filter').oninput = () => { state.layerLimit = 120; renderLayers(); };
 function renderLayers() {
@@ -132,7 +161,10 @@ function renderLayers() {
 function renderAgentHistory() {
   const root = $('agent-history'); root.replaceChildren();
   if (!state.lineage.length && !state.jobContext) {
-    const welcome = el('div', 'agent-welcome'); welcome.append(el('span', 'agent-symbol', '✧'), el('h2', '', 'What’s next?'), el('p', '', 'Describe a world and a task. Then ask for changes.')); root.append(welcome); return;
+    const welcome = el('div', 'agent-welcome'); welcome.append(el('span', 'agent-symbol', '✧'), el('h2', '', state.worlds.length ? 'What’s next?' : 'Create your first world'), el('p', '', 'Describe the place, the robot’s task and what must happen in order. Review the checks before evaluating a policy.'));
+    const draft = el('button', 'button welcome-action', 'Draft a factory mission'); draft.onclick = () => { $('prompt').value = 'Create a factory with a parts shelf, an inspection bench and a shipping table connected by clear aisles. A TIAGo++ robot must pick up one identified rigid part, carry it to inspection, then place it on the shipping table and release it. Keep the stations physically reachable and grade identity, ordering and stable final placement.'; $('prompt').focus(); }; welcome.append(draft);
+    if (state.worlds.length) { const browse = el('button', 'text-button welcome-action', 'Browse saved worlds →'); browse.onclick = () => setPanel('world'); welcome.append(browse); }
+    welcome.append(el('p', 'small muted', 'The draft is editable. Sending it uses your configured model budget.')); root.append(welcome); return;
   }
   for (const entry of [...state.lineage].reverse()) {
     const metadata = entry.world?.manifest?.edit, spec = entry.world?.spec, turn = el('article', 'agent-turn');
@@ -205,7 +237,9 @@ function renderInspector() {
   }
 }
 function selectObject(object) {
-  state.selectedObject = object; state.tab = 'scene'; syncTabs(); renderInspector(); renderLayers();
+  state.selectedObject = object; state.viewer?.select(object); syncViewControls();
+  if (window.innerWidth <= 900) { const shell = document.querySelector('.app-shell'); shell.classList.add('show-inspector'); shell.classList.remove('show-left'); $('inspector-toggle').setAttribute('aria-expanded', 'true'); }
+  state.tab = 'scene'; syncTabs(); renderInspector(); renderLayers();
   $('selection-label').hidden = false; $('selection-label').textContent = `${object.label || object.id} · ${object.id}`;
   if (state.worldId && !state.jobId && !state.submitting) {
     setEditMode('edit', { preserveDraft: true, activate: false }); state.scope = [object.id]; renderScope();
@@ -241,13 +275,17 @@ function renderObjectProperties(root, object) {
 function syncTabs() { document.querySelectorAll('[data-inspect]').forEach(button => button.classList.toggle('active', button.dataset.inspect === state.tab)); }
 document.querySelectorAll('[data-inspect]').forEach(button => { button.onclick = () => { state.tab = button.dataset.inspect; syncTabs(); renderInspector(); }; });
 $('physical-tab').onclick = () => setView('physical'); $('layout-tab').onclick = () => setView('layout'); $('fit-view').onclick = () => state.viewer?.fit();
+$('focus-object').onclick = () => { if (state.selectedObject) state.viewer?.fit(state.selectedObject); };
+$('top-view').onclick = () => state.viewer?.fit(null, [0, -.001, 1]);
+$('cutaway-view').onclick = () => { state.viewer?.setCutaway(!state.viewer.cutaway); syncViewControls(); };
 function resetWorkspace() {
+  state.navigation++; disposeViewer(); state.reference = false; $('report-frame').src = 'about:blank';
   document.querySelector('.app-shell').classList.remove('showing-report');
   $('layer-filter').value = ''; state.layerLimit = 120;
   state.world = null; state.worldId = null; state.editing = false; state.selectedObject = null; state.editMode = null; state.selectedObject = null; state.scope = []; state.lineage = []; state.assets = []; renderAssets(); $('edit-context').hidden = true; $('prompt').required = true;
   $('work-area').hidden = false; $('report-area').hidden = true; $('viewport').classList.add('empty'); $('empty-state').hidden = false;
-  for (const id of ['scene-canvas', 'scene-labels', 'physical-image', 'viewport-caption', 'selection-label', 'world-status']) $(id).hidden = true;
-  $('physical-tab').disabled = $('layout-tab').disabled = $('fit-view').disabled = true;
+  for (const id of ['scene-canvas', 'scene-labels', 'physical-image', 'viewport-caption', 'selection-label', 'world-status', 'view-state']) $(id).hidden = true;
+  for (const id of ['physical-tab', 'layout-tab', 'fit-view', 'focus-object', 'top-view', 'cutaway-view']) $(id).disabled = true;
   $('world-title').textContent = 'Untitled world'; $('workspace-eyebrow').textContent = 'Robot Worlds · local workspace'; $('viewport-info').textContent = 'No environment loaded';
   $('prompt-label').textContent = 'What should the robot do, and where?'; $('generate-button').firstChild.textContent = 'Generate world '; $('prompt').value = ''; $('prompt').placeholder = 'Describe a world and a task…'; $('generate-button').setAttribute('aria-label', 'Generate world'); $('scene-profile').disabled = false;
   setPanel('agent'); renderLayers(); renderAgentHistory(); controls(); renderInspector(); renderLists(); history.replaceState(null, '', '/'); $('prompt').focus();
@@ -425,6 +463,7 @@ async function start() {
   try { const health = await api('/api/health'); state.key = !!health.key_configured; $('connection').textContent = state.key ? '● Connected' : 'Key required'; $('connection').title = state.key ? 'Local runtime · model key configured' : 'Configure OPENAI_API_KEY on the server'; $('connection').classList.toggle('error', !state.key); if (!state.key) notice('Set OPENAI_API_KEY in the server environment, then restart the local server to generate worlds or run the agent. Saved worlds and reports remain available.'); if (health.model) $('model').value = health.model; await refreshLists(); const params = new URLSearchParams(location.search); if (params.get('reference')) await openReference(params.get('reference'));
     else if (params.get('run')) openReport(params.get('run')); else if (params.get('world')) await openWorld(params.get('world')); }
   catch (error) { notice(error.message); $('connection').textContent = 'Local server unavailable'; $('connection').classList.add('error'); }
+  if (!state.world && !state.jobId) renderAgentHistory();
   controls();
 }
 start();
@@ -456,11 +495,13 @@ function renderAssets() {
 async function openReference(id) {
   const base = `/api/references/${encodeURIComponent(id)}/`;
   if (state.jobId || state.submitting) return;
+  const navigation = ++state.navigation;
   notice('Loading the source geometry and materials…');
   const [manifest, data, spec, environment] = await Promise.all([api(base + 'reference-manifest.json'), api(base + 'visual-scene.json'), api(base + 'world.json'), api(base + 'environment-scene.json').catch(() => null)]);
+  if (navigation !== state.navigation) return;
   state.world = { spec, manifest: { validation: { status: 'reference', checks: [] } } }; state.worldId = null; state.editing = false; state.editMode = null; state.scope = []; state.lineage = []; renderAgentHistory(); $('edit-context').hidden = true; $('prompt').required = true; $('scene-profile').disabled = false;
   $('prompt-label').textContent = 'Describe a new environment and task'; $('generate-button').firstChild.textContent = 'Generate world ';
-  displaySpec(spec, true); await getViewer().setReference(data, manifest, environment); notice('');
+  displaySpec(spec, true); await getViewer().setReference(data, manifest, environment); state.reference = true; syncViewControls(); notice('');
   $('world-title').textContent = 'Airsup production line'; $('workspace-eyebrow').textContent = 'Static reference study';
   $('world-status').textContent = 'Reference study'; $('world-status').className = 'badge preview';
   $('viewport-caption').textContent = 'Source geometry at the original camera angle · frozen reference state · lighting differs.';

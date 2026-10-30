@@ -2,39 +2,49 @@ import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { OBJLoader } from './vendor/OBJLoader.js';
 import { disposeMaterials, disposeTree } from './scene-resources.js';
+import { isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js';
+import { APPEARANCE_NOTICE, estimatedAppearance, studioEnvironmentPixels } from './scene-appearance.js';
 
 /** Layout inspection only. The native PNG is the physical robot representation. */
 export class WorldViewer {
   constructor(canvas, labels, onSelect) {
     this.canvas = canvas;
     this.labels = labels;
-    this.onSelect = onSelect;
+    this.onSelect = onSelect; this.active = true; this.disposed = false; this.fitted = true;
+    this.shellNodes = []; this.shellCount = 0; this.cutaway = false; this.loads = new Set(); this.pendingLoads = [];
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#1e1e1e');
     this.camera = new THREE.PerspectiveCamera(42, 1, 0.02, 500);
     this.camera.up.set(0, 0, 1);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.autoUpdate = false;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.2;
+    this.renderer.toneMappingExposure = .95;
+    this.appearanceNotice = APPEARANCE_NOTICE;
+    const environment = studioEnvironmentPixels();
+    this.layoutEnvironment = new THREE.DataTexture(environment.data, environment.width, environment.height, THREE.RGBAFormat);
+    this.layoutEnvironment.mapping = THREE.EquirectangularReflectionMapping; this.layoutEnvironment.colorSpace = THREE.LinearSRGBColorSpace;
+    this.layoutEnvironment.needsUpdate = true;
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
     this.controls.maxPolarAngle = Math.PI * 0.49;
     this.controls.minDistance = 0.3;
     this.controls.target.set(0, 0, 0.5);
-    this.scene.add(new THREE.HemisphereLight(0xdce4ff, 0x4a5268, 2.3));
-    const sun = new THREE.DirectionalLight(0xffffff, 3.2);
+    this.scene.add(new THREE.HemisphereLight(0xe8eef7, 0x797b80, 1.2));
+    const sun = new THREE.DirectionalLight(0xfff2df, 1.8);
     sun.position.set(5, -3, 9);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
     sun.shadow.camera.left = sun.shadow.camera.bottom = -20;
     sun.shadow.camera.right = sun.shadow.camera.top = 20;
     sun.shadow.camera.far = 50;
-    sun.shadow.normalBias = 0.025;
+    sun.shadow.normalBias = 0.003; sun.shadow.bias = -.0001;
     this.scene.add(sun); this.sun = sun;
+    this.fill = new THREE.DirectionalLight(0xd5e6ff, .55); this.scene.add(this.fill);
+    this.rim = new THREE.DirectionalLight(0xe5ecff, .35); this.scene.add(this.rim);
     this.group = new THREE.Group();
     this.scene.add(this.group);
     this.objects = [];
@@ -42,18 +52,23 @@ export class WorldViewer {
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
     this.down = null;
-    canvas.addEventListener('pointerdown', e => { this.down = [e.clientX, e.clientY]; });
-    canvas.addEventListener('pointerup', e => {
+    this.onPointerDown = e => { this.down = e.button === 0 ? [e.clientX, e.clientY] : null; };
+    this.onPointerUp = e => {
       if (!this.down || Math.hypot(e.clientX - this.down[0], e.clientY - this.down[1]) > 5) return;
       const rect = canvas.getBoundingClientRect();
       this.pointer.set((e.clientX - rect.left) / rect.width * 2 - 1, -(e.clientY - rect.top) / rect.height * 2 + 1);
       this.raycaster.setFromCamera(this.pointer, this.camera);
-      const hit = this.raycaster.intersectObjects(this.objects)[0];
-      if (hit) this.onSelect(hit.object.userData.objects?.[hit.instanceId] || hit.object.userData.object);
-    });
+      const candidates = this.objects.filter(node => { for (let current = node; current; current = current.parent) if (!current.visible) return false; return true; });
+      const hit = this.raycaster.intersectObjects(candidates)[0];
+      const object = hit && (hit.object.userData.objects?.[hit.instanceId] || hit.object.userData.object);
+      if (object) this.onSelect(object);
+      this.down = null;
+    };
+    canvas.addEventListener('pointerdown', this.onPointerDown);
+    canvas.addEventListener('pointerup', this.onPointerUp);
     this.animate = () => {
       this.animation = null;
-      if (canvas.hidden || document.hidden) return;
+      if (this.disposed || !this.active || canvas.hidden || document.hidden) return;
       this.resize();
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
@@ -64,15 +79,19 @@ export class WorldViewer {
         a.node.style.top = `${(1 - point.y) * canvas.clientHeight / 2}px`;
       }
     };
-    this.controls.addEventListener('change', () => this.invalidate());
+    this.onControlChange = () => this.invalidate();
+    this.onControlStart = () => { this.fitted = false; };
+    this.controls.addEventListener('change', this.onControlChange);
+    this.controls.addEventListener('start', this.onControlStart);
     this.resizeObserver = new ResizeObserver(() => this.invalidate());
     this.resizeObserver.observe(canvas.parentElement);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) this.invalidate(); });
+    this.onVisibility = () => { if (!document.hidden) this.invalidate(); };
+    document.addEventListener('visibilitychange', this.onVisibility);
     this.invalidate();
   }
 
   invalidate() {
-    if (this.animation == null) this.animation = requestAnimationFrame(this.animate);
+    if (!this.disposed && this.active && this.animation == null) this.animation = requestAnimationFrame(this.animate);
   }
 
   resize() {
@@ -82,37 +101,50 @@ export class WorldViewer {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
+    if (this.fitted && this.spec && !this.reference) this.applyFit(this.fitBounds || sceneBounds(this.spec), this.fitDirection);
   }
 
   setSpec(spec, assetBase = null) {
+    this.abortLoads();
     this.loadGeneration = (this.loadGeneration || 0) + 1;
+    this.select(null); this.shellNodes = []; this.shellCount = 0; this.cutaway = false;
     const generation = this.loadGeneration;
     this.spec = spec; this.reference = false; this.camera.layers.set(0); this.camera.fov = 42; this.camera.updateProjectionMatrix();
     this.scene.children.filter(n => n.isLight).forEach(n => { n.visible = true; });
-    this.scene.environment = null; this.environmentTarget?.dispose(); this.environmentTarget = null;
+    this.scene.environment = this.layoutEnvironment; this.environmentTarget?.dispose(); this.environmentTarget = null;
+    this.renderer.toneMappingExposure = .95; this.renderer.shadowMap.needsUpdate = true;
     disposeTree(this.group);
     this.group.clear(); this.objects = []; this.annotations = []; this.labels.replaceChildren();
     const [w, d] = spec.bounds || [6, 6, 3];
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ color: 0x343b48, roughness: 0.95 }));
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ color: 0x62676d, roughness: .86, metalness: .02, envMapIntensity: .35 }));
     floor.receiveShadow = true; floor.position.z = -0.012; this.group.add(floor);
-    const grid = new THREE.GridHelper(Math.max(w, d), Math.max(2, Math.min(200, Math.ceil(Math.max(w, d) * 2))), 0x66738d, 0x4b566d);
-    grid.rotation.x = Math.PI / 2; grid.position.z = 0.001; grid.material.transparent = true; grid.material.opacity = 0.35; this.group.add(grid);
+    const grid = new THREE.GridHelper(Math.max(w, d), Math.max(2, Math.min(200, Math.ceil(Math.max(w, d) * 2))), 0x818992, 0x6a737e);
+    grid.scale.set(w/Math.max(w,d), 1, d/Math.max(w,d));
+    grid.rotation.x = Math.PI / 2; grid.position.z = 0.001; grid.material.transparent = true; grid.material.opacity = .16; this.group.add(grid);
     const buckets = new Map();
     for (const object of spec.objects || []) {
       const kind = object.kind || 'box';
-      if (kind === 'mesh' && assetBase && /\.obj$/i.test(object.mesh_path || '')) { this.loadOBJ(object, assetBase, generation); continue; }
-      if (!buckets.has(kind)) buckets.set(kind, []);
-      buckets.get(kind).push(object);
+      const shell = isInspectionShell(object, spec.bounds); if (shell) this.shellCount++;
+      if (kind === 'mesh' && assetBase && /\.obj$/i.test(object.mesh_path || '')) { this.pendingLoads.push([object, assetBase, generation]); continue; }
+      const appearance = estimatedAppearance(object);
+      const key = `${kind}:${shell ? 'shell' : 'solid'}:${appearance.id}`;
+      if (!buckets.has(key)) buckets.set(key, { kind, shell, appearance, objects: [] });
+      buckets.get(key).objects.push(object);
     }
     const matrix = new THREE.Matrix4(), rotation = new THREE.Quaternion(), position = new THREE.Vector3(), scale = new THREE.Vector3();
-    for (const [kind, objects] of buckets) {
-      let geometry;
+    const geometries = new Map();
+    for (const { kind, shell, appearance, objects } of buckets.values()) {
+      let geometry = geometries.get(kind);
+      if (!geometry) {
       if (kind === 'sphere') geometry = new THREE.SphereGeometry(.5, 20, 12);
       else if (kind === 'cylinder') { geometry = new THREE.CylinderGeometry(.5, .5, 1, 24); geometry.rotateX(Math.PI / 2); }
       else geometry = new THREE.BoxGeometry(1, 1, 1);
-      const material = new THREE.MeshStandardMaterial({ roughness: .65, metalness: .08, transparent: kind === 'mesh', opacity: kind === 'mesh' ? .48 : 1 });
+      geometries.set(kind, geometry);
+      }
+      const material = new THREE.MeshStandardMaterial({ roughness: appearance.roughness, metalness: appearance.metalness, envMapIntensity: .65, transparent: kind === 'mesh', opacity: kind === 'mesh' ? .48 : 1 });
       const batch = new THREE.InstancedMesh(geometry, material, objects.length);
-      batch.castShadow = true; batch.receiveShadow = true; batch.userData.objects = objects;
+      batch.castShadow = true; batch.receiveShadow = true; batch.userData.objects = objects; batch.userData.appearance = appearance;
+      if (shell) this.shellNodes.push(batch);
       objects.forEach((object, index) => {
         const size = object.size || [.2, .2, .2];
         position.set(...object.position); scale.set(...size); rotation.identity();
@@ -128,7 +160,9 @@ export class WorldViewer {
     }
     const extent = Math.max(w, d);
     this.camera.far = Math.max(500, extent * 10); this.camera.updateProjectionMatrix();
-    this.sun.position.set(extent * .4, -extent * .3, extent * .8);
+    this.sun.position.set(extent * .4, -extent * .3, extent * .9);
+    this.fill.position.set(-extent*.45, -extent*.2, extent*.65);
+    this.rim.position.set(-extent*.3, extent*.5, extent*.5);
     Object.assign(this.sun.shadow.camera, { left: -extent * .6, right: extent * .6, top: extent * .6, bottom: -extent * .6, far: extent * 3 });
     this.sun.shadow.camera.updateProjectionMatrix();
     for (const region of spec.regions || []) {
@@ -143,37 +177,48 @@ export class WorldViewer {
     marker.position.set(start[0], start[1], 0.025); this.group.add(marker);
     const arrow = new THREE.ArrowHelper(new THREE.Vector3(Math.cos(start[2]), Math.sin(start[2]), 0), new THREE.Vector3(start[0], start[1], 0.03), 0.45, 0xaab8ee, 0.1, 0.08);
     this.group.add(arrow); this.label('Robot start', new THREE.Vector3(start[0], start[1], 0.17));
-    this.fit();
+    this.setCutaway(false); this.fit(); this.pumpLoads();
+  }
+
+  pumpLoads() {
+    while (!this.disposed && this.active && this.loads.size < 4 && this.pendingLoads.length) this.loadOBJ(...this.pendingLoads.shift());
   }
 
   async loadOBJ(object, assetBase, generation) {
+    const controller = new AbortController(); this.loads.add(controller);
     try {
       if (!/^assets\/[a-zA-Z0-9_.-]+$/.test(object.mesh_path)) throw new Error('Unbundled mesh path');
-      const response = await fetch(assetBase + object.mesh_path);
+      const response = await fetch(assetBase + object.mesh_path, { signal: controller.signal });
       if (!response.ok) throw new Error('Mesh unavailable');
       const source = await response.text();
       if (source.length > 24 * 1024 * 1024) throw new Error('Mesh exceeds viewer budget');
-      if (this.loadGeneration !== generation) return;
+      if (this.disposed || this.loadGeneration !== generation) return;
       const group = new OBJLoader().parse(source), box = new THREE.Box3().setFromObject(group), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
       let appearance = {};
       const metadata = source.match(/^# robot_worlds_material (.{1,2048})$/m);
       if (metadata) { try { appearance = JSON.parse(metadata[1]); } catch {} }
       const bounded = (key, fallback) => Number.isFinite(appearance[key]) ? Math.max(0, Math.min(1, appearance[key])) : fallback;
-      const material = new THREE.MeshStandardMaterial({ color: new THREE.Color().setRGB(...object.color), metalness: bounded('metalness', .05), roughness: bounded('roughness', .65), transparent: bounded('opacity', 1) < 1, opacity: bounded('opacity', 1) });
+      const estimated = estimatedAppearance(object);
+      const material = new THREE.MeshStandardMaterial({ color: new THREE.Color().setRGB(...object.color), envMapIntensity: .65, metalness: bounded('metalness', estimated.metalness), roughness: bounded('roughness', estimated.roughness), transparent: bounded('opacity', 1) < 1, opacity: bounded('opacity', 1) });
       if (Array.isArray(appearance.emissive) && appearance.emissive.length === 3 && appearance.emissive.every(Number.isFinite)) material.emissive.setRGB(...appearance.emissive.map(x => Math.max(0, Math.min(10, x))));
       group.traverse(node => {
         if (!node.isMesh) return;
         node.geometry.translate(-center.x, -center.y, -center.z);
         node.geometry.scale(...object.size.map((extent, axis) => extent / Math.max(size.getComponent(axis), 1e-9)));
-        disposeMaterials(node.material); node.material = material; node.castShadow = true; node.receiveShadow = true; node.userData.object = object; this.objects.push(node);
+        disposeMaterials(node.material); node.material = material; node.castShadow = true; node.receiveShadow = true; node.userData.object = object; node.userData.appearance = { ...estimated, basis: metadata ? 'Bundled OBJ appearance metadata with estimated defaults' : estimated.basis }; this.objects.push(node);
       });
-      group.position.set(...object.position); this.group.add(group);
+      group.position.set(...object.position);
+      if (object.quaternion) group.quaternion.set(object.quaternion[1], object.quaternion[2], object.quaternion[3], object.quaternion[0]);
+      else if (object.yaw) group.rotation.z = object.yaw;
+      this.group.add(group);
     } catch (error) {
-      if (this.loadGeneration !== generation) return;
+      if (controller.signal.aborted || this.disposed || this.loadGeneration !== generation) return;
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(...object.size), new THREE.MeshBasicMaterial({ color: 0xcc8c67, wireframe: true }));
       mesh.position.set(...object.position); mesh.userData.object = object; this.group.add(mesh); this.objects.push(mesh);
       this.label(`${object.label || object.id}: mesh unavailable`, new THREE.Vector3(...object.position));
     } finally {
+      this.loads.delete(controller); this.pumpLoads();
+      if (!this.disposed) this.renderer.shadowMap.needsUpdate = true;
       if (this.loadGeneration === generation) this.invalidate();
     }
   }
@@ -190,6 +235,7 @@ export class WorldViewer {
     this.group.clear(); this.labels.replaceChildren(); this.annotations = []; this.objects = [];
     group.traverse(node => { if (node.isMesh) { node.layers.enableAll(); node.castShadow = true; node.receiveShadow = true; } });
     this.group.add(group); this.reference = true; this.camera.layers.enableAll();
+    this.scene.environment = null; this.renderer.toneMappingExposure = 1.2; this.renderer.shadowMap.needsUpdate = true;
     this.scene.children.filter(n => n.isLight).forEach(n => { n.visible = false; });
     if (environment) {
       for (const image of environment.images || []) if (typeof image.url !== 'string' || !image.url.startsWith('data:image/png;base64,')) throw new Error('Embedded environment textures required');
@@ -216,12 +262,59 @@ export class WorldViewer {
     this.labels.append(node); this.annotations.push({ node, position });
   }
 
-  fit() {
+  applyFit(bounds, direction = [.8, -.9, .85]) {
+    const view = perspectiveFit(bounds, this.camera.aspect, this.camera.fov, direction);
+    this.camera.position.set(...view.position); this.controls.target.set(...view.target);
+    this.camera.near = view.near; this.camera.far = view.far; this.camera.updateProjectionMatrix();
+    this.controls.maxDistance = view.maxDistance; this.controls.minDistance = Math.max(.03, view.near*2);
+    this.controls.update(); this.fitBounds = bounds; this.fitDirection = direction; this.fitted = true;
+  }
+
+  fit(object = null, direction = [.8, -.9, .85]) {
+    this.resize();
+    if (this.reference && this.referenceShot) {
+      this.camera.position.set(...this.referenceShot.position); this.controls.target.set(...this.referenceShot.target);
+      this.camera.fov = this.referenceShot.fov; this.camera.updateProjectionMatrix(); this.controls.update(); this.invalidate(); return;
+    }
+    this.applyFit(object ? objectBounds(object) : sceneBounds(this.spec || {}), direction); this.invalidate();
+  }
+
+  select(object) {
+    if (this.selectionOutline) { disposeTree(this.selectionOutline); this.scene.remove(this.selectionOutline); this.selectionOutline = null; }
+    if (object) {
+      const bounds = objectBounds(object);
+      this.selectionOutline = new THREE.Box3Helper(new THREE.Box3(new THREE.Vector3(...bounds.min), new THREE.Vector3(...bounds.max)), 0x48aaff);
+      this.selectionOutline.material.depthTest = false; this.selectionOutline.renderOrder = 10; this.scene.add(this.selectionOutline);
+    }
     this.invalidate();
-    if (this.reference && this.referenceShot) { this.camera.position.set(...this.referenceShot.position); this.controls.target.set(...this.referenceShot.target); this.controls.update(); return; }
-    const bounds = this.spec?.bounds || [6, 6, 3], extent = Math.max(bounds[0], bounds[1], 2);
-    this.camera.position.set(extent * 0.8, -extent * 0.9, extent * 0.85);
-    this.controls.target.set(0, 0, Math.min(bounds[2] * 0.15, 0.8));
-    this.controls.maxDistance = extent * 5; this.controls.update(); this.resize();
+  }
+
+  setCutaway(enabled) {
+    this.cutaway = !!enabled && !this.reference;
+    for (const node of this.shellNodes) node.visible = !this.cutaway;
+    this.renderer.shadowMap.needsUpdate = true; this.invalidate(); return this.cutaway;
+  }
+
+  setActive(active) {
+    this.active = active;
+    if (!active && this.animation != null) { cancelAnimationFrame(this.animation); this.animation = null; }
+    if (active) { this.pumpLoads(); this.invalidate(); }
+  }
+
+  abortLoads() { for (const controller of this.loads) controller.abort(); this.loads.clear(); this.pendingLoads = []; }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true; this.loadGeneration = (this.loadGeneration || 0)+1;
+    this.setActive(false); this.abortLoads(); this.resizeObserver.disconnect();
+    this.canvas.removeEventListener('pointerdown', this.onPointerDown);
+    this.canvas.removeEventListener('pointerup', this.onPointerUp);
+    document.removeEventListener('visibilitychange', this.onVisibility);
+    this.controls.removeEventListener('change', this.onControlChange);
+    this.controls.removeEventListener('start', this.onControlStart); this.controls.dispose();
+    disposeTree(this.scene); this.scene.clear(); this.environmentTarget?.dispose(); this.environmentTarget = null;
+    this.labels.replaceChildren(); this.objects = []; this.annotations = []; this.shellNodes = [];
+    this.layoutEnvironment?.dispose(); this.layoutEnvironment = null; this.scene.environment = null;
+    this.renderer.dispose(); this.renderer.forceContextLoss();
   }
 }

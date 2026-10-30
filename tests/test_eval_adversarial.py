@@ -214,6 +214,33 @@ def test_lost_process_loading_resets_duration_instead_of_accumulating_credit():
     assert "cycle" not in monitor._process_states.get("part", {})
 
 
+def test_decoy_loading_cannot_bridge_a_required_workpiece_interruption():
+    spec = process_world()
+    decoy = spec.objects[0].model_copy(deep=True)
+    decoy.id = "decoy"
+    spec.objects.append(decoy)
+    state = frame(0, placed=True)
+    state["objects"]["decoy"] = copy.deepcopy(state["objects"]["part"])
+    state["objects"]["decoy"].update(position=[2, 1, .15], contacts=[])
+    monitor = process_monitor(spec, state)
+    monitor._advance_processes()
+    monitor.data.time = .06
+    state["objects"]["part"].update(position=[2, 0, .15], contacts=[])
+    state["objects"]["decoy"].update(position=[-2, 0, .75], contacts=["top"])
+    monitor._advance_processes()
+    monitor.data.time = .08
+    state["objects"]["part"].update(position=[-2, 0, .75], contacts=["top"])
+    monitor._advance_processes()
+    monitor.data.time = .15
+    monitor._advance_processes()
+    assert "cycle" not in monitor._process_states.get("part", {})
+    assert "cycle" not in monitor._process_states.get("decoy", {})
+    monitor.data.time = .19
+    monitor._advance_processes()
+    assert monitor._process_states["part"]["cycle"] == "processed"
+    assert "cycle" not in monitor._process_states.get("decoy", {})
+
+
 def test_process_monitor_observes_loading_breaks_between_recorded_samples(monkeypatch):
     """Check real step scheduling; injected states do not establish contact physics."""
     import robot_worlds.runtime as runtime_module

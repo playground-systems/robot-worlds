@@ -12,6 +12,17 @@ import typer
 app = typer.Typer(no_args_is_help=True, help="Generate physical robot worlds and evaluate agents.")
 
 
+@app.command()
+def doctor(json_output: bool = typer.Option(False, "--json"),
+           model: str = "gpt-6-astra", data_dir: Path = Path(".robot-worlds")):
+    """Check installation offline without starting physics or calling a model."""
+    from robot_worlds.diagnostics import collect_diagnostics, format_diagnostics
+    report = collect_diagnostics(model=model, data_dir=data_dir)
+    typer.echo(format_diagnostics(report, as_json=json_output))
+    if not report["offline_ready"]:
+        raise typer.Exit(1)
+
+
 def _progress(event: dict):
     if event["type"] in ("candidate", "preview"):
         typer.echo("World preview generated; validating geometry and physics…")

@@ -125,6 +125,10 @@ requirements, robot preset and existing physics. The local applier enforces scop
 and permission flags. Robot replacement is unsupported. Task/rubric/process edits
 need allow_task_changes; existing mass/friction/movability/parent structure and
 joint definition edits need allow_physics_changes. Joint.initial is a pose edit.
+Task bindings are protected too: referenced regions cannot move or resize, bound
+objects cannot disappear or change identity/shape, and destination/process fixture
+anchors and their ancestors cannot move without allow_task_changes. Subject initial
+placement may be repaired, but this does not certify preservation of task difficulty.
 When scope is supplied, only those exact entity IDs may change, including new IDs.
 Do not change world-level fields in a scoped edit. Coordinates are metres, Z up,
 geometry centers, full extents. Regions do not collide. Keep physical supports,
@@ -256,6 +260,10 @@ def enforce_protections(before: WorldSpec, after: WorldSpec, *,
                 raise ValueError("Repair cannot remove original entities: " + ", ".join(sorted(missing)))
     if not allow_task_changes and any(getattr(before, key) != getattr(after, key) for key in ("task", "rubric", "process_cycles")):
         raise ValueError("Task, rubric and process definitions are protected; allow_task_changes is required")
+    if not allow_task_changes:
+        if before.robot_start != after.robot_start:
+            raise ValueError("Robot start is a protected task initial condition; allow_task_changes is required")
+        _protect_task_bindings(before, after)
     if before.robot != after.robot:
         raise ValueError("Robot preset changes are unsupported")
     if not allow_physics_changes:
@@ -271,6 +279,59 @@ def enforce_protections(before: WorldSpec, after: WorldSpec, *,
             new_joint = obj.joint.model_dump(exclude={"initial"}) if obj.joint else None
             if old_joint != new_joint:
                 raise ValueError(f"{obj.id}: joint definition is protected; only joint.initial pose may change")
+
+
+def _protect_task_bindings(before: WorldSpec, after: WorldSpec):
+    """Keep evaluator referents fixed, not merely their IDs in rubric text."""
+    old_objects = {obj.id: obj for obj in before.objects}
+    new_objects = {obj.id: obj for obj in after.objects}
+    old_regions = {region.id: region for region in before.regions}
+    new_regions = {region.id: region for region in after.regions}
+    bound_objects, anchors, bound_regions = set(), set(), set()
+    conditions = list(before.rubric)
+    for process in before.process_cycles:
+        anchors.add(process.fixture_id)
+        bound_objects.update(process.workpiece_ids)
+        conditions.extend(process.prerequisites)
+    for condition in conditions:
+        if condition.object_id in old_objects:
+            bound_objects.add(condition.object_id)
+        if condition.target_id in old_objects:
+            anchors.add(condition.target_id)
+        if condition.target_id in old_regions:
+            bound_regions.add(condition.target_id)
+    bound_objects.update(anchors)
+    ancestors = set()
+    for oid in list(bound_objects):
+        current, seen = old_objects.get(oid), set()
+        while current is not None and current.parent_id is not None:
+            parent = current.parent_id
+            if parent in seen:
+                break
+            seen.add(parent)
+            ancestors.add(parent)
+            current = old_objects.get(parent)
+    bound_objects.update(ancestors)
+    anchors.update(ancestors)
+    for rid in sorted(bound_regions):
+        old, new = old_regions[rid], new_regions.get(rid)
+        if new is None or old.position != new.position or old.size != new.size:
+            raise ValueError(f"{rid}: task-bound region geometry/presence is protected; allow_task_changes is required")
+    for oid in sorted(bound_objects):
+        old, new = old_objects.get(oid), new_objects.get(oid)
+        if old is None:
+            continue  # Missing references are independently rejected by validation.
+        if new is None:
+            raise ValueError(f"{oid}: task-bound object presence is protected; allow_task_changes is required")
+        for field in ("label", "color", "kind", "size", "mesh_path", "parent_id"):
+            if getattr(old, field) != getattr(new, field):
+                raise ValueError(f"{oid}: task-bound object {field} is protected; allow_task_changes is required")
+        if oid in anchors:
+            pose_fields = {"type", "axis", "anchor", "initial"}
+            old_pose = old.joint.model_dump(include=pose_fields) if old.joint else None
+            new_pose = new.joint.model_dump(include=pose_fields) if new.joint else None
+            if old.position != new.position or old_pose != new_pose:
+                raise ValueError(f"{oid}: task destination/ancestor pose is protected; allow_task_changes is required")
 
 
 class EditingContextLimit(ValueError):

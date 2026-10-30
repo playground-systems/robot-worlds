@@ -577,6 +577,27 @@ def test_policy_step_limit_stops_without_an_additional_model_decision():
     assert len(fake.decisions) == 1
 
 
+def test_episode_contract_is_sent_once_with_sensor_history_and_full_audit():
+    fake = FakeDecisionClient()
+    agent = LLMAgent(client=fake, max_steps=12, history_steps=6)
+    context = {"task": "Carry the measured part", "action_contract": {"details": "x" * 10000}}
+    agent.reset(context)
+    for step in range(12):
+        observation = {"tools": TOOLS, "time": step,
+                       "visible_objects": [{"id": "observed_part", "position": [step, 0, 1]}]}
+        agent.act(observation)
+        agent.record_result({"distance_traveled": 0.09, "step": step})
+    _, current, _, history = fake.decisions[-1]
+    assert current["episode_context"] == context
+    assert len(history) == 6
+    assert [entry["observation"]["time"] for entry in history] == list(range(5, 11))
+    assert all("episode_context" not in entry["observation"] and
+               "task" not in entry["observation"] for entry in history)
+    assert history[-1]["observation"]["visible_objects"][0]["position"] == [10, 0, 1]
+    assert history[-1]["tool_result"] == {"distance_traveled": 0.09, "step": 10}
+    assert agent.transcript[0]["observation"]["episode_context"] == context
+
+
 def test_injected_policy_client_cannot_bypass_runtime_tool_contract():
     class InvalidClient:
         def choose_action(self, *args):

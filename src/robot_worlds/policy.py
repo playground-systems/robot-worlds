@@ -282,8 +282,13 @@ class LLMAgent:
             budget=copy.deepcopy(getattr(self.client, "budget", {})),
         )
         self.transcript.append(record)
+        # The current request carries the immutable task and contracts once.
+        # Repeating them in every past observation makes long episodes hit the
+        # input limit without adding any sensor evidence. Keep the full audit
+        # record above, and retain only observations in the model's memory.
+        remembered = {k: v for k, v in public.items() if k not in {"task", "episode_context"}}
         self._history.append(
-            {"observation": audit_value(public), "selected_action": copy.deepcopy(action)}
+            {"observation": audit_value(remembered), "selected_action": copy.deepcopy(action)}
         )
         if len(self._history) > self.history_steps + 1:
             self._history = self._history[-(self.history_steps + 1) :]

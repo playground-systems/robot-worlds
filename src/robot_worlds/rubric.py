@@ -10,7 +10,7 @@ from typing import Any
 
 from .models import Condition, WorldSpec
 
-SUPPORTED_PREDICATES = frozenset({"in_region", "on_top", "near", "holding", "released", "robot_in_region", "joint_at", "process_complete"})
+SUPPORTED_PREDICATES = frozenset({"in_region", "on_top", "near", "holding", "released", "carried_distance", "robot_in_region", "joint_at", "process_complete"})
 
 
 def validate_rubric(spec: WorldSpec) -> list[str]:
@@ -40,6 +40,13 @@ def validate_rubric(spec: WorldSpec) -> list[str]:
                 errors.append(f"{label}: target_id must reference a different physical object")
         if c.predicate == "near" and (c.threshold is None or c.threshold <= 0):
             errors.append(f"{label}: near requires a positive distance threshold")
+        if c.predicate == "carried_distance":
+            if c.threshold is None or c.threshold <= 0:
+                errors.append(f"{label}: carried_distance requires a positive distance threshold")
+            if c.target_id is not None:
+                errors.append(f"{label}: carried_distance measures the subject trajectory without a target_id")
+            if c.object_id in objects and not objects[c.object_id].movable:
+                errors.append(f"{label}: carried_distance requires a movable workpiece")
         if c.predicate == "joint_at":
             obj = objects.get(c.object_id)
             if not obj or not obj.joint:
@@ -124,6 +131,13 @@ def measure_predicate(spec: WorldSpec, condition: Condition, snapshot: dict) -> 
             if measured is not None and measured not in ("left", "right", "both"):
                 raise ValueError("malformed measured holding state")
             satisfied = (measured is not None) == (c.predicate == "holding")
+        elif c.predicate == "carried_distance":
+            # One snapshot can establish the start of a streak, never travel.
+            _vector(state.get("position"))
+            if "held_by" not in state or state["held_by"] not in (None, "left", "right", "both"):
+                raise ValueError("missing or malformed measured holding state")
+            measured = {"distance_m": 0.0, "measurement": "single-sample baseline; grade uses full trajectory"}
+            satisfied = False
         elif c.predicate == "joint_at":
             measured = float(state["joint_position"])
             if not math.isfinite(measured):
@@ -167,6 +181,40 @@ def measure_predicate(spec: WorldSpec, condition: Condition, snapshot: dict) -> 
         return {"satisfied": None, "measured": None, "reason": str(exc)}
 
 
+def carried_measurements(spec: WorldSpec, condition: Condition, trace: list[dict]) -> list[dict]:
+    """Net planar displacement during an uninterrupted sampled grasp streak.
+
+    A release or unknown sample resets the origin. Back-and-forth motion does
+    not accumulate distance. This measures recorded evidence, not actor claims.
+    """
+    origin, started = None, None
+    measurements = []
+    for frame in trace:
+        baseline = measure_predicate(spec, condition, frame)
+        if baseline["satisfied"] is None:
+            origin, started = None, None
+            measurements.append(baseline)
+            continue
+        state = frame["objects"][condition.object_id]
+        position = _vector(state["position"])
+        if state["held_by"] is None:
+            origin, started = None, None
+            distance = 0.0
+        else:
+            if origin is None:
+                origin, started = position, frame["time"]
+            distance = math.dist(origin[:2], position[:2])
+        measurements.append({
+            "satisfied": distance >= condition.threshold,
+            "measured": {"distance_m": distance, "threshold_m": condition.threshold,
+                         "grasp_start_position": origin, "position": position,
+                         "continuous_since": started, "held_by": state["held_by"],
+                         "measurement": "net XY displacement within continuous sampled holding"},
+            "reason": None,
+        })
+    return measurements
+
+
 def grade(spec: WorldSpec, trace: list[dict]) -> dict:
     errors = validate_rubric(spec)
     if errors:
@@ -191,7 +239,8 @@ def grade(spec: WorldSpec, trace: list[dict]) -> dict:
         dependency_times = [d["completion_time"] for d in dependencies]
         ready = not dependencies or all(t is not None for t in dependency_times)
         ready_at = max(dependency_times) if ready and dependencies else None
-        measurements = [measure_predicate(spec, c, frame) for frame in trace]
+        measurements = (carried_measurements(spec, c, trace) if c.predicate == "carried_distance"
+                        else [measure_predicate(spec, c, frame) for frame in trace])
         intervals, start = [], None
         for i, (t, measurement) in enumerate(zip(times, measurements)):
             if measurement["satisfied"] is True:
@@ -257,4 +306,4 @@ def grade(spec: WorldSpec, trace: list[dict]) -> dict:
             "criteria": [results[c.id] for c in spec.rubric],
             "evidence": {"unvalidated_requirements": spec.unvalidated_requirements, "sample_count": len(times), "duration": times[-1]-times[0] if times else 0,
                          "maximum_sample_gap": max((b-a for a, b in zip(times, times[1:])), default=0),
-                         "measurement_limit": "Duration and ordering are verified at recorded samples, not between them. Holding is physical bilateral gripper contact; on_top is contact plus conservative geometric support."}}
+                         "measurement_limit": "Duration and ordering are verified at recorded samples, not between them. Holding is physical bilateral gripper contact; carrying measures net XY displacement during uninterrupted sampled holding, not path length or unseen motion between samples; on_top is contact plus conservative geometric support."}}

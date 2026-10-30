@@ -21,10 +21,14 @@ In the browser, select an object in **World → Layers** or the 3D canvas. Its I
 
 - An explicit `scope` limits actual changes to those exact IDs. Without a scope, the model chooses which entities to edit; the application preserves every entity omitted from the patch. This does not independently prove that the model understood the user's intent.
 - Task, rubric and process definitions require `allow_task_changes=True`. Existing mass, friction and mechanism definitions require `allow_physics_changes=True`. Both default to false, and repair rejects either permission. Repair also preserves every original object and region ID; deleting a failed object cannot make the repair pass. Protections are checked against the original parent on every retry. A joint's initial pose can change without changing its mechanism.
+- Task bindings are protected as well as rubric text. Referenced regions cannot be removed, moved or resized without `allow_task_changes=True`. Bound objects retain their IDs, label, color, shape, dimensions, mesh path and parent relationship. A destination support or process fixture cannot move beside the source to make the task easier. Ancestor poses and joint transforms are protected so moving a parent cannot bypass that rule. These checks also apply to process-loading prerequisites and optional rubric criteria.
+- The robot start is a protected task initial condition. Deliberate changes to the start or destination require an explicit task-changing refinement; repair cannot grant that permission. Physical-property changes still require their separate permission.
 - The robot preset stays fixed. Existing model/controller versions and previous evaluation artifacts are preserved.
 - Repeated assemblies are materialized before editing. Editing one instance's part does not regenerate its neighbors from the template.
 
 The diff is calculated from the resulting specifications, rather than copied from the model's explanation. Edit metadata is included in the new world's content identity. Meshes retain their content hashes and are copied into the new version when referenced.
+
+Direct initial placement of a task subject remains editable so a repair can lift a workpiece out of a surface penetration. Its own initial joint pose can also change when it is not a destination or an ancestor of another task-bound entity. This exception does **not** prove preservation of task difficulty: moving the initial workpiece closer to its destination can shorten the task. Review the measured diff and use an independent task contract when distance or stage separation matters. The internal [ten-scenario suite](../tests/scenarios/README.md) demonstrates such checks. Unreferenced scenery can still be edited; preserving an ID does not establish semantic fidelity to arbitrary prose.
 
 ## Validation and limits
 

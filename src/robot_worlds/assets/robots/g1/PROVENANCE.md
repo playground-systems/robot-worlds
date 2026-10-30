@@ -10,7 +10,11 @@ The published velocity controller is copied from Unitree Robotics:
 https://github.com/unitreerobotics/unitree_rl_mjlab/tree/1425b15f73bd4095f0df53709d7c389c3eb9e790/deploy/robots/g1/config/policy/velocity/v0
 
 policy.onnx and deploy.yaml are shipped with that repository's Apache-2.0 license
-in CONTROLLER_LICENSE. The ONNX metadata identifies joint names, action scaling,
+in CONTROLLER_LICENSE, copied from its pinned root [LICENCE](https://github.com/unitreerobotics/unitree_rl_mjlab/blob/1425b15f73bd4095f0df53709d7c389c3eb9e790/LICENCE).
+The upstream license Git blob is `7b72d429a403d760f5ca0e260ea324dbb35854c9`;
+the retained file matches its SHA-256 byte for byte:
+`ff28cacaef7b9919a0fb905136cf4ccffba5191522bf5d024c4339932c0edc28`.
+The ONNX metadata identifies joint names, action scaling,
 default positions, stiffness and damping. The deployment implementation specifying
 gait phase and observation semantics is:
 https://github.com/unitreerobotics/unitree_rl_mjlab/blob/1425b15f73bd4095f0df53709d7c389c3eb9e790/deploy/include/isaaclab/envs/mdp/observations/observations.h
