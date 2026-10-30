@@ -180,6 +180,7 @@ def process_monitor(spec, state):
     monitor.data = SimpleNamespace(time=0, qpos=np.zeros(1), qvel=np.zeros(1))
     monitor._process_timers = {}
     monitor._process_states = {}
+    monitor._live_view = None  # This fixture bypasses Runtime.__init__ and has no spectator.
     monitor._events = []
     monitor._fixture_members = {"fixture": {"fixture", "top"}}
     monitor._process_snapshot = lambda: copy.deepcopy(state)
