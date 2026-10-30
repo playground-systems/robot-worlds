@@ -102,6 +102,10 @@ def _job_worker(root_string: str, job_id: str, kind: str, payload: dict) -> None
 
     def event(data):
         data = dict(data)
+        if data.get("type") == "live_frame":
+            job["live_frame"] = data
+            write_json(job_path, job)
+            return
         if data.get("type") == "candidate":
             data["type"] = "preview"
         job["events"].append(data)

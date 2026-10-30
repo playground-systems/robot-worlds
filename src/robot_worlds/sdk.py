@@ -217,7 +217,8 @@ class World:
                                "skipped_fixed_overlap_pairs": skipped_fixed_pairs,
                                "skipped_fixed_overlap_count": len(skipped_fixed_pairs),
                                "limitations": ["Static geometry and a reset probe do not prove task reachability, completeness of natural-language interpretation, or policy solvability.",
-                                               "Material properties are estimated unless independently measured; temporal measurements have the recorded sampling resolution."]},
+                                               "Material properties are estimated unless independently measured; temporal measurements have the recorded sampling resolution.",
+                                               "Surface finishes, floor pattern and studio lighting are visual estimates, not measured materials."]},
             }
             if edit_metadata is not None:
                 manifest["identity_version"] = 3
@@ -431,6 +432,17 @@ class World:
                            if key in expected_runtime and episode["runtime"].get(key) != expected_runtime[key]]
                 if changed:
                     raise WorldNotReady("Runtime contract changed since validation; create a new world version: " + ", ".join(changed))
+                if render and on_event and hasattr(runtime, "set_live_observer"):
+                    def live_frame(frame):
+                        target = episode_dir / "live.png"
+                        temporary = episode_dir / "live.png.tmp"
+                        temporary.write_bytes(frame["image"])
+                        temporary.replace(target)
+                        emit({"type": "live_frame", "run_id": run_id, "episode": episode_index,
+                              "time": frame["time"], "sequence": frame["sequence"],
+                              "path": f"{episode_dir.name}/live.png", "source": frame["source"]})
+                    runtime.set_live_observer(live_frame)
+                    runtime.publish_live(force=True)
                 phase = "policy"
                 episode_policy = policy if policy is not None else policy_factory() if policy_factory else LLMAgent(max_steps=max_steps)
                 episode_policy.reset({"task": frozen._spec.task, "robot": frozen._spec.robot,
@@ -457,6 +469,8 @@ class World:
                         (episode_dir / name).write_bytes(image)
                         episode["frames"].append({"time": current_time, "path": f"{episode_dir.name}/{name}"})
                     phase = "policy"
+                    emit({"type": "policy_started", "run_id": run_id, "episode": episode_index,
+                          "step": step, "time": current_time})
                     if policy_record(episode_policy) != episode["policy"]:
                         raise PolicyError("Policy identity changed after its episode configuration was frozen")
                     tick = time.monotonic()
@@ -469,6 +483,8 @@ class World:
                     step_record = {"step": step, "time": current_time,
                                    "action": audit_value(action), "inference_seconds": latency}
                     episode["steps"].append(step_record)
+                    emit({"type": "action_started", "run_id": run_id, "episode": episode_index,
+                          **step_record})
                     if action.get("tool") == "finish":
                         step_record["result"] = {"ended": True, "success": "determined_by_rubric"}
                         if hasattr(episode_policy, "record_result"):
@@ -486,6 +502,14 @@ class World:
                     write_json(episode_dir / "trace.json", runtime.trace)
                     write_json(folder / "result.json", result)
                     emit({"type": "step", "run_id": run_id, "episode": episode_index, **step_record})
+                    if render and on_event and hasattr(runtime, "publish_live"):
+                        runtime.publish_live(force=True)
+                    if on_event:
+                        progress = grade(frozen.spec, runtime.trace)
+                        emit({"type": "task_progress", "run_id": run_id, "episode": episode_index,
+                              "time": float(runtime.snapshot()["time"]), "provisional": True,
+                              "criteria": [{key: criterion[key] for key in ("id", "description", "satisfied", "completion_time")}
+                                           for criterion in progress["criteria"]]})
                     if step_record["result"].get("status") == "time_limit" or float(runtime.snapshot()["time"]) >= max_sim_seconds - 1e-9:
                         episode["termination"] = "simulation_time_limit"
                         break
@@ -507,6 +531,11 @@ class World:
                         episode["status"] = "policy_error"
                     write_json(episode_dir / "transcript.json", {"unavailable": public_error(exc)})
                 if runtime is not None:
+                    live = getattr(runtime, "_live_view", None)
+                    if live and live.error:
+                        episode["live_view_error"] = live.error
+                    if hasattr(runtime, "set_live_observer"):
+                        runtime.set_live_observer(None)
                     trace, last = [], None
                     try:
                         trace = list(runtime.trace)

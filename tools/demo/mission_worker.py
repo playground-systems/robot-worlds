@@ -4,6 +4,7 @@ Internal demonstration harness. No model credential is needed on the worker.
 The relay is a declared custom transport; it is not itself a reproducibility proof.
 """
 import argparse
+import base64
 import json
 import sys
 from pathlib import Path
@@ -12,7 +13,7 @@ from robot_worlds.artifacts import write_json
 from robot_worlds.llm import LLMBudgetExceeded
 from robot_worlds.policy import LLMAgent
 from robot_worlds.remote_policy import _wire
-from robot_worlds.sdk import generate, load
+from robot_worlds.sdk import World, generate, load
 
 
 class RelayClient:
@@ -26,6 +27,7 @@ class RelayClient:
         self.budget = {}
         self.last_usage = {}
         self.last_response_id = None
+        self.provenance = {}
 
     def call(self, method, *args):
         print("RW_RPC " + json.dumps(_wire({"channel": self.channel, "method": method, "args": args})), flush=True)
@@ -33,6 +35,7 @@ class RelayClient:
         self.usage, self.budget = reply.get("usage", {}), reply.get("budget", {})
         self.last_usage = reply.get("last_usage", {})
         self.last_response_id = reply.get("response_id")
+        self.provenance = reply.get("client_provenance", {})
         if "error" in reply:
             error = reply["error"]
             if error["type"] == "LLMBudgetExceeded":
@@ -55,17 +58,23 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--prompt", default="tools/demo/factory-mission.txt")
     parser.add_argument("--world")
+    parser.add_argument("--revalidate", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
     root = Path(args.output)
     root.mkdir(parents=True, exist_ok=True)
 
     def event(value):
-        if value["type"] in {"step", "validation", "world_created", "episode_completed"}:
+        if value["type"] == "live_frame":
+            frame = root / "runs" / value["run_id"] / value["path"]
+            print("RW_FRAME " + json.dumps({**value, "image_base64": base64.b64encode(frame.read_bytes()).decode()}), flush=True)
+        elif value["type"] in {"run_started", "policy_started", "action_started", "task_progress", "step", "validation", "world_created", "episode_completed"}:
             print("RW_EVENT " + json.dumps({k: v for k, v in value.items() if k != "spec"}), flush=True)
 
     if args.world:
         world = load(args.world)
+        if args.revalidate:
+            world = World.from_spec(world.spec, root / "worlds", asset_root=world.path, parent_id=world.id)
     else:
         world = generate(Path(args.prompt).read_text(), output=root / "worlds",
                          client=RelayClient("generation"), max_repairs=3,
@@ -76,7 +85,8 @@ def main():
         return 2
     policy = LLMAgent(client=RelayClient("policy"), max_steps=80, max_seconds=1800, history_steps=6)
     report = world.evaluate(policy, output=root / "runs", max_steps=80,
-                            max_sim_seconds=240, seed=args.seed, render=True, on_event=event)
+                            max_sim_seconds=360, seed=args.seed, render=True, on_event=event,
+                            cancelled=lambda: policy.client.call("cancelled"))
     write_json(root / "mission-result.json", {"report_path": str(report.path), "summary": report.summary})
     print("RW_RESULT " + json.dumps({"report_path": str(report.path), "summary": report.summary}), flush=True)
     return 0

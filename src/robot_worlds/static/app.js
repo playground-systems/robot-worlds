@@ -92,6 +92,7 @@ function syncViewControls() {
   $('viewport-caption').textContent = state.reference ? 'Frozen source visuals · lighting may differ · no simulated behavior.' : layout ? (viewer?.cutaway ? `${viewer.shellCount} inferred wall/roof objects hidden for inspection. ` : '') + 'Reference configuration · robot start marker · joints have not been simulated. ' + (viewer?.appearanceNotice || '') : 'Saved MuJoCo validation image · not a live simulation or evidence of task success.';
 }
 function setView(mode) {
+  $('live-status').hidden = mode !== 'live';
   const layout = mode === 'layout';
   if (layout && currentSpec()) {
     const viewer = getViewer();
@@ -127,6 +128,7 @@ async function openWorld(id) {
 function openReport(id) {
   if (state.jobId || state.submitting) return;
   state.navigation++; setPanel('runs'); state.viewer?.setActive(false);
+  $('live-status').hidden = true;
   document.querySelector('.app-shell').classList.add('showing-report');
   $('work-area').hidden = true; $('report-area').hidden = false; $('world-title').textContent = `Evaluation ${shorten(id, 10)}`; $('workspace-eyebrow').textContent = 'RECORDED BEHAVIOR / LOCAL GRADING'; $('world-status').hidden = true;
   const path = `/api/runs/${encodeURIComponent(id)}/report`;
@@ -279,6 +281,7 @@ $('focus-object').onclick = () => { if (state.selectedObject) state.viewer?.fit(
 $('top-view').onclick = () => state.viewer?.fit(null, [0, -.001, 1]);
 $('cutaway-view').onclick = () => { state.viewer?.setCutaway(!state.viewer.cutaway); syncViewControls(); };
 function resetWorkspace() {
+  $('live-status').hidden = true;
   state.navigation++; disposeViewer(); state.reference = false; $('report-frame').src = 'about:blank';
   document.querySelector('.app-shell').classList.remove('showing-report');
   $('layer-filter').value = ''; state.layerLimit = 120;
@@ -416,6 +419,10 @@ function renderChanges(root) {
 }
 
 function eventLabel(event) {
+  if (event.type === 'policy_started') return `Choosing action ${event.step + 1}`;
+  if (event.type === 'action_started') return `Action ${event.step + 1}: ${(event.action?.tool || 'move').replaceAll('_', ' ')}`;
+  if (event.type === 'step') return `Feedback: ${(event.result?.status || 'executed').replaceAll('_', ' ')}`;
+  if (event.type === 'task_progress') return `${(event.criteria || []).filter(c => c.satisfied).length}/${(event.criteria || []).length} checks observed`;
   const labels = { edit_started: 'Planning targeted changes', repair_started: 'Diagnosing unresolved checks', candidate: 'Candidate ready for checks', preview: 'Candidate preview', validation: 'Checking geometry and physics', edit_validated: 'Verifying preserved entities', edit_completed: 'Saved version and computed changes', generation_incomplete: 'Budget exhausted · saved unresolved candidate', generation_cancelled: 'Cancelled · preserving available evidence' };
   const type = labels[event.type] || String(event.type || event.phase || 'update').replaceAll('_', ' ');
   const detail = event.message || (event.errors?.length ? event.errors.map(message).join('; ') : event.error ? message(event.error) : '');
@@ -424,15 +431,66 @@ function eventLabel(event) {
 function trackJob(job, label) {
   const id = job.id || job.job_id; if (!id) { notice('The server returned no job identifier.'); return; }
   setPanel('agent'); renderAgentHistory();
-  state.jobId = id; state.eventSeen = new Set(); $('job-panel').hidden = false; $('job-panel').classList.remove('done', 'failed'); $('job-title').textContent = label; $('job-state').textContent = job.status || 'queued'; $('job-events').replaceChildren(); $('cancel-job').hidden = false; $('cancel-job').textContent = 'Cancel'; controls(); pollJob(id);
+  state.jobId = id; state.eventSeen = new Set(); $('job-panel').hidden = false; $('job-panel').classList.remove('done', 'failed'); $('job-title').textContent = label; $('job-state').textContent = job.status || 'queued'; $('job-events').replaceChildren(); $('cancel-job').hidden = false; $('cancel-job').textContent = 'Cancel'; controls(); history.replaceState(null, '', `/?job=${encodeURIComponent(id)}`); pollJob(id);
+}
+function showLiveFrame(frame) {
+  if (!/^[a-f0-9]{32}$/.test(frame.run_id || '') || !/^episode-\d{3}\/live\.png$/.test(frame.path || '') || !Number.isFinite(frame.sequence) || !Number.isFinite(frame.time)) return;
+  if (state.liveFrameKey === `${frame.run_id}:${frame.episode}:${frame.sequence}`) return;
+  if (state.mode !== 'live') {
+    $('live-progress').hidden = true;
+    $('agent-history').replaceChildren(el('h2', '', 'Your robot is on the job.'), el('p', 'small muted', 'Watch its actions and measured task progress. You can cancel the run at any time.'));
+    if (!state.world) $('world-title').textContent = 'Live robot mission';
+    $('workspace-eyebrow').textContent = 'AUTONOMOUS EXECUTION';
+    $('connection').textContent = '● Watching run'; $('connection').classList.remove('error');
+  }
+  state.liveFrameKey = `${frame.run_id}:${frame.episode}:${frame.sequence}`;
+  state.viewer?.setActive(false); state.mode = 'live';
+  $('work-area').hidden = false; $('report-area').hidden = true;
+  document.querySelector('.app-shell').classList.remove('showing-report');
+  $('viewport').classList.remove('empty'); $('empty-state').hidden = true;
+  $('scene-canvas').hidden = true; $('scene-labels').hidden = true; $('selection-label').hidden = true;
+  $('physical-image').hidden = false;
+  $('physical-image').src = `/api/runs/${frame.run_id}/files/${frame.path}?frame=${frame.sequence}`;
+  $('live-status').hidden = false; $('live-time').textContent = `${frame.time.toFixed(1)} sim s`;
+  $('view-state').hidden = false; $('view-state').textContent = 'LIVE ROBOT';
+  $('viewport-info').textContent = 'Live simulation · spectator camera';
+  $('viewport-caption').hidden = false; $('viewport-caption').textContent = 'Live spectator camera · simulation advances between model decisions · final success is independently graded.';
+  for (const id of ['physical-tab', 'layout-tab', 'fit-view', 'focus-object', 'top-view', 'cutaway-view']) $(id).disabled = true;
+}
+function showLiveEvent(event) {
+  if (event.type === 'policy_started') {
+    $('live-phase').textContent = 'Thinking';
+    $('live-action').textContent = `Choosing action ${event.step + 1} from camera and robot observations`;
+  } else if (event.type === 'action_started') {
+    const names = {drive: 'Driving', move_arm: 'Moving arm', gripper: 'Moving gripper', wait: 'Waiting', look: 'Looking', finish: 'Checking the result'};
+    $('live-phase').textContent = names[event.action?.tool] || 'Acting';
+    const args = event.action?.arguments || {}, hand = args.hand || 'robot';
+    const detail = event.action?.tool === 'drive' ? `Moving ${(args.distance || 0).toFixed(2)} m · turning ${Math.round((args.turn || 0)*180/Math.PI)}°` : event.action?.tool === 'move_arm' ? `Reaching with the ${hand} arm` : event.action?.tool === 'gripper' ? `${args.opening > 0 ? 'Opening' : 'Closing'} the ${hand} gripper` : event.action?.tool === 'wait' ? `Waiting ${args.seconds || 0} simulated seconds` : 'Following the task using measured feedback';
+    $('live-action').textContent = detail;
+  } else if (event.type === 'step') {
+    $('live-action').textContent = `${event.action?.tool || 'Action'} · ${event.result?.status || 'executed'}`;
+  } else if (event.type === 'task_progress') {
+    const criteria = event.criteria || [], observed = criteria.filter(criterion => criterion.satisfied === true).length;
+    $('live-progress').hidden = !criteria.length;
+    $('live-progress-bar').max = criteria.length || 1; $('live-progress-bar').value = observed;
+    $('live-progress-label').textContent = `${observed} / ${criteria.length} checks observed · provisional`;
+    const panel = $('inspector-body'); panel.replaceChildren(el('div', 'inspector-label', 'TASK PROGRESS'), el('p', 'small muted', 'Observed milestones. Final conditions are checked again when the run ends.'));
+    for (const criterion of criteria) {
+      const card = el('div', `live-goal${criterion.satisfied ? ' observed' : ''}`);
+      card.append(el('span', 'live-goal-icon', criterion.satisfied ? '✓' : '○'), el('span', '', criterion.description));
+      panel.append(card);
+    }
+  }
 }
 async function pollJob(id) {
   if (state.jobId !== id) return;
   try {
     const job = await api(`/api/jobs/${encodeURIComponent(id)}`); $('job-state').textContent = job.status;
+    if (job.live_frame) showLiveFrame(job.live_frame);
     for (const event of job.events || []) {
       const signature = JSON.stringify(event); if (state.eventSeen.has(signature)) continue; state.eventSeen.add(signature);
       const row = el('li', event.error || event.errors?.length ? 'stage-error' : '', eventLabel(event)); $('job-events').append(row);
+      showLiveEvent(event);
       if (event.type === 'preview' && event.spec) { state.worldId = null; state.world = { spec: event.spec, manifest: { validation: { status: 'preview', checks: [] } } }; displaySpec(event.spec, true); }
     }
     $('job-events').scrollTop = $('job-events').scrollHeight;
@@ -448,7 +506,7 @@ async function pollJob(id) {
       return;
     }
   } catch (error) { notice(`Unable to read job status: ${error.message}`); }
-  setTimeout(() => pollJob(id), 1300);
+  setTimeout(() => pollJob(id), state.mode === 'live' ? 250 : 1000);
 }
 $('cancel-job').onclick = async () => { if (!state.jobId) return; try { await post(`/api/jobs/${encodeURIComponent(state.jobId)}/cancel`, {}); $('cancel-job').textContent = 'Cancellation requested'; } catch (error) { notice(error.message); } };
 $('evaluate-button').onclick = () => { $('policy-model-label').textContent = `${settings().model} · ${settings().reasoning} reasoning`; $('evaluate-dialog').showModal(); };
@@ -461,6 +519,7 @@ $('evaluate-form').onsubmit = async event => {
 };
 async function start() {
   try { const health = await api('/api/health'); state.key = !!health.key_configured; $('connection').textContent = state.key ? '● Connected' : 'Key required'; $('connection').title = state.key ? 'Local runtime · model key configured' : 'Configure OPENAI_API_KEY on the server'; $('connection').classList.toggle('error', !state.key); if (!state.key) notice('Set OPENAI_API_KEY in the server environment, then restart the local server to generate worlds or run the agent. Saved worlds and reports remain available.'); if (health.model) $('model').value = health.model; await refreshLists(); const params = new URLSearchParams(location.search); if (params.get('reference')) await openReference(params.get('reference'));
+    else if (params.get('job')) { notice(''); const job = await api(`/api/jobs/${encodeURIComponent(params.get('job'))}`); trackJob(job, 'Live robot mission'); }
     else if (params.get('run')) openReport(params.get('run')); else if (params.get('world')) await openWorld(params.get('world')); }
   catch (error) { notice(error.message); $('connection').textContent = 'Local server unavailable'; $('connection').classList.add('error'); }
   if (!state.world && !state.jobId) renderAgentHistory();

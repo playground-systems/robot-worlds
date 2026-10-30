@@ -18,7 +18,7 @@ uv run robot-worlds serve
 
 Open **http://127.0.0.1:8765**. Enter a scene and task, inspect the generated geometry and rubric, then start an evaluation. The workbench stores worlds, job progress and reports under `.robot-worlds/`. A failed validation preserves its candidate and explains the failed checks.
 
-See [setup and model access](docs/setup.md) for offline `doctor` checks, paid API requirements and clean installation.
+See [setup and model access](docs/setup.md) for offline `doctor` checks, API requirements, the optional Codex SDK transport, and clean installation.
 
 ```python
 from robot_worlds import generate, LLMAgent
@@ -39,7 +39,7 @@ Generation can return an **unvalidated** world. Inspect `world.manifest["validat
 - **Editing and repair:** text requests patch persistent scene entities, preserve prior versions and produce computed before/after diffs. Optional scope limits which objects can change; repair preserves the task and physical properties. [Scene editing](docs/scene-editing.md) explains the contracts.
 - **Robot tools:** the agent selects bounded motion, arm, gripper and sensing actions. Controllers execute these actions in MuJoCo. Object motion comes from physical contact.
 - **Evaluation:** local checks grade the recorded state. Criteria support object identity, contact, containment, grasping, temporal order, holding duration and alternatives. Inference wall time is separate from simulated time.
-- **Inspection:** the browser shows the generated layout, native simulator images, validation findings, an editable rubric and an evidence-linked report. Worlds and runs export as ZIP archives.
+- **Inspection:** watch a live spectator camera, the current robot action and provisional milestones while evaluation runs. The final report independently rechecks the full trace. Worlds and runs export as ZIP archives.
 
 TIAGo++ uses the pinned MuJoCo Menagerie model with documented wheel and gripper collision approximations. Unitree G1 uses the 29-DOF body, Dex1 parallel grippers and an official walking policy. Engineering tests cover contact grasping, carrying and flat-ground locomotion; arbitrary terrain and payloads remain unvalidated. See [the implementation evidence and remaining work](docs/product-goal.md).
 

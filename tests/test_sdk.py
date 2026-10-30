@@ -113,6 +113,37 @@ def test_evaluation_resets_runtime_and_policy_and_saves_valid_evidence(tmp_path)
     assert (report.path / "report.html").is_file()
 
 
+def test_live_view_events_do_not_enter_policy_observations_or_claim_final_success(tmp_path):
+    class LiveRuntime(FakeRuntime):
+        def set_live_observer(self, callback):
+            self.callback = callback
+        def publish_live(self, *, force=False):
+            if self.callback:
+                self.callback({"image": b"spectator", "time": self.time, "sequence": int(self.time),
+                               "source": "live_simulator_overview"})
+        def execute(self, action):
+            result = super().execute(action)
+            self.publish_live()
+            return result
+
+    class SensorPolicy(Policy):
+        def act(self, observation):
+            assert "rubric" not in observation and "criteria" not in observation
+            assert "spectator" not in str(observation)
+            return super().act(observation)
+
+    events = []
+    report = ready(tmp_path, runtime_factory=LiveRuntime).evaluate(
+        SensorPolicy(), output=tmp_path / "runs", runtime_factory=LiveRuntime, on_event=events.append)
+    frames = [e for e in events if e["type"] == "live_frame"]
+    assert len(frames) >= 2 and frames[-1]["time"] == 1
+    assert all("image" not in event for event in frames)
+    assert (report.path / frames[-1]["path"]).read_bytes() == b"spectator"
+    progress = [e for e in events if e["type"] == "task_progress"]
+    assert progress[0]["provisional"] and "success" not in progress[0]
+    assert report.summary["successes"] == 1
+
+
 def test_policy_factory_builds_independent_policies(tmp_path):
     policies = []
     def factory():

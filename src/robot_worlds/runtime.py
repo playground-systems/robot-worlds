@@ -19,6 +19,7 @@ import mujoco
 import numpy as np
 from PIL import Image
 
+from .appearance import add_appearance, finish_name
 from .artifacts import digest
 from .robot_assets import ROBOT_MANIFESTS, robot_asset_path
 
@@ -38,7 +39,7 @@ def runtime_implementation_identity(robot: str, action_contract: list[dict]) -> 
     nonbehavioral edit. Missing resources/version metadata fail closed. These
     hashes identify an implementation; they do not attest to an untampered host.
     """
-    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py"]
+    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py"]
     dependencies = ["mujoco", "numpy", "pillow", "pydantic"]
     if robot == "g1":
         modules.append("g1_runtime.py")
@@ -140,6 +141,8 @@ class Runtime:
         self._implementation = runtime_implementation_identity(spec.robot, self.tools)
         self._implementation_fingerprint = digest(self._implementation)
         self._renderer = None
+        self._overview_renderer = None
+        self._live_view = None
         self._last_result = None
         self.trace = []
         self._events = []
@@ -200,20 +203,15 @@ class Runtime:
         root.append(position.find("actuator"))
         for actuator in root.findall("./actuator/velocity"):
             actuator.set("kv", "100")
-        ET.SubElement(root, "visual")
-        ET.SubElement(root.find("visual"), "global", offwidth="640", offheight="480")
-        ET.SubElement(
-            root.find("visual"), "headlight", ambient="0.4 0.4 0.4", diffuse="0.7 0.7 0.7"
-        )
+        add_appearance(root)
         world = root.find("worldbody")
-        ET.SubElement(world, "light", pos="0 0 5", dir="0 0 -1", diffuse="0.7 0.7 0.7")
         ET.SubElement(
             world,
             "geom",
             name="floor",
             type="plane",
             size="0 0 .1",
-            rgba=".27 .30 .34 1",
+            material="rw_floor",
             friction=".8 .01 .001",
             contype="4",
             conaffinity="3",
@@ -360,6 +358,7 @@ class Runtime:
                     ET.SubElement(body, "freejoint", name="free_" + obj.id)
                 geom = dict(
                     name="geom_" + obj.id,
+                    material="rw_" + finish_name(obj),
                     rgba=_vec([*obj.color, 1]),
                     mass=str(obj.mass),
                     friction=f"{getattr(obj, 'friction', 0.7)} .01 .001",
@@ -489,6 +488,14 @@ class Runtime:
     def _before_step(self):
         pass
 
+    def set_live_observer(self, callback):
+        from .live import LiveView
+        self._live_view = LiveView(lambda: self.render(view="overview"), callback) if callback else None
+
+    def publish_live(self, *, force=False):
+        if self._live_view is not None:
+            self._live_view.publish(self.data.time, force=force)
+
     def _step(self, seconds):
         for _ in range(max(0, round(seconds / self.model.opt.timestep))):
             if (
@@ -505,6 +512,7 @@ class Runtime:
                 self._advance_processes()
             if self.data.time + 1e-8 >= self._next_sample:
                 self._sample()
+                self.publish_live()
 
     def _contact_state(self):
         pairs, fingers = set(), {h: {} for h in ("left", "right")}
@@ -886,15 +894,19 @@ class Runtime:
             "actual_position": self.data.site_xpos[site].tolist(),
         }
 
-    def _get_renderer(self):
+    def _get_renderer(self, *, overview=False):
         if not self._render_enabled:
             raise RuntimeError("Camera rendering is disabled for this runtime")
+        if overview:
+            if self._overview_renderer is None:
+                self._overview_renderer = mujoco.Renderer(self.model, height=720, width=960)
+            return self._overview_renderer
         if self._renderer is None:
             self._renderer = mujoco.Renderer(self.model, height=480, width=640)
         return self._renderer
 
     def render(self, *, view="robot", azimuth=135, elevation=-25, distance=4, lookat=None):
-        renderer = self._get_renderer()
+        renderer = self._get_renderer(overview=view != "robot")
         renderer.disable_depth_rendering()
         renderer.disable_segmentation_rendering()
         camera = "robot_rgbd"
@@ -1014,6 +1026,10 @@ class Runtime:
         mujoco.mj_forward(self.model, self.data)
 
     def close(self):
+        self._live_view = None
+        if self._overview_renderer is not None:
+            self._overview_renderer.close()
+            self._overview_renderer = None
         if self._renderer is not None:
             self._renderer.close()
             self._renderer = None

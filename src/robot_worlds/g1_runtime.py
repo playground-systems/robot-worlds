@@ -15,6 +15,7 @@ import mujoco
 import numpy as np
 import onnxruntime as ort
 
+from .appearance import add_appearance
 from .runtime import HAND, NUMBER, TOOLS, RobotPhysicalFailure, Runtime, _tool
 
 
@@ -83,9 +84,7 @@ class G1Runtime(Runtime):
                     ctrlrange="-.020 .0245",
                 )
         root.remove(root.find("keyframe"))
-        visual = ET.SubElement(root, "visual")
-        ET.SubElement(visual, "global", offwidth="640", offheight="480")
-        ET.SubElement(visual, "headlight", ambient=".4 .4 .4", diffuse=".7 .7 .7")
+        add_appearance(root)
         world = root.find("worldbody")
         ET.SubElement(
             world,
@@ -93,10 +92,9 @@ class G1Runtime(Runtime):
             name="floor",
             type="plane",
             size="0 0 .1",
-            rgba=".27 .30 .34 1",
+            material="rw_floor",
             friction=".8 .01 .001",
         )
-        ET.SubElement(world, "light", pos="0 0 5", dir="0 0 -1")
         torso = root.find(".//body[@name='torso_link']")
         ET.SubElement(
             torso,

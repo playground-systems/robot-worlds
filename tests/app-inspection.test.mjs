@@ -44,6 +44,29 @@ function fixture() {
   return { run, nodes, calls, events, context, shell };
 }
 
+test('live camera updates pause WebGL, show actual time, and keep provisional milestones separate', () => {
+  const { run, nodes, calls } = fixture();
+  run("setView('layout');showLiveFrame({run_id:'a'.repeat(32),episode:0,sequence:4,time:2.5,path:'episode-000/live.png'});");
+  assert.deepEqual(calls.at(-1), ['active', false]);
+  assert.equal(nodes.get('view-state').textContent, 'LIVE ROBOT');
+  assert.equal(nodes.get('live-time').textContent, '2.5 sim s');
+  assert.match(nodes.get('physical-image').src, /episode-000\/live.png\?frame=4$/);
+  const image = nodes.get('physical-image').src;
+  run("showLiveFrame({run_id:'a'.repeat(32),sequence:5,time:3,path:'../../secret'});");
+  assert.equal(nodes.get('physical-image').src, image);
+  run("showLiveEvent({type:'policy_started',step:2});");
+  assert.equal(nodes.get('live-phase').textContent, 'Thinking');
+  run("showLiveEvent({type:'task_progress',criteria:[{description:'Carry part',satisfied:true},{description:'Deliver part',satisfied:false}]});");
+  assert.match(nodes.get('inspector-body').children[1].textContent, /Final conditions/);
+  assert.equal(nodes.get('inspector-body').children[2].children[0].textContent, '✓');
+  assert.equal(nodes.get('inspector-body').children[3].children[0].textContent, '○');
+  assert.equal(nodes.get('live-progress-bar').max, 2);
+  assert.equal(nodes.get('live-progress-bar').value, 1);
+  assert.match(nodes.get('live-progress-label').textContent, /1 \/ 2 checks observed · provisional/);
+  run("showLiveEvent({type:'task_progress',criteria:[{description:'Carry part',satisfied:false},{description:'Deliver part',satisfied:false}]});");
+  assert.equal(nodes.get('live-progress-bar').value, 0); // Final-state regression is visible.
+});
+
 test('native frame inspection never starts WebGL; layout does, then native frame pauses it', () => {
   const { run, calls, nodes } = fixture();
   run("setView('physical');"); assert.equal(calls.length, 0);

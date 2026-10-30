@@ -178,6 +178,8 @@ class LLMAgent:
             ("policy.py", "llm.py", "artifacts.py"), ("openai", "httpx", "pydantic")
         )
         client = _class_identity(self.client)
+        if isinstance(getattr(self.client, "provenance", None), dict):
+            client["declared_configuration"] = audit_value(copy.deepcopy(self.client.provenance))
         builtin = type(self.client) is ResponsesClient
         configuration_status = "opaque_client_configuration_unvalidated"
         if builtin:

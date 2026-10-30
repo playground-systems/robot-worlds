@@ -98,6 +98,43 @@ def test_parent_cycles_and_unbound_process_loading_rejected():
     assert any("loading" in e for e in validate_spec(WorldSpec.model_validate(data)))
 
 
+def test_process_loading_volume_at_support_plane_requires_contact_clearance():
+    data = valid()
+    data["objects"].append({"id": "platen", "label": "platen", "kind": "box",
+                            "position": [-2, 0, .55], "size": [1, 1, .08]})
+    data["regions"][0].update(position=[-2, 0, .79], size=[1, 1, .4])
+    data["process_cycles"] = [{"id": "inspect", "label": "inspection", "fixture_id": "platen",
+                              "workpiece_ids": ["part"], "duration": 3, "output_state": "inspected",
+                              "prerequisites": [
+                                  {"predicate": "on_top", "object_id": "part", "target_id": "platen"},
+                                  {"predicate": "in_region", "object_id": "part", "target_id": "destination", "tolerance": 0},
+                                  {"predicate": "released", "object_id": "part"}]}]
+    original = copy.deepcopy(data)
+    errors = validate_spec(WorldSpec.model_validate(data))
+    assert any("contact clearance" in error for error in errors)
+    assert data == original  # Validation diagnoses; it never widens a user's rubric.
+    # Extend the region below the support, preserving its upper bound and XY area.
+    data["regions"][0]["position"][2] -= .0025
+    data["regions"][0]["size"][2] += .005
+    assert validate_spec(WorldSpec.model_validate(data)) == []
+    client = Client([original, data])
+    generate_spec("Inspect the same part after released physical loading", client=client)
+    assert "contact clearance" in client.prompts[1]
+
+
+def test_explicit_containment_tolerance_allows_process_contact_clearance():
+    data = valid()
+    data["objects"].append({"id": "platen", "label": "platen", "kind": "box",
+                            "position": [-2, 0, .55], "size": [1, 1, .08]})
+    data["regions"][0].update(position=[-2, 0, .79], size=[1, 1, .4])
+    data["process_cycles"] = [{"id": "inspect", "label": "inspection", "fixture_id": "platen",
+                              "workpiece_ids": ["part"], "duration": 3, "output_state": "inspected",
+                              "prerequisites": [
+                                  {"predicate": "on_top", "object_id": "part", "target_id": "platen"},
+                                  {"predicate": "in_region", "object_id": "part", "target_id": "destination", "tolerance": .001}]}]
+    assert validate_spec(WorldSpec.model_validate(data)) == []
+
+
 def test_mesh_must_exist_and_nonfinite_properties_rejected(tmp_path):
     data = valid()
     data["objects"][0].update(kind="mesh", mesh_path="missing.obj")

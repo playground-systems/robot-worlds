@@ -1,6 +1,6 @@
 # Install and check your setup
 
-Robot Worlds runs simulation and grading on your computer. Generating a world and using the built-in LLM policy require your own model API access. The browser opens an empty workbench; no factory or controller demo is bundled into onboarding.
+Robot Worlds runs simulation and grading on your computer. The browser uses your own model API access. The Python SDK also accepts an optional Codex transport using an existing supported sign-in. The browser opens an empty workbench; no factory or controller demo is bundled into onboarding.
 
 ## Install from source
 
@@ -19,7 +19,23 @@ Open http://127.0.0.1:8765. Describe a place, robot and task; inspect validation
 
 `doctor --json` produces a shareable offline report. It does not make API calls, import native simulator libraries, create a graphics context or write probe files. An offline pass establishes prerequisite presence; model access, dependency compatibility, native loading and rendering remain separate checks.
 
-## Verify model access explicitly
+## Optional Codex SDK transport
+
+With a recent Codex CLI installed and signed in, the SDK can request decisions through `codex exec`. This uses the account's Codex plan limits rather than API credits; it has no API dollar cap. The transport bounds calls and wall time, and uses reported token totals to stop subsequent calls. It does not extract or copy sign-in credentials. See [Codex authentication](https://learn.chatgpt.com/docs/auth).
+
+```python
+from robot_worlds import LLMAgent, load
+from robot_worlds.codex_client import CodexClient
+
+world = load("path/to/your/validated/world")
+agent = LLMAgent(client=CodexClient(max_calls=40, max_seconds=900))
+report = world.evaluate(agent, max_steps=40, max_sim_seconds=240)
+report.open()
+```
+
+Generation accepts the same client through `generate(prompt, client=CodexClient(...))`. The CLI receives task text, allowed actions and robot observations in an ephemeral working directory. Shell, apps, web search and delegation are disabled; only a schema-valid action is accepted. The external simulator executes the action. Account access and CLI configuration are not independently attested, and this option does not enable hosted inference for other users.
+
+## Verify API model access explicitly
 
 The code defaults to `gpt-6-astra`, reasoning `medium`. The development team's successful Astra calls establish access for that account, not yours. Astra requires supported paid API access; a ChatGPT subscription does not establish that API access. A configured key, a model name or a model-list response does not establish compatibility with the actual workload.
 
