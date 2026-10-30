@@ -57,7 +57,7 @@ def native_world(tmp_path):
 
 
 @pytest.mark.parametrize("workers", [1, 2])
-def test_actual_spawned_physics_policies_and_frames_preserve_episode_identity(tmp_path, remote_url, workers):
+def test_actual_spawned_physics_policies_and_frames_preserve_episode_identity(tmp_path, native_rendering, remote_url, workers):
     world = native_world(tmp_path)
     started = time.monotonic()
     report = evaluate_batch(world, policy_config={"kind": "remote", "base_url": remote_url, "timeout": 5},
@@ -81,7 +81,7 @@ def test_actual_spawned_physics_policies_and_frames_preserve_episode_identity(tm
     print(f"Two native MuJoCo render+step episodes, {workers} spawned workers: {elapsed:.3f}s ({2/elapsed:.3f} episodes/s), physics CPU")
 
 
-def test_worker_policy_failure_is_not_an_ordinary_task_failure(tmp_path):
+def test_worker_policy_failure_is_not_an_ordinary_task_failure(tmp_path, native_rendering):
     world = native_world(tmp_path)
     report = evaluate_batch(world, policy_config={"kind": "remote", "base_url": "http://127.0.0.1:1", "timeout": .2},
                             episodes=2, workers=2, max_steps=1, render=False, output=tmp_path / "runs")

@@ -109,7 +109,7 @@ def test_model_generated_compact_assemblies_expand_before_validation():
     assert spec.source_prompt == "A large connected facility"
 
 
-def test_real_mujoco_compiles_renders_and_steps_561_geometry_scene():
+def test_real_mujoco_compiles_renders_and_steps_561_geometry_scene(native_rendering):
     from robot_worlds.runtime import Runtime
     start = time.monotonic()
     spec = expand_assemblies(large_spec())

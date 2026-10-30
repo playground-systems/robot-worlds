@@ -31,9 +31,9 @@ jobs:
         run: node --test tests/scene-resources.test.mjs
       - name: Test on macOS
         if: runner.os == 'macOS'
-        run: uv run --frozen pytest -q
+        run: uv run --frozen pytest -q -ra
       - name: Test on Linux
         if: runner.os == 'Linux'
-        run: xvfb-run -a uv run --frozen pytest -q
+        run: xvfb-run -a uv run --frozen pytest -q -ra
       - name: Build distribution
         run: uv build

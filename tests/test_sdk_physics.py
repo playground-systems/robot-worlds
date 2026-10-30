@@ -4,7 +4,7 @@ from robot_worlds.models import WorldSpec
 from robot_worlds.sdk import World
 
 
-def test_real_mujoco_world_and_noop_report(tmp_path):
+def test_real_mujoco_world_and_noop_report(tmp_path, native_rendering):
     spec = WorldSpec.model_validate({
         "name": "Physical SDK smoke", "description": "An internal test fixture",
         "task": "Move the part to the output region", "bounds": [8, 8, 3],

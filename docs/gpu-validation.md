@@ -88,3 +88,9 @@ A distribution build and fresh Linux Python 3.13 environment install also passed
 ## Review-fix verification
 
 After adding runtime/policy identity, trace-integrity checks and connectivity diagnostics, the remote machine passed 109 focused identity/policy/SDK/regrading tests, 18 physical/batch integration tests, 70 generator/API/CLI boundary tests, and 39 connectivity/generator/large-scene tests. The last two selections overlap; these counts are not an aggregate suite total. Ruff passed. A lightweight Node regression also verified shared scene-resource and instanced-buffer disposal. Full hosted CI is tracked on the implementation PR.
+
+## Hosted CI graphics boundary
+
+[Implementation PR #1](https://github.com/playground-systems/robot-worlds/pull/1) runs the suite on Ubuntu 24.04 and macOS 15. The first complete Linux run passed **262 tests**, skipped the credential-dependent live API test, and built both distributions. The hosted macOS runner passed 257 tests but lacked the CGL pixel format needed for five rendering-dependent cases. The CI fixture probes native rendering and skips only that specific CGL failure on GitHub-hosted macOS; other rendering failures remain errors. Linux must run the render cases, and nonrendering robot physics remains active on macOS. This limitation does not replace the separate native Apple-silicon and NVIDIA evidence above.
+
+The workflow moved from macOS 14 after GitHub's scheduled retirement brownout prevented startup. [GitHub retirement notice](https://github.blog/changelog/2026-10-01-github-actions-macos-14-runner-image-retirement/).
