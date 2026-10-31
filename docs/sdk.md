@@ -95,6 +95,14 @@ world identity. Failed model calls retain their duration and error type without
 saving transport exception text. Unexpected import failures leave a terminal
 `failed` diagnostic record and still raise to the caller.
 
+Repeated objects share native texture/material definitions and mesh definitions
+when their source path and scale match. Each instance keeps its own physical body,
+pose, mass, contacts and color. Different scales use separate meshes. Source bounds
+and textures are checked once per build and rechecked on the next build; this does
+not persist native models or trust stale file metadata. The hosted
+`tools/benchmark_native_assets.py` compares repeated original appliances against
+per-instance definitions and checks compiled physical arrays for equivalence.
+
 `tools/benchmark_generation.py` measures the bundled bowl/microwave pipeline with
 a mocked model and real native validation in Linux CI. It reports time to preview,
 time to a ready world and stage durations; it does not measure live model latency

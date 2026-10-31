@@ -354,6 +354,9 @@ class Runtime:
             root.find("option").set("jacobian", "sparse")
         world = root.find("worldbody")
         bodies = {}
+        # Asset definitions are immutable within this build. Sharing them does
+        # not weld bodies or share per-geom mass, contact, color or pose settings.
+        texture_names, mesh_names, mesh_bounds = {}, {}, {}
         remaining = list(self.spec.objects)
         while remaining:
             progress = False
@@ -408,11 +411,14 @@ class Runtime:
                     texture_path = Path(obj.texture_path).expanduser()
                     if not texture_path.is_absolute():
                         texture_path = self.asset_root / texture_path
-                    validate_texture(texture_path)
-                    name = "texture_" + obj.id
-                    ET.SubElement(root.find("asset"), "texture", name=name, type="2d", file=str(texture_path.resolve()))
-                    ET.SubElement(root.find("asset"), "material", name=name, texture=name, texuniform="false")
-                    geom["material"] = name
+                    texture_path = texture_path.resolve()
+                    if texture_path not in texture_names:
+                        validate_texture(texture_path)
+                        name = "texture_" + obj.id
+                        ET.SubElement(root.find("asset"), "texture", name=name, type="2d", file=str(texture_path))
+                        ET.SubElement(root.find("asset"), "material", name=name, texture=name, texuniform="false")
+                        texture_names[texture_path] = name
+                    geom["material"] = texture_names[texture_path]
                 size = np.asarray(obj.size, dtype=float)
                 if obj.kind == "box":
                     geom.update(type="box", size=_vec(size / 2))
@@ -443,40 +449,42 @@ class Runtime:
                         raise ValueError(f"Mesh asset is missing: {mesh_path}")
                     # Normalize visual/collision mesh dimensions to the declared
                     # full extents and center; rubric geometry matches physics.
-                    if mesh_path.suffix.lower() == ".obj":
-                        from .mesh_assets import obj_bounds
-                        lower, upper = obj_bounds(mesh_path)
-                    else:
-                        # Keep the native decoder for binary STL/MSH formats.
-                        probe = ET.Element("mujoco")
-                        ET.SubElement(
-                            ET.SubElement(probe, "asset"), "mesh", name="probe", file=str(mesh_path)
-                        )
-                        ET.SubElement(
-                            ET.SubElement(probe, "worldbody"), "geom", type="mesh", mesh="probe"
-                        )
-                        mesh_model = mujoco.MjModel.from_xml_string(
-                            ET.tostring(probe, encoding="unicode")
-                        )
-                        mesh_rotation = np.empty(9)
-                        mujoco.mju_quat2Mat(mesh_rotation, mesh_model.geom_quat[0])
-                        vertices = (
-                            mesh_model.mesh_vert @ mesh_rotation.reshape(3, 3).T
-                            + mesh_model.geom_pos[0]
-                        )
-                        lower, upper = vertices.min(0), vertices.max(0)
+                    if mesh_path not in mesh_bounds:
+                        if mesh_path.suffix.lower() == ".obj":
+                            from .mesh_assets import obj_bounds
+                            lower, upper = obj_bounds(mesh_path)
+                        else:
+                            # Keep the native decoder for binary STL/MSH formats.
+                            probe = ET.Element("mujoco")
+                            ET.SubElement(
+                                ET.SubElement(probe, "asset"), "mesh", name="probe", file=str(mesh_path)
+                            )
+                            ET.SubElement(
+                                ET.SubElement(probe, "worldbody"), "geom", type="mesh", mesh="probe"
+                            )
+                            mesh_model = mujoco.MjModel.from_xml_string(
+                                ET.tostring(probe, encoding="unicode")
+                            )
+                            mesh_rotation = np.empty(9)
+                            mujoco.mju_quat2Mat(mesh_rotation, mesh_model.geom_quat[0])
+                            vertices = (
+                                mesh_model.mesh_vert @ mesh_rotation.reshape(3, 3).T
+                                + mesh_model.geom_pos[0]
+                            )
+                            lower, upper = vertices.min(0), vertices.max(0)
+                        mesh_bounds[mesh_path] = (lower, upper)
+                    lower, upper = mesh_bounds[mesh_path]
                     if np.any(upper - lower < 1e-8):
                         raise ValueError(f"Mesh {obj.id} must have three nonzero dimensions")
                     scale = size / (upper - lower)
-                    ET.SubElement(
-                        root.find("asset"),
-                        "mesh",
-                        name="mesh_" + obj.id,
-                        file=str(mesh_path),
-                        scale=_vec(scale),
-                    )
+                    key = (mesh_path, _vec(scale))
+                    if key not in mesh_names:
+                        name = "mesh_" + obj.id
+                        ET.SubElement(root.find("asset"), "mesh", name=name,
+                                      file=str(mesh_path), scale=key[1])
+                        mesh_names[key] = name
                     geom.update(
-                        type="mesh", mesh="mesh_" + obj.id, pos=_vec(-0.5 * (lower + upper) * scale)
+                        type="mesh", mesh=mesh_names[key], pos=_vec(-0.5 * (lower + upper) * scale)
                     )
                 else:
                     raise ValueError(f"Unsupported physical shape: {obj.kind}")
