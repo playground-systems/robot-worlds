@@ -1,6 +1,8 @@
 /** Release shared scene resources once, including textures owned by materials. */
 const sharedResources = Symbol('scene-owned resources');
 
+export function hasSharedResources(node) { return node[sharedResources] === true; }
+
 export function markSharedResources(root) {
   root.traverse(node => { if (node.isMesh) node[sharedResources] = true; });
   return root;

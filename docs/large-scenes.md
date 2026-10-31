@@ -31,6 +31,12 @@ joints and cavities; mesh and texture paths remain shared. A single prepared cop
 keeps its plain prefix, while repeated copies use `id_ix_iy_iz` as the catalog
 prefix. All copies count toward the physical component budget before allocation.
 
+The layout viewer shares source mesh/material data and instances compatible
+opaque copies in 8 m spatial cells after loading. Picking retains each copy's
+object ID, and cutaway shells remain independently toggleable. This changes
+display submission only; physical bodies and policy observations remain separate.
+Actual GPU/frame-rate and LOD acceptance is still pending.
+
 An explicit `min_objects` (default zero) turns a requested detail count into a repair check; it does not prescribe the layout. The example requires at least 500. The default resource budget is 5,000 physical objects, with an explicit implementation ceiling of 10,000. This bounds expansion memory and does not prescribe a floorplan. Expansion checks counts before allocating repeated geometry. The collision validator uses a spatial hash broadphase and bounded overlap diagnostics. Runtime meshes use native convex-hull collision unless a source adapter supplies separate collision pieces. Primitive and mesh assemblies support all four quarter turns. Source mesh bytes remain unchanged: the frozen mesh rotation and resulting bounding extents drive both native XML and the browser. Prepared-asset references support the same whole-asset rotation for source fixtures, joints and cavities. Arbitrary-angle placement is not supported.
 
 Validation covers schema, IDs, bounds, initial overlaps, robot starting clearance, physical compilation/reset, and available rubric measurements. It does not certify global route connectivity, arm reachability, task solvability, interpretation of every natural-language requirement, or hardware equivalence. Missing assets or failed checks retain a preview and generation diagnostics; they do not silently produce a ready world. Repairs keep the original request in every model call. Cancellation is checked between model requests and before physical validation; an in-flight HTTP request still uses its bounded timeout.

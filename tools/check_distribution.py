@@ -15,7 +15,7 @@ REQUIRED_PACKAGE_FILES = (
     "__init__.py", "cli.py", "diagnostics.py", "sdk.py", "runtime.py", "g1_runtime.py",
     "static/index.html", "static/app.js", "static/styles.css", "static/scene.js",
     "static/scene-resources.js", "static/scene-inspection.js", "static/scene-appearance.js",
-    "static/scene-materials.js", "static/scene-assets.js",
+    "static/scene-materials.js", "static/scene-assets.js", "static/scene-batching.js",
     "static/vendor/three.module.js", "static/vendor/three.core.js",
     "static/vendor/OBJLoader.js", "static/vendor/OrbitControls.js", "static/vendor/THREE-LICENSE.txt",
     "assets/robots/tiago/tiago_dual.xml", "assets/robots/tiago/tiago_dual_position.xml",

@@ -38,3 +38,9 @@ copies with stable IDs, and rejects budget/ID failures before publishing the
 group. Mocked planning with actual carton assets produced two 960-component
 arrangements in under 0.3 s each. This is static expansion evidence, not the
 required live generated-warehouse visual acceptance.
+
+The layout viewer now batches compatible opaque source meshes by spatial cell.
+CPU checks cover picking, transforms, material/visibility separation, cleanup and
+failure recovery. Actual carton geometry yielded 28 batches from 840 visual mesh
+objects in a harness without rendering or real image decoding. Frame rate, GPU
+memory, screenshots and visual acceptance remain unverified.

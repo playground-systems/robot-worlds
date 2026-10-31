@@ -17,7 +17,7 @@ DEPENDENCIES = (
 REQUIRED_RESOURCES = (
     "static/index.html", "static/app.js", "static/styles.css", "static/scene.js",
     "static/scene-resources.js", "static/scene-inspection.js", "static/scene-appearance.js",
-    "static/scene-assets.js", "static/scene-materials.js", "static/scene-textures.js",
+    "static/scene-assets.js", "static/scene-materials.js", "static/scene-textures.js", "static/scene-batching.js",
     "warehouse_library.py", "simready_structures.py", "assets/simready/catalog.json",
     "assets/codecs/decode-glb.mjs", "assets/codecs/meshopt_decoder.mjs",
     "assets/codecs/meshopt-source.json", "assets/codecs/MESHOPT-LICENSE.md",

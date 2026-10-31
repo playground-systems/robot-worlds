@@ -10,13 +10,14 @@ const directory = await mkdtemp(join(tmpdir(), 'robot-worlds-scene-assets-'));
 after(() => rm(directory, { recursive: true, force: true }));
 await writeFile(join(directory, 'package.json'), '{"type":"module"}');
 for (const name of ['vendor/three.core.js', 'vendor/OBJLoader.js', 'scene-assets.js',
-  'scene-resources.js', 'scene-materials.js', 'scene-appearance.js', 'scene-textures.js']) {
+  'scene-resources.js', 'scene-materials.js', 'scene-appearance.js', 'scene-textures.js', 'scene-batching.js']) {
   const source = await readFile(new URL(`../src/robot_worlds/static/${name}`, import.meta.url), 'utf8');
   await writeFile(join(directory, name.split('/').at(-1)), source
     .replaceAll("from 'three'", "from './three.core.js'")
     .replaceAll("'./vendor/OBJLoader.js'", "'./OBJLoader.js'"));
 }
 const { SceneAssets } = await import(pathToFileURL(join(directory, 'scene-assets.js')));
+const { batchSourceMeshes } = await import(pathToFileURL(join(directory, 'scene-batching.js')));
 const { disposeTree, SceneResourceCache } = await import(pathToFileURL(join(directory, 'scene-resources.js')));
 const THREE = await import(pathToFileURL(join(directory, 'three.core.js')));
 const source = `v -1 -2 -3
@@ -172,4 +173,106 @@ test('unbundled or non-triangle OBJ input cannot become a shared display asset',
   await assert.rejects(assets.load({ ...object, mesh_path: '../private.obj' }, '/world/'), /Unbundled/);
   assert.equal(calls.length, 0);
   await assert.rejects(assets.load(object, '/world/'), /triangle meshes/);
+});
+
+test('opaque source batches preserve selection and release only owned instance buffers', async t => {
+  const { assets, counts } = fixtures(t), root = new THREE.Group();
+  const input = Array.from({ length: 64 }, (_, i) => ({ ...object, id: `rack${i}`, position: [i*4+1, 1, 3] }));
+  const frozen = JSON.stringify(input);
+  for (const item of input) root.add(await assets.load(item, '/world/'));
+  const original = root.children[0].children[0];
+  let geometryDisposed = 0, materialDisposed = 0, instancesDisposed = 0;
+  original.geometry.addEventListener('dispose', () => geometryDisposed++);
+  original.material.addEventListener('dispose', () => materialDisposed++);
+  const result = batchSourceMeshes(THREE, root, { cellSize: 1000 });
+  assert.equal(result.stats.meshesBefore, 64); assert.equal(result.stats.meshesAfter, 1);
+  const batch = result.objects[0];
+  assert(batch.isInstancedMesh); assert.equal(batch.count, 64);
+  assert.equal(batch.geometry, original.geometry); assert.equal(batch.material, original.material);
+  assert.deepEqual(batch.userData.objects.map(item => item.id), input.map(item => item.id));
+  const ray = new THREE.Raycaster(new THREE.Vector3(17*4+1,1,10), new THREE.Vector3(0,0,-1));
+  const hit = ray.intersectObject(batch)[0];
+  assert.equal(hit.instanceId, 17); assert.equal(hit.object.userData.objects[hit.instanceId].id, 'rack17');
+  assert.equal(JSON.stringify(input), frozen);
+  assert.equal(batchSourceMeshes(THREE, root).stats.batches, 0); // No double batching.
+  batch.addEventListener('dispose', () => instancesDisposed++);
+  disposeTree(root);
+  assert.deepEqual([instancesDisposed, geometryDisposed, materialDisposed, counts.closed], [1,0,0,0]);
+  assets.dispose();
+  assert.deepEqual([geometryDisposed, materialDisposed, counts.closed], [1,1,3]);
+});
+
+test('batch matrices preserve nested transforms, nonuniform scale and quarter turns', async t => {
+  const { assets } = fixtures(t), parent = new THREE.Group(), root = new THREE.Group();
+  parent.position.set(-3,7,2); parent.rotation.z = .4; parent.add(root);
+  root.position.set(4,-3,2); root.rotation.y = .6; root.scale.set(1.3,.8,1.1);
+  for (let i=0; i<4; i++) root.add(await assets.load({ ...object, id: `part${i}`,
+    position: [i+1,1,3], size: i%2 ? [8,1,3] : [1,8,3], mesh_quarter_turns: i }, '/world/'));
+  root.updateWorldMatrix(true,true);
+  const original = root.children.map(group => group.children[0].matrixWorld.clone());
+  const result = batchSourceMeshes(THREE, root, { cellSize: 1000 });
+  assert.equal(result.objects.length, 1);
+  const batch = result.objects[0], instance = new THREE.Matrix4(), world = new THREE.Matrix4();
+  for (let i=0; i<4; i++) {
+    batch.getMatrixAt(i,instance); world.multiplyMatrices(batch.matrixWorld,instance);
+    world.elements.forEach((value,j) => assert(Math.abs(value-original[i].elements[j]) < 1e-5));
+  }
+});
+
+test('spatial cells and materials stay separate; blended hidden reflected and shadow variants retain rendering', async t => {
+  const { assets } = fixtures(t), root = new THREE.Group();
+  const groups = [];
+  for (const [id,x,changes] of [
+    ['a',1,{}], ['b',2,{}], ['c',17,{}], ['d',18,{}],
+    ['glass1',3,{ surface: { ...surface, alpha_mode: 'BLEND' } }],
+    ['glass2',4,{ surface: { ...surface, alpha_mode: 'BLEND' } }],
+    ['tint1',5,{ color: [.2,.3,.4] }], ['tint2',6,{ color: [.2,.3,.4] }],
+    ['hidden',1,{}], ['reflected',1,{}], ['shadow',1,{}],
+  ]) {
+    const group = await assets.load({ ...object, id, position: [x,1,3], ...changes }, '/world/');
+    if (id === 'hidden') group.visible = false;
+    if (id === 'reflected') group.scale.x *= -1;
+    if (id === 'shadow') group.children[0].castShadow = false;
+    root.add(group); groups.push(group);
+  }
+  const result = batchSourceMeshes(THREE, root);
+  const batches = result.objects.filter(node => node.isInstancedMesh);
+  assert.equal(batches.length, 3);
+  assert.deepEqual(batches.map(b => b.userData.objects.map(o=>o.id)), [['a','b'],['c','d'],['tint1','tint2']]);
+  const retained = result.objects.filter(node => !node.isInstancedMesh);
+  assert.deepEqual(retained.map(n=>n.userData.object.id), ['glass1','glass2','hidden','reflected','shadow']);
+  assert.equal(groups[8].visible, false);
+  assert.equal(retained.at(-1).castShadow, false);
+});
+
+test('120 seven-part source fixtures reduce 840 mesh objects to seven batches in one cell', async t => {
+  const { assets, calls } = fixtures(t), root = new THREE.Group();
+  for (let i=0; i<120; i++) for (let part=0; part<7; part++) {
+    root.add(await assets.load({ ...object, id: `carton${i}_part${part}`,
+      mesh_path: `assets/part${part}.obj`, position: [i%12*.5,Math.floor(i/12)*.5,3] }, '/world/'));
+  }
+  const result = batchSourceMeshes(THREE, root);
+  assert.equal(result.stats.meshesBefore, 840); assert.equal(result.stats.meshesAfter, 7);
+  assert.equal(result.stats.batchedInstances, 840);
+  assert(result.objects.every(node => node.isInstancedMesh && node.count === 120));
+  assert.equal(calls.filter(path=>path.endsWith('.obj')).length, 7);
+});
+
+test('batch construction failure retains original scene and cleans new instance buffers', async t => {
+  const { assets } = fixtures(t), root = new THREE.Group();
+  for (const x of [1,2,17,18]) root.add(await assets.load({ ...object, position: [x,1,3] }, '/world/'));
+  const original = root.children.slice();
+  let built = 0, released = 0;
+  class FailedBatch extends THREE.InstancedMesh {
+    constructor(...args) {
+      if (++built === 2) throw new Error('fixture allocation failure');
+      super(...args); this.addEventListener('dispose', () => released++);
+    }
+  }
+  assert.throws(() => batchSourceMeshes({ ...THREE, InstancedMesh: FailedBatch },root), /allocation failure/);
+  assert.deepEqual(root.children,original); assert.equal(released,1);
+  assert(original.every(group=>group.children.length === 1));
+  assert.throws(() => batchSourceMeshes(THREE,root,{cellSize:0}), /limits/);
+  const limited = batchSourceMeshes(THREE,root,{cellSize:1000,maxInstances:2});
+  assert.equal(limited.stats.batches,0); assert.equal(limited.objects.length,4);
 });

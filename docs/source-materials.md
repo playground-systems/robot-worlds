@@ -32,7 +32,13 @@ materials and decoded maps. Position, size, rotation and selection stay per
 object. Texture sharing respects color space and wrapping, and different
 material factors keep separate materials. Changing worlds aborts pending loads
 and releases the scene-owned resources. The viewer still starts at most four
-object loads at once; this does not yet batch OBJ draw calls or supply LODs.
+object loads at once. Once loading finishes, compatible opaque source meshes are
+instanced within 8 m spatial cells. Selection still resolves the individual
+source object. Cells retain useful culling for close views; transparent parts,
+cutaway shells, hidden/reflected meshes and incompatible rendering settings stay
+separate. Instance buffers are released separately from shared geometry/maps.
+If batch construction fails, the original meshes remain available. LODs and
+actual viewport frame-rate measurements remain open.
 
 Mesh placement supports `mesh_quarter_turns` (0–3) around Z without rewriting
 source files. `size` describes the full extents after that turn. Prepared assets
@@ -54,7 +60,13 @@ source removal, hash tampering, scoped edits, XML material sharing, channel/colo
 space selection and texture cleanup. A small real-Three test loads 64 repeated
 fixtures with one OBJ request and three map requests, checks independent bounds
 and selection IDs, and verifies disposal on replacement or late completion.
+Batch tests also cover ray selection, transformed parents, quarter turns,
+spatial/material separation, transparency and construction failure. A CPU-only
+harness using the actual carton geometry reduced 840 source mesh objects to
+28 spatial batches; geometry loading took 109 ms and batching took 15 ms.
+That harness mocked image decoding from PNG dimensions and created no renderer,
+so these timings exclude image decoding, GPU upload and frame rendering.
 This is CPU-side evidence, not measured GPU memory or viewport frame rate.
-No new browser screenshot, native material
-compilation or PBR policy-camera parity is established by these checks. The
+No new browser screenshot, native material compilation or PBR policy-camera
+parity is established by these checks. The
 warehouse visual acceptance gate remains open.

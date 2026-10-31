@@ -8,10 +8,11 @@ const resources = await import(`data:text/javascript;base64,${resourceSource.toS
 const code = (await readFile(new URL('../src/robot_worlds/static/scene.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\n/gm, '').replace('export class WorldViewer', 'globalThis.WorldViewer = class WorldViewer');
 
-function fixture() {
+function fixture(extra = {}) {
   const calls = [], document = new EventTarget(), context = vm.createContext({
     ...resources, document, AbortController, cancelAnimationFrame: id => calls.push(['cancel', id]),
     requestAnimationFrame: () => { calls.push(['frame']); return 17; },
+    ...extra,
   });
   vm.runInContext(code, context);
   const viewer = Object.create(context.WorldViewer.prototype), canvas = new EventTarget(), controls = new EventTarget();
@@ -65,4 +66,50 @@ test('cutaway only changes renderer visibility and leaves physical object data i
   const frozen = structuredClone(object); viewer.setCutaway(true);
   assert.equal(viewer.shellNodes[0].visible, false); assert.deepEqual(object, frozen);
   viewer.setCutaway(false); assert.equal(viewer.shellNodes[0].visible, true);
+});
+
+test('viewer batches only when the current source queue finishes and preserves primitive picking', async () => {
+  let batches = 0;
+  const batch = { isMesh: true, isInstancedMesh: true };
+  const { viewer } = fixture({ THREE: {}, isInspectionShell: () => false,
+    batchSourceMeshes: () => { batches++; return { objects: [batch], stats: { batches: 1 } }; } });
+  const waiting = [], sourceNodes = [], primitive = { isMesh: true, userData: { object: { id: 'primitive' } } };
+  viewer.spec = { bounds: [6,6,3] }; viewer.objects = [primitive]; viewer.loadGeneration = 1;
+  viewer.sourceGroup = { add: group => group.traverse(node => sourceNodes.push(node)),
+    traverse: callback => sourceNodes.forEach(callback) };
+  viewer.assets = { controller: new AbortController(), load: () => new Promise(done => waiting.push(done)) };
+  const first = viewer.loadOBJ({ id: 'first' }, '/', 1), second = viewer.loadOBJ({ id: 'second' }, '/', 1);
+  const firstNode = { isMesh: true, userData: { object: { id: 'first' } } };
+  const secondNode = { isMesh: true, userData: { object: { id: 'second' } } };
+  waiting[0]({ traverse(callback) { callback(firstNode); } });
+  await first;
+  assert.equal(batches, 0); assert.equal(viewer.loads.size, 1);
+  waiting[1]({ traverse(callback) { callback(secondNode); } });
+  await second;
+  assert.equal(batches, 1); assert.deepEqual(viewer.objects, [primitive,batch]);
+  viewer.batchSources(); assert.equal(batches, 1);
+});
+
+test('late-loaded source shells respect cutaway and stay outside the batching root', async () => {
+  const { viewer } = fixture({ THREE: {}, isInspectionShell: () => true,
+    batchSourceMeshes: () => ({ objects: [], stats: { batches: 0 } }) });
+  const shellMesh = { isMesh: true }, shell = { visible: true, traverse(callback) { callback(shellMesh); } };
+  viewer.assets = { controller: new AbortController(), load: async () => shell };
+  viewer.objects = []; viewer.shellNodes = []; viewer.loadGeneration = 1;
+  viewer.spec = { bounds: [6,6,3] }; viewer.reference = false; viewer.cutaway = true;
+  viewer.group = { add: group => assert.equal(group, shell) };
+  viewer.sourceGroup = { add: () => assert.fail('shell must stay independent'), traverse() {} };
+  await viewer.loadOBJ({ id: 'shell' }, '/', 1);
+  assert.equal(shell.visible, false); assert.equal(viewer.objects[0], shellMesh);
+  viewer.setCutaway(false); assert.equal(shell.visible, true);
+  viewer.setCutaway(true); assert.equal(shell.visible, false);
+});
+
+test('optional batching failure leaves existing selection objects usable', () => {
+  const { viewer } = fixture({ THREE: {}, batchSourceMeshes: () => { throw new Error('fixture failure'); } });
+  const node = { isMesh: true };
+  viewer.objects = [node]; viewer.sourceGroup = { traverse: callback => callback(node) };
+  viewer.batchSources();
+  assert.equal(viewer.objects[0], node);
+  assert.match(viewer.sourceBatchStats.error, /retained individual/);
 });

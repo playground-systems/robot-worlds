@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { SceneAssets } from './scene-assets.js';
+import { batchSourceMeshes } from './scene-batching.js';
 import { disposeTree } from './scene-resources.js';
 import { isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js';
 import { APPEARANCE_NOTICE, estimatedAppearance, studioEnvironmentPixels } from './scene-appearance.js';
@@ -117,6 +118,8 @@ export class WorldViewer {
     this.renderer.toneMappingExposure = .95; this.renderer.shadowMap.needsUpdate = true;
     disposeTree(this.group);
     this.group.clear(); this.objects = []; this.annotations = []; this.labels.replaceChildren();
+    this.sourceGroup = new THREE.Group(); this.group.add(this.sourceGroup);
+    this.sourceBatched = false; this.sourceBatchStats = null;
     const [w, d] = spec.bounds || [6, 6, 3];
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ color: 0x62676d, roughness: .86, metalness: .02, envMapIntensity: .35 }));
     floor.receiveShadow = true; floor.position.z = -0.012; this.group.add(floor);
@@ -199,7 +202,11 @@ export class WorldViewer {
       const group = await assets.load(object, assetBase);
       if (this.disposed || this.loadGeneration !== generation) return;
       group.traverse(node => { if (node.isMesh) this.objects.push(node); });
-      this.group.add(group);
+      if (isInspectionShell(object, this.spec.bounds)) {
+        // Keep cutaway shells independent so toggling visibility still works.
+        this.shellNodes.push(group); group.visible = !this.cutaway;
+        this.group.add(group);
+      } else this.sourceGroup.add(group);
     } catch (error) {
       if (assets.controller.signal.aborted || this.disposed || this.loadGeneration !== generation) return;
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(...object.size), new THREE.MeshBasicMaterial({ color: 0xcc8c67, wireframe: true }));
@@ -207,8 +214,24 @@ export class WorldViewer {
       this.label(`${object.label || object.id}: mesh unavailable`, new THREE.Vector3(...object.position));
     } finally {
       this.loads.delete(pending); this.pumpLoads();
+      if (!this.disposed && this.loadGeneration === generation && !this.loads.size && !this.pendingLoads.length) this.batchSources();
       if (!this.disposed) this.renderer.shadowMap.needsUpdate = true;
       if (this.loadGeneration === generation) this.invalidate();
+    }
+  }
+
+  batchSources() {
+    if (this.sourceBatched || !this.sourceGroup) return;
+    this.sourceBatched = true;
+    try {
+      const previous = new Set();
+      this.sourceGroup.traverse(node => { if (node.isMesh) previous.add(node); });
+      const result = batchSourceMeshes(THREE, this.sourceGroup);
+      this.objects = this.objects.filter(node => !previous.has(node)).concat(result.objects);
+      this.sourceBatchStats = result.stats;
+    } catch {
+      // Batching is optional; its transaction leaves the original meshes intact.
+      this.sourceBatchStats = { error: 'Batching unavailable; retained individual source meshes' };
     }
   }
 
@@ -303,6 +326,7 @@ export class WorldViewer {
     this.controls.removeEventListener('start', this.onControlStart); this.controls.dispose();
     disposeTree(this.scene); this.scene.clear(); this.environmentTarget?.dispose(); this.environmentTarget = null;
     this.labels.replaceChildren(); this.objects = []; this.annotations = []; this.shellNodes = [];
+    this.sourceGroup = null; this.sourceBatchStats = null;
     this.layoutEnvironment?.dispose(); this.layoutEnvironment = null; this.scene.environment = null;
     this.renderer.dispose(); this.renderer.forceContextLoss();
   }
