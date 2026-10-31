@@ -21,6 +21,7 @@ from PIL import Image
 
 from .appearance import add_appearance, finish_name
 from .artifacts import digest
+from .revolved import MAX_SCENE_COLLIDERS, collision_count, wedges
 from .robot_assets import ROBOT_MANIFESTS, robot_asset_path
 from .rubric import rigid_members
 from .sensors import WheelOdometry, depth_point, local_point, world_point
@@ -46,7 +47,7 @@ def runtime_implementation_identity(robot: str, action_contract: list[dict]) -> 
     nonbehavioral edit. Missing resources/version metadata fail closed. These
     hashes identify an implementation; they do not attest to an untampered host.
     """
-    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py", "spectator.py", "sensors.py"]
+    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py", "spectator.py", "sensors.py", "revolved.py"]
     dependencies = ["mujoco", "numpy", "pillow", "pydantic"]
     if robot == "g1":
         modules.append("g1_runtime.py")
@@ -339,6 +340,8 @@ class Runtime:
         return self._append_objects(root)
 
     def _append_objects(self, root):
+        if sum(collision_count(obj) for obj in self.spec.objects) > MAX_SCENE_COLLIDERS:
+            raise ValueError(f"Scene exceeds {MAX_SCENE_COLLIDERS} physical scene colliders")
         world = root.find("worldbody")
         bodies = {}
         remaining = list(self.spec.objects)
@@ -398,6 +401,16 @@ class Runtime:
                     if not np.isclose(size[0], size[1]):
                         raise ValueError(f"Cylinder {obj.id} must have equal XY extents")
                     geom.update(type="cylinder", size=_vec([size[0] / 2, size[2] / 2]))
+                elif obj.kind == "revolved":
+                    pieces = list(wedges(obj.revolved.profile, obj.revolved.segments, size))
+                    total_volume = sum(volume for _, volume in pieces)
+                    for index, (vertices, volume) in enumerate(pieces):
+                        name = f"revolved_{obj.id}_{index}"
+                        ET.SubElement(root.find("asset"), "mesh", name=name,
+                                      vertex=_vec([v for point in vertices for v in point]))
+                        piece = {**geom, "name": f"geom_{obj.id}_{index}", "type": "mesh", "mesh": name,
+                                 "mass": str(obj.mass * volume / total_volume)}
+                        ET.SubElement(body, "geom", **piece)
                 elif obj.kind == "mesh":
                     mesh_path = Path(obj.mesh_path).expanduser()
                     if not mesh_path.is_absolute():
@@ -439,7 +452,8 @@ class Runtime:
                     )
                 else:
                     raise ValueError(f"Unsupported physical shape: {obj.kind}")
-                ET.SubElement(body, "geom", **geom)
+                if obj.kind != "revolved":
+                    ET.SubElement(body, "geom", **geom)
                 remaining.remove(obj)
                 progress = True
             if not progress:

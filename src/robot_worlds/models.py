@@ -43,10 +43,21 @@ class JointSpec(Model):
         return self
 
 
+class RevolvedShape(Model):
+    profile: list[tuple[Number, Number]] = Field(min_length=3, max_length=12, description="Closed material cross-section as normalized (radius,height) vertices; radius 0..0.5, height -0.5..0.5. Closure implicit. Include inner wall and bottom to preserve a hollow cavity.")
+    segments: Annotated[int, Field(ge=12, le=64, multiple_of=4)] = 32
+
+    @model_validator(mode="after")
+    def check_profile(self):
+        from .revolved import triangulate
+        triangulate(self.profile)
+        return self
+
+
 class SceneObject(Model):
     id: Identifier
     label: str
-    kind: Literal["box", "sphere", "cylinder", "mesh"]
+    kind: Literal["box", "sphere", "cylinder", "mesh", "revolved"]
     position: Vec3
     size: Size3
     color: tuple[Color, Color, Color] = Field(default=(0.5, 0.6, 0.7), description="Exactly three red, green, blue components in [0,1]; no alpha component")
@@ -56,6 +67,7 @@ class SceneObject(Model):
     parent_id: Identifier | None = None
     joint: JointSpec | None = None
     mesh_path: str | None = None
+    revolved: RevolvedShape | None = None
 
     @model_validator(mode="after")
     def check_shape(self):
@@ -69,6 +81,11 @@ class SceneObject(Model):
             raise ValueError("sphere requires equal XYZ extents")
         if self.kind == "cylinder" and abs(self.size[0] - self.size[1]) > 1e-6:
             raise ValueError("cylinder requires equal XY extents")
+        if self.kind == "revolved":
+            if self.revolved is None or abs(self.size[0] - self.size[1]) > 1e-6:
+                raise ValueError("revolved geometry requires a profile and equal XY extents")
+        elif self.revolved is not None:
+            raise ValueError("revolved profile is only valid for revolved geometry")
         if self.parent_id and self.movable and not self.joint:
             raise ValueError("parented movable geometry requires a joint")
         return self

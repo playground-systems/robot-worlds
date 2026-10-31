@@ -21,16 +21,18 @@ from .models import (
     Number,
     ProcessCycle,
     Region,
+    RevolvedShape,
     SceneObject,
     Size3,
     Vec3,
     WorldSpec,
 )
+from .rubric import rigid_members
 
 
 class ObjectValues(Model):
     label: str | None = None
-    kind: Literal["box", "sphere", "cylinder", "mesh"] | None = None
+    kind: Literal["box", "sphere", "cylinder", "mesh", "revolved"] | None = None
     position: Vec3 | None = None
     size: Size3 | None = None
     color: Vec3 | None = None
@@ -40,6 +42,7 @@ class ObjectValues(Model):
     parent_id: Identifier | None = None
     joint: JointSpec | None = None
     mesh_path: str | None = None
+    revolved: RevolvedShape | None = None
 
 
 class AddObject(Model):
@@ -50,7 +53,7 @@ class AddObject(Model):
 class UpdateObject(Model):
     op: Literal["update_object"]
     id: Identifier
-    fields: list[Literal["label", "kind", "position", "size", "color", "mass", "movable", "friction", "parent_id", "joint", "mesh_path"]] = Field(min_length=1, max_length=12)
+    fields: list[Literal["label", "kind", "position", "size", "color", "mass", "movable", "friction", "parent_id", "joint", "mesh_path", "revolved"]] = Field(min_length=1, max_length=13)
     values: ObjectValues
 
 
@@ -74,7 +77,7 @@ class AddRegion(Model):
 class UpdateRegion(Model):
     op: Literal["update_region"]
     id: Identifier
-    fields: list[Literal["label", "position", "size"]] = Field(min_length=1, max_length=3)
+    fields: list[Literal["label", "position", "size", "interior_of"]] = Field(min_length=1, max_length=4)
     values: RegionValues
 
 
@@ -301,6 +304,11 @@ def _protect_task_bindings(before: WorldSpec, after: WorldSpec):
             anchors.add(condition.target_id)
         if condition.target_id in old_regions:
             bound_regions.add(condition.target_id)
+    for rid in bound_regions:
+        container = old_regions[rid].interior_of
+        if container:
+            bound_objects.add(container)
+            anchors.add(container)
     bound_objects.update(anchors)
     ancestors = set()
     for oid in list(bound_objects):
@@ -314,9 +322,11 @@ def _protect_task_bindings(before: WorldSpec, after: WorldSpec):
             current = old_objects.get(parent)
     bound_objects.update(ancestors)
     anchors.update(ancestors)
+    bound_roots = set(bound_objects)
+    bound_objects = set().union(*(rigid_members(old_objects, oid) for oid in bound_objects))
     for rid in sorted(bound_regions):
         old, new = old_regions[rid], new_regions.get(rid)
-        if new is None or old.position != new.position or old.size != new.size:
+        if new is None or old.position != new.position or old.size != new.size or old.interior_of != new.interior_of:
             raise ValueError(f"{rid}: task-bound region geometry/presence is protected; allow_task_changes is required")
     for oid in sorted(bound_objects):
         old, new = old_objects.get(oid), new_objects.get(oid)
@@ -324,7 +334,7 @@ def _protect_task_bindings(before: WorldSpec, after: WorldSpec):
             continue  # Missing references are independently rejected by validation.
         if new is None:
             raise ValueError(f"{oid}: task-bound object presence is protected; allow_task_changes is required")
-        for field in ("label", "color", "kind", "size", "mesh_path", "parent_id"):
+        for field in ("label", "color", "kind", "size", "mesh_path", "parent_id", "revolved"):
             if getattr(old, field) != getattr(new, field):
                 raise ValueError(f"{oid}: task-bound object {field} is protected; allow_task_changes is required")
         if oid in anchors:
@@ -333,6 +343,15 @@ def _protect_task_bindings(before: WorldSpec, after: WorldSpec):
             new_pose = new.joint.model_dump(include=pose_fields) if new.joint else None
             if old.position != new.position or old_pose != new_pose:
                 raise ValueError(f"{oid}: task destination/ancestor pose is protected; allow_task_changes is required")
+
+        if old.parent_id and not old.joint and not old.movable:
+            old_parent, new_parent = old_objects.get(old.parent_id), new_objects.get(old.parent_id)
+            if old_parent and new_parent and any(abs((old.position[i]-old_parent.position[i]) -
+                                                    (new.position[i]-new_parent.position[i])) > 1e-9 for i in range(3)):
+                raise ValueError(f"{oid}: task-bound attached geometry pose is protected; allow_task_changes is required")
+    for oid in bound_roots:
+        if rigid_members(old_objects, oid) != rigid_members(new_objects, oid):
+            raise ValueError(f"{oid}: task-bound rigid assembly membership is protected; allow_task_changes is required")
 
 
 class EditingContextLimit(ValueError):

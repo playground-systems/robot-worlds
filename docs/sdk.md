@@ -69,8 +69,33 @@ Define a hollow object as attached physical components, with one movable root fo
 
 A cavity region can declare `interior_of` with the appliance's physical root ID. Static checks reject a missing container, a region outside its envelope or a usable volume filled by its box components. The generator is instructed to declare these relationships. This check does not certify a door's swept clearance or curved/mesh cavities. Native reset checks also do not prove the door can be opened by the selected robot.
 
-Imported meshes currently collide as convex hulls. A single concave bowl mesh therefore cannot establish a usable hollow interior; use separate physical pieces. Photorealistic assets, detailed curved collision decomposition and general appliance manipulation remain development work.
+Imported meshes currently collide as convex hulls. A single concave bowl mesh therefore cannot establish a usable hollow interior; use separate physical pieces or the revolved-profile geometry described below. Photorealistic assets, general concave mesh decomposition and appliance manipulation remain development work.
 
 ## Checks without model charges
 
 `tests/test_appliance_generation.py` uses mocked model responses to check repair, cavity geometry and compound-body grading. `tests/test_appliance_physics.py` runs the SDK through generation, native rendering, sensor queries, a no-op evaluation, trace verification, regrading and ZIP round trips. It verifies that observing the bowl does **not** earn a placement success. These are engineering fixtures, not bundled demos or evidence of autonomous task performance.
+
+## Curved hollow geometry
+
+Use `kind="revolved"` for a rotationally symmetric object such as a bowl, cup or funnel. Its `revolved.profile` is a closed polygon describing **material**, including the inner wall and bottom, rather than the outside silhouette alone. Coordinates are normalized `(radius, height)` pairs: radius spans 0–0.5 and height spans −0.5–0.5. The last point connects to the first automatically. `size=[diameter, diameter, height]` sets dimensions in metres.
+
+```python
+from robot_worlds import SceneObject
+
+bowl = SceneObject(
+    id="bowl", label="White ceramic bowl", kind="revolved",
+    position=(1, 0, 0.665), size=(0.16, 0.16, 0.15),
+    movable=True, mass=0.08, color=(0.9, 0.9, 0.88),
+    revolved={
+        "profile": [(0, -0.5), (0.32, -0.5), (0.5, 0.5),
+                    (0.45, 0.5), (0.28, -0.4), (0, -0.4)],
+        "segments": 32,
+    },
+)
+```
+
+The profile must be simple, nonzero-area, and contain 3–12 points. It must reach radius 0.5 and both height bounds so declared dimensions agree with geometry. Angular resolution is 12–64 segments, in multiples of four. Increasing it changes both rendering and collision fidelity, so it creates a new physical version rather than silently changing an existing evaluation.
+
+The native engine triangulates the material cross-section and sweeps each triangle into convex wedges. These wedges preserve the cavity and share one rigid body; their mass totals the declared object mass. The browser displays the same segmented profile. This supports curved hollow geometry without a prebuilt asset catalog. It is still a faceted rigid-body approximation, not deformable ceramic, a textured scanned asset or a claim of photorealism.
+
+Scene validation counts generated collision pieces separately from object count and caps them at 20,000. Static overlap checks retain empty cavities while conservatively bounding curved facets; native compilation, contact and settling checks still apply. Task-bound profiles, attached geometry and cavity bindings are protected during repair, just like the existing rubric targets.

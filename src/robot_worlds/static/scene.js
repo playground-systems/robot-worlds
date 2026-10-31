@@ -4,6 +4,7 @@ import { OBJLoader } from './vendor/OBJLoader.js';
 import { disposeMaterials, disposeTree } from './scene-resources.js';
 import { isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js';
 import { APPEARANCE_NOTICE, estimatedAppearance, studioEnvironmentPixels } from './scene-appearance.js';
+import { closedProfile, geometryKey } from './scene-shapes.js';
 
 /** Layout inspection only. The native PNG is the physical robot representation. */
 export class WorldViewer {
@@ -127,19 +128,25 @@ export class WorldViewer {
       const shell = isInspectionShell(object, spec.bounds); if (shell) this.shellCount++;
       if (kind === 'mesh' && assetBase && /\.obj$/i.test(object.mesh_path || '')) { this.pendingLoads.push([object, assetBase, generation]); continue; }
       const appearance = estimatedAppearance(object);
-      const key = `${kind}:${shell ? 'shell' : 'solid'}:${appearance.id}`;
+      const key = `${geometryKey(object)}:${shell ? 'shell' : 'solid'}:${appearance.id}`;
       if (!buckets.has(key)) buckets.set(key, { kind, shell, appearance, objects: [] });
       buckets.get(key).objects.push(object);
     }
     const matrix = new THREE.Matrix4(), rotation = new THREE.Quaternion(), position = new THREE.Vector3(), scale = new THREE.Vector3();
     const geometries = new Map();
     for (const { kind, shell, appearance, objects } of buckets.values()) {
-      let geometry = geometries.get(kind);
+      const shapeKey = geometryKey(objects[0]);
+      let geometry = geometries.get(shapeKey);
       if (!geometry) {
       if (kind === 'sphere') geometry = new THREE.SphereGeometry(.5, 20, 12);
       else if (kind === 'cylinder') { geometry = new THREE.CylinderGeometry(.5, .5, 1, 24); geometry.rotateX(Math.PI / 2); }
+      else if (kind === 'revolved') {
+        const shape = objects[0].revolved;
+        geometry = new THREE.LatheGeometry(closedProfile(shape.profile).map(p => new THREE.Vector2(...p)), shape.segments);
+        geometry.rotateX(Math.PI / 2);
+      }
       else geometry = new THREE.BoxGeometry(1, 1, 1);
-      geometries.set(kind, geometry);
+      geometries.set(shapeKey, geometry);
       }
       const material = new THREE.MeshStandardMaterial({ roughness: appearance.roughness, metalness: appearance.metalness, envMapIntensity: .65, transparent: kind === 'mesh', opacity: kind === 'mesh' ? .48 : 1 });
       const batch = new THREE.InstancedMesh(geometry, material, objects.length);
