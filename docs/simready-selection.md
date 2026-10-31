@@ -173,7 +173,30 @@ reference; the expanded object data was about 1.48 million characters before
 freezing paths. These measure local expansion and static checks, not model
 latency, native stability, rendered appearance or a complete warehouse demo.
 
-Next implementation: preserve or explicitly label the conveyor mechanism and
+The pinned conveyor now passes the internal `conveyor_bodies` articulation
+check: 30 source bodies, 30 collider mappings, 29 unlimited passive hinges and
+112.524278 kg total declared source mass. Both connection frames and the
+independent source joint declarations agree after Y-up → Z-up conversion. The
+source has 37 visual primitives / 228,964 triangles. These counts were read from
+the hash-verified source above, not inferred from the catalog alone.
+
+Eighteen metadata-only checks reject missing/duplicate mappings, disagreeing
+frames, changed axes/pivots, drives, unsupported motion, unreachable geometry
+and malformed mass/collider references. This is an internal preparation step,
+not a public conveyor importer or evidence of physical operation. The intended
+adaptation is a fixed frame with passive rollers; no motor/controller or powered
+transport is provided. Zero bearing damping/friction loss would be an explicit
+estimate because the inspected source does not specify those properties.
+
+Collision work remains: the frame has 191 connected surface components, 12 of
+which have zero thickness at the existing envelope adapter's tolerance. The
+current rigid adapter correctly rejects them. They need a reviewed treatment
+that preserves source appearance and leaves the roller bed clear; flattening
+the entire conveyor into a solid box is not acceptable. Source center of mass,
+inertia, restitution, actual contacts and rendering still require adaptation or
+explicit disclosure and validation.
+
+Next implementation: complete the conveyor collision/visual adapter, then
 perform native/browser validation when permitted. The viewer now shares source geometry/materials/maps
 across repeated fixtures; real warehouse frame rate, GPU memory and LOD remain
 unmeasured.
