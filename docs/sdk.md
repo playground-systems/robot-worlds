@@ -160,7 +160,7 @@ def import_scan(candidate):
     downloaded = download_fuel_asset(candidate, ".robot-worlds/asset-cache")
     return import_fuel_mesh_asset(
         downloaded, candidate=candidate, prefix="source", mass=0.3,
-        # collision_manifest="prepared-collision/manifest.json",  # Concave source.
+        preparation_cache=".robot-worlds/collision-cache",  # Prepare once, then reuse.
     )
 # Pass import_scan as source_asset's import_asset callback, then register its result.
 ```
@@ -171,7 +171,29 @@ requires matching visual/collision meshes, unit scale and an explicit estimated
 mass. Contact friction and inertia are estimates disclosed in the resulting asset.
 A source must be verified closed and convex, or have a source-bound collision
 manifest produced during preparation. Concave objects are never replaced by a
-filled convex hull. Importing does not run CoACD automatically.
+filled convex hull. Supplying `preparation_cache` enables preparation when needed;
+omit it to require an existing `collision_manifest` or a verified convex source.
+Do not supply both options.
+
+Install the optional converter from a checkout with `uv sync --extra preparation`
+or `python -m pip install '.[preparation]'`. `prepare_collision_mesh(source, cache)`
+is also available directly. It returns a verified manifest, source hash, component
+count, method and cache-hit flag. Closed convex sources use unchanged geometry
+without loading CoACD. Concave sources use pinned CoACD 1.0.14 in a separate
+low-priority worker with computation thread limits. Workers are serialized per
+cache; concurrent requests for the same source reuse the first verified result.
+The default deadline is 120 seconds, configurable up to 600, with up to 1.5 seconds
+for worker cleanup. `cancelled` and `on_event` callbacks support cancellation and
+progress; the SDF adapters forward them along with `preparation_timeout`.
+
+Cache identity includes source bytes and the conversion profile. Every reuse
+checks component checksums and closed convex geometry; corruption fails explicitly.
+Failed, timed-out or cancelled work leaves no published result. The 2 mm converter
+setting is not a certified error bound, and prepared geometry still needs native
+checks for the intended task. The optional dependency is unnecessary when reusing
+prepared assets. Native conversion wheels currently cover Apple silicon macOS,
+Linux x86/ARM and Windows x86-64; other hosts can reuse prepared libraries. See the
+[pinned package files](https://pypi.org/project/coacd/1.0.14/#files).
 
 Articulation, multiple links, explicit inertia/contact settings, rotations,
 external resources, plugins and unsupported appearance features fail explicitly.

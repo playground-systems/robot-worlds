@@ -291,13 +291,17 @@ def _texture(mesh, root, files, notices):
     return texture, color, opacity
 
 
-def _import(source, *, prefix, mass, source_notice, collision_manifest, position, friction):
+def _physical_inputs(prefix, mass, position, friction):
     TypeAdapter(Identifier).validate_python(prefix)
     if isinstance(mass, bool) or not isinstance(mass, (int, float)) or not math.isfinite(mass) or mass <= 0:
         raise ValueError("SDF mesh import requires an explicit finite positive estimated mass")
     if isinstance(friction, bool) or not isinstance(friction, (int, float)) or not math.isfinite(friction) or friction < 0:
         raise ValueError("SDF mesh import requires finite nonnegative estimated friction")
-    offset = _vector(" ".join(map(str, position)), 3) + source.offset
+    return _vector(" ".join(map(str, position)), 3)
+
+
+def _import(source, *, prefix, mass, source_notice, collision_manifest, position, friction):
+    offset = _physical_inputs(prefix, mass, position, friction) + source.offset
     notice = Path(source_notice).resolve()
     if notice.suffix.lower() not in {".md", ".txt"}:
         raise ValueError("SDF import requires a retained text attribution notice")
@@ -336,28 +340,49 @@ def _import(source, *, prefix, mass, source_notice, collision_manifest, position
     return asset
 
 
+def _prepare(source, manifest, cache, timeout, cancelled, on_event):
+    if cache is None:
+        return manifest
+    if manifest is not None:
+        raise ValueError("Supply either an existing collision manifest or a preparation cache")
+    from .collision_preparation import prepare_collision_mesh
+    return prepare_collision_mesh(source.mesh, cache, timeout=timeout, cancelled=cancelled,
+                                  on_event=on_event).manifest_path
+
+
 def import_sdf_mesh_asset(path: str | Path, *, prefix: str, mass: float, source_notice: str | Path,
-                          collision_manifest: str | Path | None = None, position=(0, 0, 0), friction=.7):
+                          collision_manifest: str | Path | None = None, position=(0, 0, 0), friction=.7,
+                          preparation_cache=None, preparation_timeout=120, cancelled=None, on_event=None):
     """Import a single-link OBJ scan from SDF or a model.config package.
 
     Only translations, unit mesh scale, one material/PNG, and matching visual/
     collision meshes are supported. Articulation, explicit inertial/surface data,
     remote resources, plugins and unsupported settings fail explicitly. Without
-    a decomposition, the source must pass the closed-convex verifier.
+    a decomposition or preparation_cache, the source must pass the closed-convex
+    verifier. preparation_cache opts into bounded, cached conversion when needed.
     """
-    return _import(_inspect(path), prefix=prefix, mass=mass, source_notice=source_notice,
+    _physical_inputs(prefix, mass, position, friction)
+    notice = Path(source_notice).resolve()
+    if notice.suffix.lower() not in {".md", ".txt"}:
+        raise ValueError("SDF import requires a retained text attribution notice")
+    _bytes(notice, 1024 * 1024)
+    source = _inspect(path)
+    collision_manifest = _prepare(source, collision_manifest, preparation_cache, preparation_timeout, cancelled, on_event)
+    return _import(source, prefix=prefix, mass=mass, source_notice=source_notice,
                    collision_manifest=collision_manifest, position=position, friction=friction)
 
 
 def import_fuel_mesh_asset(downloaded: DownloadedAsset, *, candidate: AssetCandidate, prefix: str,
                            mass: float, collision_manifest: str | Path | None = None,
-                           position=(0, 0, 0), friction=.7):
+                           position=(0, 0, 0), friction=.7, preparation_cache=None,
+                           preparation_timeout=120, cancelled=None, on_event=None):
     """Import a downloaded scan without modifying its cached source package.
 
     Candidate evidence must match the pinned download. Derived attribution and
     import metadata live beside the source, outside its verified byte inventory.
     Use this adapter inside source_asset before registering an AssetLibrary entry.
     """
+    _physical_inputs(prefix, mass, position, friction)
     checked = _cached(downloaded.manifest_path.parent, _identity(candidate), time.monotonic()+60)
     if checked.source_dir.resolve() != downloaded.source_dir.resolve() or checked.archive_sha256 != downloaded.archive_sha256:
         raise ValueError("Downloaded source identity changed before import")
@@ -369,6 +394,7 @@ def import_fuel_mesh_asset(downloaded: DownloadedAsset, *, candidate: AssetCandi
             "\n\nRobot Worlds retains source geometry/UVs/textures. Collision conversion, estimated mass/friction and derived inertia are disclosed in the imported world.\n")
     if len(text.encode()) > 1024 * 1024:
         raise ValueError("Retained source attribution exceeds 1 MiB")
+    collision_manifest = _prepare(source, collision_manifest, preparation_cache, preparation_timeout, cancelled, on_event)
     metadata = {"schema_version": 1, "source": asdict(candidate), "archive_sha256": checked.archive_sha256,
                 "source_files": json.loads(checked.manifest_path.read_text())["files"],
                 "source_static": source.static, "mass_estimate_kg": mass, "friction_estimate": friction}

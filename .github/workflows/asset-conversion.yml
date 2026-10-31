@@ -3,6 +3,12 @@ on:
   pull_request:
     paths:
       - 'tools/decompose_asset.py'
+      - 'src/robot_worlds/collision_preparation.py'
+      - 'src/robot_worlds/collision_worker.py'
+      - 'src/robot_worlds/sdf_import.py'
+      - 'tests/test_collision_preparation*.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
       - 'src/robot_worlds/assets/household/porcelain_bowl/**'
       - '.github/workflows/asset-conversion.yml'
   workflow_dispatch:
@@ -10,10 +16,15 @@ permissions:
   contents: read
 jobs:
   decompose-bowl:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     env:
-      OMP_NUM_THREADS: '2'
+      OMP_NUM_THREADS: '1'
+      ROBOT_WORLDS_TEST_PREPARATION: '1'
       OPENBLAS_NUM_THREADS: '1'
     steps:
       - uses: actions/checkout@v7.0.1
@@ -25,15 +36,10 @@ jobs:
       - name: Convert original source surface
         shell: bash
         run: |
-          uv sync --frozen
-          uv pip install coacd==1.0.14
-          if test -f src/robot_worlds/assets/household/porcelain_bowl/collision/manifest.json; then
-            cp -R src/robot_worlds/assets/household/porcelain_bowl/collision "$RUNNER_TEMP/bowl-collision"
-          else
-            .venv/bin/python tools/decompose_asset.py src/robot_worlds/assets/household/porcelain_bowl/meshes/model.obj "$RUNNER_TEMP/bowl-collision"
-          fi
+          uv sync --frozen --dev --extra preparation
+          uv run --frozen --extra preparation pytest -q -ra -s tests/test_collision_preparation_native.py --basetemp "$RUNNER_TEMP/preparation-tests"
       - uses: actions/upload-artifact@v7.0.2
         with:
-          name: porcelain-bowl-collision
-          path: ${{ runner.temp }}/bowl-collision
+          name: prepared-collision-${{ matrix.os }}
+          path: ${{ runner.temp }}/preparation-tests
           if-no-files-found: error

@@ -93,8 +93,10 @@ and [link schema](https://raw.githubusercontent.com/gazebosim/sdformat/sdf15/sdf
 
 Without a conversion manifest, the original mesh must pass the closed-convex
 verifier. Concave meshes require an existing source-bound decomposition, including
-per-part checksums and geometry checks. Import never starts a converter or makes
-an articulated object static to get a pass. Unsupported elements/attributes and
+per-part checksums and geometry checks. Passing `preparation_cache` now enables
+bounded preparation through `prepare_collision_mesh`; otherwise import requires
+an existing conversion. The adapter never makes an articulated object static to
+get a pass. Unsupported elements/attributes and
 external resources fail explicitly. Material support is one MTL material with
 one PNG diffuse map, diffuse color and opacity; other renderer coefficients are
 retained/disclosed as approximations. Mesh scale/submesh semantics are defined by
@@ -108,6 +110,22 @@ no network request, new collision conversion, model call or policy episode.
 Synthetic tests cover transforms, fixed/dynamic settings, unsupported physics,
 unsafe paths, corruption and download → import → library portability. Native
 checks are separate from these source-format tests.
+
+## Preparation cache
+
+`prepare_collision_mesh` runs the pinned CoACD profile in a separate process,
+with a deadline, cancellation, low process priority and computation thread limits.
+A per-cache OS lock serializes conversion and suppresses duplicate concurrent work.
+It snapshots source bytes, verifies the output hulls and source bounds, and publishes
+an immutable cache entry only after all checks pass. Cache reuse does not require
+the optional converter. Closed convex sources retain their exact original bytes
+through a no-worker path.
+
+The native preparation job runs fresh conversion on hosted Linux and Apple silicon
+macOS, separately from default local tests. It checks an empty notch in a concave
+fixture and uses the original bowl for a native cavity-contact probe. These checks
+do not certify all possible source meshes or turn the 2 mm setting into a measured
+surface-error guarantee.
 
 ## Scanned-object adapter boundaries
 

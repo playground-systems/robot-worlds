@@ -253,3 +253,29 @@ def test_configured_version_must_match_source_and_extra_notices_are_retained(tmp
     config.write_text(config.read_text().replace('version="1.6"', 'version="1.7"'))
     with pytest.raises(ValueError, match="versions disagree"):
         import_fixture(root)
+
+
+def test_preparation_cache_connects_sdf_import_without_changing_convex_source(tmp_path, monkeypatch):
+    from robot_worlds import collision_preparation
+
+    root = package(tmp_path / "source")
+    monkeypatch.setattr(collision_preparation, "_installed_converter", lambda: pytest.fail("Convex scan needs no worker"))
+    asset = import_fixture(root, preparation_cache=tmp_path / "collision-cache")
+    assert len(asset.objects) == 2
+    assert any("unchanged source surface" in text for text in asset.disclosures)
+    assert not any("approximate convex decomposition" in text for text in asset.disclosures)
+    metadata = json.loads(Path(asset.objects[0].source_metadata).read_text())
+    assert metadata["tool"] == "verified-source"
+    with pytest.raises(ValueError, match="either"):
+        import_fixture(root, preparation_cache=tmp_path / "collision-cache", collision_manifest=asset.objects[0].source_metadata)
+
+
+@pytest.mark.parametrize("mass", [None, 0, float("nan"), True])
+def test_invalid_mass_fails_before_starting_preparation(tmp_path, monkeypatch, mass):
+    from robot_worlds import collision_preparation
+
+    root = package(tmp_path / "source")
+    monkeypatch.setattr(collision_preparation, "prepare_collision_mesh", lambda *_args, **_kwargs: pytest.fail("Invalid request started expensive work"))
+    with pytest.raises(ValueError, match="mass"):
+        import_sdf_mesh_asset(root, prefix="scan", mass=mass, source_notice=root / "ATTRIBUTION.md",
+                              preparation_cache=tmp_path / "cache")

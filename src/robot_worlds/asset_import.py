@@ -282,6 +282,11 @@ def import_convex_mesh_asset(mesh_path: str | Path, collision_manifest: str | Pa
             raise ValueError("Collision conversion expands more than 5 mm outside source bounds")
         verified.append((path, lower, upper, volume))
         result.source_files["collision/"+name] = digest
+    if len(parts) == 1 and parts[0]["sha256"] == source_hash:
+        result.disclosures[:2] = [
+            "Original mesh was verified closed and convex; collision geometry uses the unchanged source surface.",
+            "Original texture and UVs are retained; native contact checks are still required.",
+        ]
     total_volume = sum(part[3] for part in verified)
     root_id = prefix + "_body"
     result.body_ids["object"] = root_id
