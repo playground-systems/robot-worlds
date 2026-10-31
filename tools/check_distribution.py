@@ -34,7 +34,7 @@ REQUIRED_PACKAGE_FILES = (
     "assets/household/porcelain_bowl/materials/textures/texture.png",
     "assets/household/porcelain_bowl/metadata.pbtxt", "assets/household/porcelain_bowl/model.config",
     "assets/household/porcelain_bowl/collision/manifest.json",
-    "simready.py", "gltf_decode.py", "assets/simready/catalog.json",
+    "simready.py", "gltf_decode.py", "gltf_geometry.py", "assets/simready/catalog.json",
     "assets/codecs/decode-glb.mjs", "assets/codecs/meshopt_decoder.mjs",
     "assets/codecs/meshopt-source.json", "assets/codecs/MESHOPT-LICENSE.md",
 )

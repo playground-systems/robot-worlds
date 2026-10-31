@@ -64,7 +64,24 @@ simulation or collision generation; appearance and contact remain unverified.
 All nine embedded image byte sequences and the scene/material/joint metadata
 matched the source. A verified warm repeat took 0.0039 seconds.
 
-Next implementation: visual conversion into the existing source-backed asset
-library, separate interaction-aware collisions, and native validation when permitted.
+The internal `GLBGeometry` reader now extracts decoded triangle primitives with
+composed node transforms, normalized quantized attributes, corrected normals and
+mirrored winding. Output positions/normals use metres and Z-up; retained raw
+attributes and the full document preserve source-coordinate data for subsequent
+material/joint conversion. Texture-info transforms are applied before optional
+OBJ V inversion. Embedded image bytes and samplers remain available without
+rendering or texture recompression.
+
+Thirty analytical checks cover hierarchy, matrices, signed normalization,
+nonuniform scale, reflections, multiple mesh instances, UV transforms and invalid
+references/resources. The actual rack reader returned 48,864 vertices and 53,128
+triangles across three materials in 0.0123 seconds. Its Z-up bounds match the
+publisher's Y-up bounds after axis conversion: approximately 4.000 × 2.067 ×
+3.010 metres. This verifies geometry interpretation, not appearance or collision.
+
+Next implementation: write the material/visual artifacts into the existing
+source-backed asset library, add separate interaction-aware collisions, and
+perform native validation when permitted. PBR maps, vertex colors and physical
+metadata must not be silently discarded by that next step.
 The browser and policy camera must depict the same physical scene. No full
 catalog download or new asset design is needed for these candidates.
