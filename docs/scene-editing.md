@@ -30,6 +30,40 @@ The diff is calculated from the resulting specifications, rather than copied fro
 
 Direct initial placement of a task subject remains editable so a repair can lift a workpiece out of a surface penetration. Its own initial joint pose can also change when it is not a destination or an ancestor of another task-bound entity. This exception does **not** prove preservation of task difficulty: moving the initial workpiece closer to its destination can shorten the task. Review the measured diff and use an independent task contract when distance or stage separation matters. The internal [ten-scenario suite](../tests/scenarios/README.md) demonstrates such checks. Unreferenced scenery can still be edited; preserving an ID does not establish semantic fidelity to arbitrary prose.
 
+## Add an existing source asset
+
+Refinement and repair receive the same prepared-asset catalog as generation. The
+model can return one `add_prepared_asset` operation instead of spelling out every
+mesh and collider:
+
+```json
+{
+  "operations": [{
+    "op": "add_prepared_asset",
+    "asset": {
+      "id": "bowl",
+      "asset_id": "google-porcelain-bowl",
+      "position": [1, -2, 0.601],
+      "mass": 0.6
+    }
+  }]
+}
+```
+
+Here `position` is the asset's bottom-center, suitable for a support whose top is
+at 0.6 m. The source geometry, texture, collision pieces and provenance are retained;
+mass is an explicit estimate. Original size and orientation are preserved. This
+uses the previously sourced local asset, without another download or conversion.
+General online asset discovery remains separate from the edit path.
+
+Scope and resource limits apply to every expanded object and cavity region. A
+prefix is not a wildcard: a scope containing only `bowl` does not authorize all
+`bowl_*` components. New assets do not authorize changes to the task, rubric or
+existing physics. Conflicts or later failures reject the entire patch and preserve
+the parent. Progress reports asset reuse; the computed diff lists actual additions.
+Mocked model tests exercise import through native validation and export, without
+claiming autonomous policy performance or live model selection.
+
 ## Validation and limits
 
 Each candidate goes through the same reference, geometry, connectivity, rubric and native physics checks as generation. Native reset diagnostics record initial penetration and transient object motion as well as final settling state. The report names measured objects and thresholds so a repair can address the failure without weakening the test.

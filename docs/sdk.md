@@ -129,6 +129,8 @@ This compact representation is generation input only: saved worlds contain the
 expanded objects and copied files, and load/export never resolves the catalog.
 Surrounding layouts remain model-authored. Mocked generation exercises this path;
 live model selection and autonomous appliance manipulation are not yet demonstrated.
+Refinement and repair use the same catalog through the typed
+[`add_prepared_asset` edit operation](scene-editing.md#add-an-existing-source-asset).
 
 For a local MJCF outside the prepared catalog:
 

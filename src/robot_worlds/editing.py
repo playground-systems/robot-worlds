@@ -27,6 +27,7 @@ from .models import (
     Vec3,
     WorldSpec,
 )
+from .prepared_assets import PreparedAssetInstance, append_prepared_asset, prepared_asset_catalog
 from .rubric import rigid_members
 
 
@@ -54,6 +55,11 @@ class ObjectValues(Model):
 class AddObject(Model):
     op: Literal["add_object"]
     object: SceneObject
+
+
+class AddPreparedAsset(Model):
+    op: Literal["add_prepared_asset"]
+    asset: PreparedAssetInstance
 
 
 class UpdateObject(Model):
@@ -117,7 +123,7 @@ class SetProcesses(Model):
     process_cycles: list[ProcessCycle] = Field(max_length=200)
 
 
-Operation = (AddObject | UpdateObject | RemoveObject | AddRegion | UpdateRegion | RemoveRegion
+Operation = (AddObject | AddPreparedAsset | UpdateObject | RemoveObject | AddRegion | UpdateRegion | RemoveRegion
              | SetBounds | SetRobotStart | SetTask | SetRubric | SetProcesses)
 
 
@@ -127,6 +133,14 @@ class ScenePatch(Model):
 
 INSTRUCTIONS = """Edit the existing physical scene with a small typed patch, never a replacement world.
 Use persistent IDs exactly. Return only bounded operations in the supplied schema.
+Prefer add_prepared_asset for compatible catalog objects. Supply one asset reference;
+the importer adds its original geometry, joints, textures and cavity regions. Do not
+also add those components/regions manually. Asset.position is bottom-center in the
+zero-joint pose; original size and orientation stay unchanged. Catalog IDs substitute
+{prefix} with asset.id. General object positions still denote geometry centers.
+This operation does not change the task/rubric. Scope applies to EVERY expanded
+object and region ID, not merely the asset prefix. Catalog reuse is not a fresh
+internet search; never invent a successful source lookup or unsupported asset.
 For update_object/update_region, fields explicitly lists the properties to change;
 values for every unlisted property are ignored. Include complete joint data when
 updating a joint, preserving its other properties if only its initial pose changes.
@@ -211,7 +225,7 @@ def scene_diff(before: WorldSpec, after: WorldSpec) -> tuple[list[dict], dict]:
 
 def apply_patch(spec: WorldSpec, patch: ScenePatch | dict, *, scope: list[str] | None = None,
                 allow_task_changes=False, allow_physics_changes=False,
-                max_objects=MAX_EXPANDED_OBJECTS) -> WorldSpec:
+                max_objects=MAX_EXPANDED_OBJECTS, event_callback=None) -> WorldSpec:
     """Apply an all-or-nothing patch and enforce protection from actual changes."""
     before = materialize(spec)
     payload = before.model_dump(mode="json")
@@ -222,7 +236,9 @@ def apply_patch(spec: WorldSpec, patch: ScenePatch | dict, *, scope: list[str] |
     for operation in plan.operations:
         op = operation.model_dump(mode="json")
         name = op["op"]
-        if name.startswith(("add_", "update_", "remove_")):
+        if name == "add_prepared_asset":
+            append_prepared_asset(payload, operation.asset, max_objects=max_objects, event_callback=event_callback)
+        elif name.startswith(("add_", "update_", "remove_")):
             field = "objects" if name.endswith("object") else "regions"
             singular = "object" if field == "objects" else "region"
             entities = payload[field]
@@ -490,6 +506,7 @@ def edit_world(world, prompt: str | None, *, kind="refine", scope=None,
 
     event({"type": "edit_started", "kind": kind, "parent_world_id": original.id})
     event({"type": "model_budget", "budget": audit_value(getattr(client, "budget", {}))})
+    catalog = prepared_asset_catalog()
     for attempt in range(max_repairs + 1):
         check_cancelled()
         try:
@@ -498,6 +515,7 @@ def edit_world(world, prompt: str | None, *, kind="refine", scope=None,
             request = {"edit_request": prompt, "kind": kind, "scope": scope,
                        "allow_task_changes": task_permission, "allow_physics_changes": physics_permission,
                        "max_objects": max_objects, "min_objects": min_objects,
+                       "prepared_asset_catalog": catalog,
                        "previous_actual_changes": scene_diff(before, current)[0][:256]}
             schema = ScenePatch.model_json_schema()
             overhead = len(INSTRUCTIONS) + len(json.dumps(request)) + len(json.dumps(strict_schema(schema))) + 2000
@@ -507,7 +525,7 @@ def edit_world(world, prompt: str | None, *, kind="refine", scope=None,
             event({"type": "model_usage", "usage": audit_value(getattr(client, "usage", {}))})
             patch = ScenePatch.model_validate(raw)
             candidate = apply_patch(current, patch, scope=scope, allow_task_changes=task_permission,
-                                    allow_physics_changes=physics_permission, max_objects=max_objects)
+                                    allow_physics_changes=physics_permission, max_objects=max_objects, event_callback=event)
             enforce_protections(before, candidate,
                                 allow_task_changes=allow_task_changes,
                                 allow_physics_changes=allow_physics_changes,

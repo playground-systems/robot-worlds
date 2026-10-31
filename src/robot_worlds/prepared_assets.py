@@ -119,37 +119,45 @@ def prepared_asset_catalog():
     return catalog
 
 
+def append_prepared_asset(payload: dict, instance: PreparedAssetInstance, *, max_objects: int, event_callback=None):
+    """Append checked source components to a caller-owned candidate payload.
+
+    Generation and typed edits share collision/budget/provenance rules. Callers
+    work on private copies and validate/protect the complete result before saving.
+    """
+    used = {entry["id"] for field in ("objects", "regions", "process_cycles") for entry in payload.get(field, [])}
+    if event_callback:
+        event_callback({"type": "asset_loading", "asset_id": instance.asset_id, "message": f"Reusing {instance.asset_id}"})
+    sourced = load_prepared_asset(instance.asset_id, prefix=instance.id, position=instance.position,
+                                  mass=instance.mass, joint_initials=instance.joint_initials)
+    asset = sourced.asset
+    ids = {entry.id for entry in [*asset.objects, *asset.regions]}
+    if used & ids:
+        raise ValueError("Prepared asset IDs conflict with scene objects or regions: " + ", ".join(sorted(used & ids)))
+    if len(payload["objects"])+len(asset.objects) > max_objects:
+        raise ValueError(f"Prepared assets exceed the {max_objects}-object resource budget")
+    payload["objects"].extend(o.model_dump(mode="json") for o in asset.objects)
+    payload.setdefault("regions", []).extend(r.model_dump(mode="json") for r in asset.regions)
+    assumptions = payload.setdefault("assumptions", [])
+    for disclosure in asset.disclosures:
+        if disclosure not in assumptions:
+            assumptions.append(disclosure)
+    assumptions.append(f"Prepared asset {instance.id}: {sourced.selected.id}, revision {sourced.selected.revision}, {sourced.selected.license}; {sourced.selected.source_url}")
+    if instance.mass is not None:
+        assumptions.append(f"{instance.id} total mass {instance.mass:g} kg is an estimate, not a measured source property.")
+    if event_callback:
+        event_callback({"type": "asset_loaded", "asset_id": instance.asset_id, "instance_id": instance.id,
+                        "source_url": sourced.selected.source_url, "revision": sourced.selected.revision,
+                        "license": sourced.selected.license, "components": len(asset.objects),
+                        "message": f"Reused {instance.asset_id}; original geometry and texture retained"})
+
+
 def materialize_prepared_assets(plan: GenerationSpec, *, max_objects: int, event_callback=None):
     """Expand references atomically before geometry validation or preview saving."""
-    spec = WorldSpec.model_validate(plan.model_dump(mode="json", exclude={"prepared_assets"}))
-    used = {entry.id for entry in [*spec.objects, *spec.regions, *spec.process_cycles]}
-    prefixes = set()
+    payload = plan.model_dump(mode="json", exclude={"prepared_assets"})
+    prefixes = [instance.id for instance in plan.prepared_assets]
+    if len(prefixes) != len(set(prefixes)):
+        raise ValueError("Prepared asset instance prefixes must be unique")
     for instance in plan.prepared_assets:
-        if instance.id in prefixes:
-            raise ValueError("Prepared asset instance prefixes must be unique")
-        prefixes.add(instance.id)
-        if event_callback:
-            event_callback({"type": "asset_loading", "asset_id": instance.asset_id, "message": f"Reusing {instance.asset_id}"})
-        sourced = load_prepared_asset(instance.asset_id, prefix=instance.id, position=instance.position,
-                                      mass=instance.mass, joint_initials=instance.joint_initials)
-        asset = sourced.asset
-        ids = {entry.id for entry in [*asset.objects, *asset.regions]}
-        if used & ids:
-            raise ValueError("Prepared asset IDs conflict with scene objects or regions: " + ", ".join(sorted(used & ids)))
-        if len(spec.objects)+len(asset.objects) > max_objects:
-            raise ValueError(f"Prepared assets exceed the {max_objects}-object resource budget")
-        used.update(ids)
-        spec.objects.extend(asset.objects)
-        spec.regions.extend(asset.regions)
-        for disclosure in asset.disclosures:
-            if disclosure not in spec.assumptions:
-                spec.assumptions.append(disclosure)
-        spec.assumptions.append(f"Prepared asset {instance.id}: {sourced.selected.id}, revision {sourced.selected.revision}, {sourced.selected.license}; {sourced.selected.source_url}")
-        if instance.mass is not None:
-            spec.assumptions.append(f"{instance.id} total mass {instance.mass:g} kg is an estimate, not a measured source property.")
-        if event_callback:
-            event_callback({"type": "asset_loaded", "asset_id": instance.asset_id, "instance_id": instance.id,
-                            "source_url": sourced.selected.source_url, "revision": sourced.selected.revision,
-                            "license": sourced.selected.license, "components": len(asset.objects),
-                            "message": f"Reused {instance.asset_id}; original geometry and texture retained"})
-    return spec
+        append_prepared_asset(payload, instance, max_objects=max_objects, event_callback=event_callback)
+    return WorldSpec.model_validate(payload)
