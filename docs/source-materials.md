@@ -77,3 +77,23 @@ keeps the original UV tangent basis. Other rotated/reflected normal-map transfor
 remain unsupported and fail explicitly. Conversion metadata retains the original
 material definitions and records this pixel-permutation step (float transform
 rounding tolerance: 1e-7). No maps are silently dropped.
+
+Bundled OBJ/PNG responses are now read through byte-limited streams (24 MiB for
+OBJ, 16 MiB for PNG), including when Content-Length is absent or incorrect. PNG
+signature/IHDR dimensions are checked before image decoding; this viewer accepts
+at most 4096 pixels per edge. A world reserves up to 512 MiB of estimated RGBA
+texels plus mipmaps across distinct texture/color-space/wrap combinations.
+Concurrent loads reserve before decoding, shared instances reserve once, and
+failure/cancellation/disposal releases reservations. Exceeding the scene budget
+shows an explicit unavailable-mesh marker; it does not remove source maps or
+change exported assets. This is not a total browser/GPU memory cap: retained
+bitmaps, geometry, network buffers, renderer allocations and driver overhead are
+separate. Adaptive texture/geometry LOD remains future work.
+
+The five selected warehouse sources contain 44 distinct 1024×1024 PNG payloads:
+176 MiB of RGBA pixels, or approximately 234.7 MiB with mipmaps before any
+color-space/wrapping duplication. These are estimates from asset dimensions,
+not measured GPU usage. Twenty-six focused viewer/resource checks cover stream
+limits, predecode rejection, concurrent reservations, cancellation, cache sharing,
+scene lifecycle and batching. Decoder fixtures and CPU-only Three objects do not
+establish rendered quality or frame rate.

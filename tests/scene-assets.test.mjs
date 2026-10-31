@@ -41,11 +41,20 @@ const object = { id: 'rack', label: 'Rack', kind: 'mesh', mesh_path: 'assets/rac
   texture_path: 'assets/color.png', normal_texture_path: 'assets/normal.png', orm_texture_path: 'assets/orm.png',
   surface, position: [0, 0, 3], size: [2, 4, 6], color: [1, 1, 1], opacity: 1 };
 
+function png() {
+  const bytes = new Uint8Array(33);
+  bytes.set([137,80,78,71,13,10,26,10]);
+  const header = new DataView(bytes.buffer);
+  header.setUint32(8, 13); header.setUint32(12, 0x49484452);
+  header.setUint32(16, 4); header.setUint32(20, 4);
+  return bytes; // Header-only fixture; bitmap decoding is explicitly mocked below.
+}
+
 function fixtures(t, respond) {
   const calls = [], counts = { closed: 0 };
   t.mock.method(globalThis, 'fetch', async (url, options) => {
     calls.push(url);
-    return respond ? respond(url, options) : new Response(url.endsWith('.obj') ? source : 'png fixture');
+    return respond ? respond(url, options) : new Response(url.endsWith('.obj') ? source : png());
   });
   const prior = globalThis.createImageBitmap;
   globalThis.createImageBitmap = async () => ({ width: 4, height: 4, close() { counts.closed++; } });
@@ -59,6 +68,7 @@ test('64 repeated fixtures share real geometry/material/maps with independent tr
   const instances = await Promise.all(Array.from({ length: 64 }, (_, i) =>
     assets.load({ ...object, id: `rack${i}`, position: [i * 4, 0, 3] }, '/world/')));
   assert.equal(calls.length, 4); // One OBJ and its three maps, including concurrent requests.
+  assert.equal(assets.textureBudget.used, 3*Math.ceil(4*4*4*4/3));
   const first = instances[0].children[0];
   let geometryDisposals = 0, materialDisposals = 0;
   first.geometry.addEventListener('dispose', () => geometryDisposals++);
@@ -78,6 +88,7 @@ test('64 repeated fixtures share real geometry/material/maps with independent tr
   instances.forEach(disposeTree); disposeTree(rotated);
   assert.deepEqual([geometryDisposals, materialDisposals, counts.closed], [0, 0, 0]);
   assets.dispose(); assets.dispose();
+  assert.equal(assets.textureBudget.used, 0);
   assert.deepEqual([geometryDisposals, materialDisposals, counts.closed], [1, 1, 3]);
 });
 
@@ -132,7 +143,7 @@ test('failed map loads do not dispose shared successful maps; explicit retry can
   let fail = true;
   const { assets, calls, counts } = fixtures(t, url => {
     if (fail && url.endsWith('normal.png')) return new Response('', { status: 404 });
-    return new Response(url.endsWith('.obj') ? source : 'png fixture');
+    return new Response(url.endsWith('.obj') ? source : png());
   });
   await assert.rejects(assets.load(object, '/world/'), /Texture unavailable/);
   assert.equal(counts.closed, 0);

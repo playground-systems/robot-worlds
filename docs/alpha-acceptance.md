@@ -112,3 +112,9 @@ acceptance as false because this subset cannot establish successful manipulation
 live generation, warehouse screenshots or clean installation. Twelve lightweight
 auditor checks pass. Collection found all 33 selected tests without executing
 the native cases. Workflow YAML parses; actual hosted execution is unverified.
+
+Viewer loading now enforces encoded byte limits during streaming and checks PNG
+dimensions before decoding. Shared textures use a per-world 512 MiB estimated
+texel/mipmap budget with cancellation/disposal accounting. Twenty-six focused
+viewer checks pass without a renderer. This bounds texture reservations, not
+all browser memory, and does not establish viewport performance or visual acceptance.

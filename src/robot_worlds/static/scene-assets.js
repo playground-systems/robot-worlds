@@ -3,12 +3,13 @@ import { OBJLoader } from './vendor/OBJLoader.js';
 import { disposeMaterials, disposeTree, markSharedResources, SceneResourceCache } from './scene-resources.js';
 import { estimatedAppearance } from './scene-appearance.js';
 import { SOURCE_MAPS, sourceMaterialOptions } from './scene-materials.js';
-import { loadBundledTexture } from './scene-textures.js';
+import { loadBundledTexture, readAssetBytes, TextureBudget } from './scene-textures.js';
 
 /** Immutable asset resources shared only for the lifetime of one displayed world. */
 export class SceneAssets {
-  constructor() {
+  constructor({ maxTextureBytes } = {}) {
     this.cache = new SceneResourceCache();
+    this.textureBudget = new TextureBudget(maxTextureBytes);
     this.controller = new AbortController();
   }
 
@@ -18,9 +19,7 @@ export class SceneAssets {
       const response = await fetch(base + path, { signal: this.controller.signal });
       if (!response.ok) throw new Error('Mesh unavailable');
       const limit = 24 * 1024 * 1024;
-      if (Number(response.headers.get('content-length')) > limit) throw new Error('Mesh exceeds viewer budget');
-      const source = await response.text();
-      if (source.length > limit) throw new Error('Mesh exceeds viewer budget');
+      const source = new TextDecoder().decode(await readAssetBytes(response, limit, this.controller.signal));
       if (this.controller.signal.aborted) throw new Error('Scene resources disposed');
       const group = new OBJLoader().parse(source);
       try {
@@ -52,7 +51,7 @@ export class SceneAssets {
     // Sampling/color-space differences require distinct GPU textures.
     const wrapS = surface?.wrap_s || 'clamp', wrapT = surface?.wrap_t || 'clamp';
     return this.cache.get(JSON.stringify(['texture', base, path, space, wrapS, wrapT]), async () => {
-      const texture = await loadBundledTexture(THREE, base, path, this.controller.signal, space);
+      const texture = await loadBundledTexture(THREE, base, path, this.controller.signal, space, this.textureBudget);
       const wraps = { repeat: THREE.RepeatWrapping, clamp: THREE.ClampToEdgeWrapping, mirror: THREE.MirroredRepeatWrapping };
       texture.wrapS = wraps[wrapS]; texture.wrapT = wraps[wrapT]; texture.needsUpdate = true;
       return texture;

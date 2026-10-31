@@ -211,7 +211,7 @@ export class WorldViewer {
       if (assets.controller.signal.aborted || this.disposed || this.loadGeneration !== generation) return;
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(...object.size), new THREE.MeshBasicMaterial({ color: 0xcc8c67, wireframe: true }));
       mesh.position.set(...object.position); mesh.userData.object = object; this.group.add(mesh); this.objects.push(mesh);
-      this.label(`${object.label || object.id}: mesh unavailable`, new THREE.Vector3(...object.position));
+      this.label(`${object.label || object.id}: ${error.message === 'Scene texture budget reached' ? error.message : 'mesh unavailable'}`, new THREE.Vector3(...object.position));
     } finally {
       this.loads.delete(pending); this.pumpLoads();
       if (!this.disposed && this.loadGeneration === generation && !this.loads.size && !this.pendingLoads.length) this.batchSources();
