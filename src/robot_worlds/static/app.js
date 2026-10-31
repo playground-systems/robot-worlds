@@ -119,7 +119,7 @@ async function openWorld(id) {
   const navigation = ++state.navigation;
   const world = await api(`/api/worlds/${encodeURIComponent(id)}`);
   if (navigation !== state.navigation) return;
-  $('layer-filter').value = ''; state.layerLimit = 120;
+  $('layer-filter').value = ''; state.layerLimit = 120; state.collisionLayers = false;
   state.world = world; state.worldId = id; state.editing = false; state.selectedObject = null; state.scope = []; state.assets = []; renderAssets();
   $('selection-label').hidden = true;
   setEditMode('edit', { activate: false });
@@ -152,14 +152,22 @@ $('assets-to-agent').onclick = () => { setPanel('agent'); $('prompt').focus(); }
 $('layer-filter').oninput = () => { state.layerLimit = 120; renderLayers(); };
 function renderLayers() {
   const root = $('layer-list'), objects = currentSpec()?.objects || [], query = $('layer-filter').value.trim().toLowerCase(); root.replaceChildren();
-  $('layer-count').textContent = objects.length;
-  const matches = objects.filter(object => `${object.id} ${object.label || ''}`.toLowerCase().includes(query));
+  const collisions = objects.filter(object => object.visible === false);
+  const matches = objects.filter(object => (query || state.collisionLayers || object.visible !== false) && `${object.id} ${object.label || ''}`.toLowerCase().includes(query));
+  $('layer-count').textContent = matches.length;
   for (const object of matches.slice(0, state.layerLimit)) {
     const item = el('button', `layer-item${state.selectedObject?.id === object.id ? ' selected' : ''}`); item.type = 'button'; item.setAttribute('aria-pressed', String(state.selectedObject?.id === object.id)); item.title = `${object.label || object.id} · ${object.id}`;
     item.append(el('span', 'layer-icon', object.movable ? '◇' : '▱'), el('span', '', object.label || object.id)); item.onclick = () => selectObject(object); root.append(item);
   }
   if (!matches.length) root.append(el('p', 'sidebar-empty', objects.length ? 'No matching objects.' : 'Your world’s objects will appear here.'));
   if (matches.length > state.layerLimit) { const more = el('button', 'text-button layer-more', `Show more (${state.layerLimit}/${matches.length})`); more.onclick = () => { state.layerLimit += 120; renderLayers(); }; root.append(more); }
+  if (collisions.length && !query) {
+    const toggle = el('button', 'text-button layer-more', state.collisionLayers ? 'Hide collision components' : `Show collision components (${collisions.length})`);
+    toggle.title = 'Collision geometry stays active. This only changes the layers list.';
+    toggle.setAttribute('aria-expanded', String(!!state.collisionLayers));
+    toggle.onclick = () => { state.collisionLayers = !state.collisionLayers; state.layerLimit = 120; renderLayers(); };
+    root.append(toggle);
+  }
 }
 function renderAgentHistory() {
   const root = $('agent-history'); root.replaceChildren();

@@ -29,6 +29,9 @@ jobs:
         run: uv run --frozen ruff check src tests
       - name: Viewer interaction and resource checks
         run: node --test tests/*.test.mjs
+      - name: Original asset preparation benchmark and bounds equivalence
+        if: runner.os == 'Linux'
+        run: uv run --frozen python tools/benchmark_asset_preparation.py
       - name: Test on macOS
         if: runner.os == 'macOS'
         run: uv run --frozen pytest -q -ra

@@ -25,7 +25,10 @@ def sourced_scene(*, inside=False):
     tray = objects[microwave.geom_ids["tray"]]
     height = tray.position[2]+tray.size[2]/2 if inside else .6
     minimum = min(o.position[2]-o.size[2]/2 for o in bowl.objects if o.collision)
-    translation = np.array([tray.position[0] if inside else 1, tray.position[1] if inside else 0, height-minimum+.001])
+    # The source tray is offset toward the door. Center the full rim in the
+    # annotated cavity, retaining tray height and unchanged success tolerance.
+    cavity = microwave.regions[0]
+    translation = np.array([cavity.position[0] if inside else 1, cavity.position[1] if inside else 0, height-minimum+.001])
     for obj in bowl.objects:
         obj.position = np.array(obj.position)+translation
     subject = bowl.body_ids["object"]

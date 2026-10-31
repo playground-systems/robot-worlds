@@ -179,6 +179,9 @@ class World:
                     asset_errors.append(f"{obj.id}: referenced {field} asset is unavailable: {value}")
                     continue
                 source = source.resolve()
+                if str(source) in mesh_members:
+                    setattr(obj, field, mesh_members[str(source)])
+                    continue
                 fingerprint = file_digest(source)
                 member = f"assets/{fingerprint}{source.suffix.lower()}"
                 assets[member], sources[member] = fingerprint, source

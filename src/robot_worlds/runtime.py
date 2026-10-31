@@ -442,23 +442,28 @@ class Runtime:
                         raise ValueError(f"Mesh asset is missing: {mesh_path}")
                     # Normalize visual/collision mesh dimensions to the declared
                     # full extents and center; rubric geometry matches physics.
-                    probe = ET.Element("mujoco")
-                    ET.SubElement(
-                        ET.SubElement(probe, "asset"), "mesh", name="probe", file=str(mesh_path)
-                    )
-                    ET.SubElement(
-                        ET.SubElement(probe, "worldbody"), "geom", type="mesh", mesh="probe"
-                    )
-                    mesh_model = mujoco.MjModel.from_xml_string(
-                        ET.tostring(probe, encoding="unicode")
-                    )
-                    mesh_rotation = np.empty(9)
-                    mujoco.mju_quat2Mat(mesh_rotation, mesh_model.geom_quat[0])
-                    vertices = (
-                        mesh_model.mesh_vert @ mesh_rotation.reshape(3, 3).T
-                        + mesh_model.geom_pos[0]
-                    )
-                    lower, upper = vertices.min(0), vertices.max(0)
+                    if mesh_path.suffix.lower() == ".obj":
+                        from .mesh_assets import obj_bounds
+                        lower, upper = obj_bounds(mesh_path)
+                    else:
+                        # Keep the native decoder for binary STL/MSH formats.
+                        probe = ET.Element("mujoco")
+                        ET.SubElement(
+                            ET.SubElement(probe, "asset"), "mesh", name="probe", file=str(mesh_path)
+                        )
+                        ET.SubElement(
+                            ET.SubElement(probe, "worldbody"), "geom", type="mesh", mesh="probe"
+                        )
+                        mesh_model = mujoco.MjModel.from_xml_string(
+                            ET.tostring(probe, encoding="unicode")
+                        )
+                        mesh_rotation = np.empty(9)
+                        mujoco.mju_quat2Mat(mesh_rotation, mesh_model.geom_quat[0])
+                        vertices = (
+                            mesh_model.mesh_vert @ mesh_rotation.reshape(3, 3).T
+                            + mesh_model.geom_pos[0]
+                        )
+                        lower, upper = vertices.min(0), vertices.max(0)
                     if np.any(upper - lower < 1e-8):
                         raise ValueError(f"Mesh {obj.id} must have three nonzero dimensions")
                     scale = size / (upper - lower)

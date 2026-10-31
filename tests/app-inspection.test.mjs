@@ -66,6 +66,19 @@ test('source visual inspector does not report placeholder mass as physical mass'
   assert.doesNotMatch(details, /1 kg/);
 });
 
+test('source collision pieces stay out of the default layers but remain inspectable', () => {
+  const {run, nodes} = fixture();
+  run("state.world.spec.objects.push({id:'hidden_collider',label:'Collision piece',visible:false});renderLayers();");
+  assert.equal(nodes.get('layer-count').textContent, 1);
+  const toggle = nodes.get('layer-list').children.at(-1);
+  assert.match(toggle.textContent, /Show collision components \(1\)/);
+  toggle.onclick(); assert.equal(nodes.get('layer-count').textContent, 2);
+  nodes.get('layer-list').children.at(-1).onclick();
+  nodes.get('layer-filter').value = 'hidden_collider'; nodes.get('layer-filter').oninput();
+  assert.equal(nodes.get('layer-count').textContent, 1);
+  assert.equal(nodes.get('layer-list').children[0].title, 'Collision piece · hidden_collider');
+});
+
 test('live camera updates pause WebGL, show actual time, and keep provisional milestones separate', () => {
   const { run, nodes, calls } = fixture();
   run("setView('layout');showLiveFrame({run_id:'a'.repeat(32),episode:0,sequence:4,time:2.5,path:'episode-000/live.png'});");

@@ -229,9 +229,9 @@ def import_convex_mesh_asset(mesh_path: str | Path, collision_manifest: str | Pa
     """
     from .mesh_assets import (
         MAX_CONVEX_COMPONENTS,
-        convex_volume,
         read_triangle_obj,
         validate_texture,
+        verified_convex_obj,
     )
 
     mesh_path, collision_manifest, notice = (Path(p).resolve() for p in (mesh_path, collision_manifest, source_notice))
@@ -276,12 +276,8 @@ def import_convex_mesh_asset(mesh_path: str | Path, collision_manifest: str | Pa
         path = (collision_manifest.parent / name).resolve()
         if not path.is_relative_to(collision_manifest.parent):
             raise ValueError("Collision file escapes its conversion directory")
-        v, f = read_triangle_obj(path)
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        if digest != record.get("sha256"):
-            raise ValueError("Converted collision file was modified")
-        volume = convex_volume(v, f)
-        lower, upper = v.min(0), v.max(0)
+        digest = record.get("sha256")
+        lower, upper, volume = verified_convex_obj(path, digest)
         if np.any(lower < visual_lower-.005) or np.any(upper > visual_upper+.005):
             raise ValueError("Collision conversion expands more than 5 mm outside source bounds")
         verified.append((path, lower, upper, volume))
