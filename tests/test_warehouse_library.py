@@ -21,6 +21,7 @@ def source(tmp_path, monkeypatch):
         calls.append((asset_id, cache, options))
         return sourced
     monkeypatch.setattr(installer, "import_simready_structure", import_asset)
+    monkeypatch.setattr(installer, "import_simready_conveyor", lambda cache, **options: import_asset("conveyor_belt_a05", cache, **options))
     return sourced, calls
 
 
@@ -59,7 +60,7 @@ def test_partial_failure_never_installs_a_partial_library(tmp_path, monkeypatch,
     assert not output.exists()
 
 
-@pytest.mark.parametrize("ids", [[], ['unknown'], ['pallet_a01', 'pallet_a01'], 'pallet_a01', ['conveyor_belt_a05']])
+@pytest.mark.parametrize("ids", [[], ['unknown'], ['pallet_a01', 'pallet_a01'], 'pallet_a01', ['conveyor_unknown']])
 def test_invalid_selection_fails_before_work(tmp_path, source, ids):
     _, calls = source
     with pytest.raises(ValueError, match='distinct reviewed'):
@@ -110,3 +111,11 @@ def test_installed_library_is_passed_to_workbench_generation_worker(tmp_path, so
     assert seen == ['pallet_a01']
     assert record['status'] == 'completed' and record['validation']['status'] == 'preview'
     assert record['world_id'] == 'fixture-world'
+
+
+def test_conveyor_subset_uses_articulated_importer(tmp_path, source):
+    _, calls = source
+    result = prepare_warehouse_library(tmp_path / "conveyor-library", asset_ids=["conveyor_belt_a05"])
+    assert result.asset_ids == ("conveyor_belt_a05",)
+    assert len(calls) == 1 and calls[0][0] == "conveyor_belt_a05"
+    assert "unpowered" in installer.WAREHOUSE_ASSETS["conveyor_belt_a05"]

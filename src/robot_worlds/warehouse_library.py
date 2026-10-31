@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Callable, Sequence
 
 from .asset_library import AssetLibrary
+from .simready_conveyor import import_simready_conveyor
 from .simready_structures import import_simready_structure
 
 WAREHOUSE_ASSETS = {
@@ -15,6 +16,7 @@ WAREHOUSE_ASSETS = {
     "pallet_a01": "Movable wooden pallet with four open fork channels",
     "box_corrugated_brown_b20": "Movable sealed rigid carton; no flap opening or cardboard deformation",
     "barrier_fence_metal_a02": "Fixed safety barrier with two open rail gaps",
+    "conveyor_belt_a05": "Fixed unpowered conveyor with 29 passive roller hinges; no powered transport",
 }
 
 
@@ -65,7 +67,9 @@ def prepare_warehouse_library(destination: str | Path, *, cache_dir: str | Path 
         check()
         emit({"type": "asset_preparing", "asset_id": asset_id, "index": index+1, "total": len(requested)})
         check()
-        sourced = import_simready_structure(asset_id, cache, timeout=min(120, deadline-time.monotonic()), cancelled=cancelled)
+        options = {"timeout": min(120, deadline-time.monotonic()), "cancelled": cancelled}
+        sourced = (import_simready_conveyor(cache, **options) if asset_id == "conveyor_belt_a05"
+                   else import_simready_structure(asset_id, cache, **options))
         check()
         library.add(asset_id, sourced, description=WAREHOUSE_ASSETS[asset_id]+"; conservative collision proxies; native contact validation pending")
         emit({"type": "asset_prepared", "asset_id": asset_id, "index": index+1, "total": len(requested),

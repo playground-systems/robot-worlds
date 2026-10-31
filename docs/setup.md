@@ -26,11 +26,13 @@ then run:
 uv run robot-worlds prepare-warehouse --data-dir .robot-worlds
 ```
 
-This prepares four pinned sources: rack, pallet, sealed carton and fixed safety
-barrier. Their GLBs total about 1.93 MB; the prepared portable library is about
-24 MB. It retains original visual data, attribution and disclosed collision
+This prepares five pinned sources: rack, pallet, sealed carton, fixed safety
+barrier and an unpowered conveyor with 29 passive rollers. Their GLBs total
+about 4.06 MB. Prepared meshes and PNGs are larger: the four rigid assets occupy
+about 24 MB and the conveyor about 33 MB. It retains original visual data, attribution and disclosed collision
 approximations. No model key, native simulator or GPU is used during preparation.
-The conveyor remains unsupported by this rigid importer.
+The conveyor retains hinges and bearing clearances; it does not provide powered
+transport. Native contact and rendering acceptance remain pending.
 
 New workbench generation/refine/repair jobs discover
 `.robot-worlds/asset-library` automatically. Use the same `--data-dir` when

@@ -31,6 +31,7 @@ from robot_worlds.simready import (
     simready_asset_catalog,
     simready_asset_search,
 )
+from robot_worlds.simready_conveyor import import_simready_conveyor
 from robot_worlds.simready_rack import import_simready_rack
 from robot_worlds.simready_structures import import_simready_structure
 from robot_worlds.warehouse_library import PreparedWarehouseLibrary, prepare_warehouse_library
@@ -43,3 +44,5 @@ __all__ += ["GLBVisuals", "prepare_glb_visuals"]
 __all__ += ["import_simready_rack"]
 __all__ += ["import_simready_structure"]
 __all__ += ["PreparedWarehouseLibrary", "prepare_warehouse_library"]
+
+__all__ += ["import_simready_conveyor"]

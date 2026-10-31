@@ -85,6 +85,29 @@ def _material(geometry, primitive, check):
     slots = {"color": pbr.get("baseColorTexture"), "mr": pbr.get("metallicRoughnessTexture"),
              "normal": material.get("normalTexture"), "ao": material.get("occlusionTexture"),
              "emissive": material.get("emissiveTexture")}
+    # A quarter-turn repeated texture can be baked losslessly into its pixels.
+    # Keep the original UV basis, including the normal-map tangent directions,
+    # instead of rotating UVs and silently changing the inferred tangent frame.
+    normal_transform = (slots["normal"] or {}).get("extensions", {}).get("KHR_texture_transform", {})
+    image_turn = None
+    if normal_transform.get("rotation", 0) != 0:
+        angle = normal_transform["rotation"]
+        if not isinstance(angle, (float, int)) or not math.isfinite(angle):
+            raise ValueError("Invalid normal-map rotation")
+        turns = round(angle / (math.pi / 2))
+        if abs(angle-turns*math.pi/2) > 1e-7:
+            raise ValueError("Rotated/reflected normal-map UVs require tangent-frame baking")
+        for info in slots.values():
+            if info is None:
+                continue
+            transform = info.get("extensions", {}).get("KHR_texture_transform", {})
+            scale = np.asarray(transform.get("scale", [1, 1]), dtype=float)
+            offset = np.asarray(transform.get("offset", [0, 0]), dtype=float)
+            if (transform.get("rotation", 0) != angle or scale.shape != (2,) or offset.shape != (2,)
+                    or not np.allclose(scale, [1, 1], atol=1e-7, rtol=0)
+                    or not np.isfinite(offset).all() or not np.allclose(offset, np.round(offset), atol=1e-7, rtol=0)):
+                raise ValueError("Quarter-turn normal-map baking requires matching transforms, unit scale and integer offsets")
+        image_turn = turns % 4
     images, uv, wrapping = {}, None, None
     decoded_bytes = 0
     for role, info in slots.items():
@@ -95,9 +118,13 @@ def _material(geometry, primitive, check):
             raise ValueError("Unsupported texture-info extension")
         if role == "normal":
             transform = info.get("extensions", {}).get("KHR_texture_transform", {})
-            if transform.get("rotation", 0) != 0 or any(x <= 0 for x in transform.get("scale", [1, 1])):
+            if image_turn is None and (transform.get("rotation", 0) != 0 or any(x <= 0 for x in transform.get("scale", [1, 1]))):
                 raise ValueError("Rotated/reflected normal-map UVs require tangent-frame baking")
-        coordinates = geometry.texture_coordinates(primitive, info, obj=True)
+        coordinate_info = info
+        if image_turn is not None:
+            transform = info.get("extensions", {}).get("KHR_texture_transform", {})
+            coordinate_info = {"texCoord": transform.get("texCoord", info.get("texCoord", 0))}
+        coordinates = geometry.texture_coordinates(primitive, coordinate_info, obj=True)
         if uv is None:
             uv = coordinates
         elif not np.allclose(uv, coordinates, atol=1e-9, rtol=0):
@@ -109,6 +136,8 @@ def _material(geometry, primitive, check):
             wraps = (_WRAPS[sampler.get("wrapS", 10497)], _WRAPS[sampler.get("wrapT", 10497)])
         except KeyError as error:
             raise ValueError("Unsupported source sampler wrap mode") from error
+        if image_turn is not None and wraps != ("repeat", "repeat"):
+            raise ValueError("Quarter-turn normal-map baking requires repeat wrapping")
         if wrapping is not None and wrapping != wraps:
             raise ValueError("Material maps need matching sampler wraps before conversion")
         wrapping = wraps
@@ -120,6 +149,8 @@ def _material(geometry, primitive, check):
             if decoded_bytes > 64*1024*1024 or image.mode not in {"RGB", "RGBA", "L", "LA", "P"}:
                 raise ValueError("Material exceeds decoded texture budget or supported bit depth")
             images[role] = np.array(image.convert("RGBA"))
+            if image_turn is not None:
+                images[role] = np.rot90(images[role], image_turn).copy()
     normal_strength = (slots["normal"] or {}).get("scale", 1)
     if not isinstance(normal_strength, (int, float)) or not math.isfinite(normal_strength) or normal_strength < 0:
         raise ValueError("Invalid source normal strength")
@@ -248,7 +279,7 @@ Unsupported appearance requirements fail instead of degrading silently.
     source_record = {"source": source_metadata, "decoded_source_sha256": source_hash,
         "gltf_document": geometry.document,
         "conversion": {"coordinates": "metres, Z-up, composed hierarchy transforms", "uv": "OBJ V-up",
-            "normal_map": "tangent Y channel inverted for OBJ V inversion", "textures": "decoded to PNG without resizing",
+            "normal_map": "tangent Y channel inverted for OBJ V inversion; matching quarter-turn/unit-scale/integer-offset REPEAT transforms are baked into all material images, preserving the original UV tangent basis", "textures": "decoded to PNG without resizing",
             "orm": "RGB occlusion/roughness/metallic; absent occlusion is white", "physics": "not imported or validated"}}
     source_bytes = (json.dumps(source_record, indent=2, allow_nan=False) + "\n").encode()
     if len(source_bytes) > _MAX_METADATA:

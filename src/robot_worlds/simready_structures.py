@@ -39,7 +39,7 @@ COLLISION_NOTICES = {
 }
 
 
-def component_envelopes(primitives, *, check=lambda: None):
+def component_bounds(primitives, *, check=lambda: None):
     """Find welded connected surfaces; use original coordinates for box bounds.
 
 Welding uses a recorded 10-micrometre coordinate grid only for connectivity.
@@ -80,11 +80,17 @@ component are conservatively filled, but disconnected components stay separate.
     high = np.full((len(ids), 3), -np.inf)
     np.minimum.at(low, slots, vertices)
     np.maximum.at(high, slots, vertices)
-    if np.any(high-low < 1e-6):
-        raise ValueError("Zero-thickness source components require a different collision adapter")
     check()
     order = sorted(range(len(ids)), key=lambda i: (*low[i], *high[i]))
     return [(low[i], high[i]) for i in order]
+
+
+def component_envelopes(primitives, *, check=lambda: None):
+    """Rigid recipes require volumetric components; never silently thicken them."""
+    boxes = component_bounds(primitives, check=check)
+    if any(np.any(high-low < 1e-6) for low, high in boxes):
+        raise ValueError("Zero-thickness source components require a different collision adapter")
+    return boxes
 
 
 def rack_clearances(boxes):

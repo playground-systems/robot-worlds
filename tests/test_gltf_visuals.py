@@ -177,3 +177,48 @@ def test_cancellation_during_conversion_cleans_staging(tmp_path):
         prepare_glb_visuals(source, tmp_path / "cache", source_notice=notice,
                             source_metadata={"source": "fixture"}, cancelled=cancelled)
     assert list((tmp_path / "cache").iterdir()) == []
+
+
+@pytest.mark.parametrize("turns", [-1, 1, 2, 3])
+def test_quarter_turn_normal_maps_bake_pixels_without_rotating_tangent_uvs(tmp_path, turns):
+    def change(doc, data):
+        material = doc["materials"][0]
+        for info in (material["normalTexture"], *[v for k, v in material["pbrMetallicRoughness"].items() if k.endswith("Texture")]):
+            info["extensions"] = {"KHR_texture_transform": {"rotation": turns*np.pi/2, "offset": [-1, 1]}}
+        return doc, data
+    result, _, _, pixels = prepare(tmp_path, change)
+    obj, = result.objects(prefix="fixture", parents={0: "body"})
+    text = (result.path / "part-0.obj").read_text()
+    assert "vt 0 1\n" in text and "vt 1 0\n" in text
+    # Independent nearest-sample evaluation of the specified glTF UV matrix.
+    # Source UV origin is upper-left; the integer offset disappears under REPEAT.
+    c, s = np.cos(turns*np.pi/2), np.sin(turns*np.pi/2)
+    with Image.open(obj.texture_path) as image, Image.open(obj.normal_texture_path) as normal:
+        actual, normals = np.array(image), np.array(normal)
+        for row in range(2):
+            for col in range(2):
+                u, v = (col+.5)/2, (row+.5)/2
+                source_col = int(((c*u-s*v-1) % 1)*2)
+                source_row = int(((s*u+c*v+1) % 1)*2)
+                expected = pixels[source_row, source_col]
+                assert np.array_equal(actual[row, col], expected)
+                assert np.array_equal(normals[row, col], [expected[0], 255-expected[1], expected[2]])
+
+
+@pytest.mark.parametrize("variant", ["clamp", "fractional_offset", "nonunit_scale"])
+def test_normal_quarter_turn_baking_rejects_non_equivalent_sampling(tmp_path, variant):
+    def change(doc, data):
+        material = doc["materials"][0]
+        for info in (material["normalTexture"], *[v for k, v in material["pbrMetallicRoughness"].items() if k.endswith("Texture")]):
+            transform = {"rotation": np.pi/2}
+            if variant == "fractional_offset":
+                transform["offset"] = [.25, 0]
+            if variant == "nonunit_scale":
+                transform["scale"] = [2, 2]
+            info["extensions"] = {"KHR_texture_transform": transform}
+        if variant == "clamp":
+            doc["samplers"] = [{"wrapS": 33071, "wrapT": 33071}]
+            doc["textures"][0]["sampler"] = 0
+        return doc, data
+    with pytest.raises(ValueError, match="Quarter-turn normal-map baking"):
+        prepare(tmp_path, change)

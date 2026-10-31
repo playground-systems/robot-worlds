@@ -398,7 +398,7 @@ current limits are 32 registered assets, 1,000 components per asset, 32 MiB per
 source file and 256 MiB of referenced files per library. Automatic online
 selection and broader SDF import remain separate, unfinished work.
 
-For the four reviewed warehouse sources, the SDK can prepare and save a library
+For the five reviewed warehouse sources, the SDK can prepare and save a library
 in one call, with the same caches and checks as `robot-worlds prepare-warehouse`:
 
 ```python
@@ -457,8 +457,13 @@ for asset_id, description in {
 library.save("warehouse-library")  # Choose a new destination.
 ```
 
-Only these reviewed rigid profiles are supported. The conveyor's articulation
-requires a separate importer; it is rejected rather than silently frozen.
+These four rigid profiles use `import_simready_structure`. The separate
+`import_simready_conveyor("asset-cache", prefix="conveyor", timeout=60)` importer
+retains the pinned conveyor's 29 passive roller hinges and source visual meshes.
+It fixes the frame, carves bearing clearance from collision envelopes and
+records the approximations in provenance. It has no motor or powered transport.
+`prepare_warehouse_library` includes it by default, or select only
+`asset_ids=["conveyor_belt_a05"]`. Native contact/render validation is pending.
 Fork/rail clearances are retained as preparation metadata, not task regions.
 Native scene validation still runs when generation uses this library.
 

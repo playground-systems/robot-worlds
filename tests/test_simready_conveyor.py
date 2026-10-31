@@ -98,3 +98,50 @@ def test_inconsistent_or_unsupported_source_cannot_lose_physics_silently(change,
     change(doc)
     with pytest.raises(ValueError, match=error):
         conveyor_bodies(doc)
+
+
+def test_bearing_pockets_preserve_frame_outside_swept_roller_bounds():
+    from types import SimpleNamespace
+
+    from robot_worlds.simready_conveyor import _roller_clearances
+
+    bodies = conveyor_bodies(source())
+    # Small round cross-section on X; use only one rotor for this geometric test.
+    center = np.array(bodies[1].joint.anchor)
+    points = center+np.array([[x, y, z] for x in (-.4, .4) for y, z in ((.02, 0), (-.02, 0), (0, .02), (0, -.02))])
+    frame = (np.array([-.5, -.2, -.1]), np.array([.5, .2, .1]))
+    parts = [SimpleNamespace(node_index=bodies[1].mesh_node, positions=points)]
+    boxes, pockets = _roller_clearances([frame], parts, bodies[:2])
+    low, high = pockets[0]
+    assert len(boxes) == 6
+    assert not any(np.all(np.minimum(high, b)-np.maximum(low, a) > 1e-10) for a, b in boxes)
+    original_volume = np.prod(frame[1]-frame[0])
+    cut_volume = np.prod(np.minimum(high, frame[1])-np.maximum(low, frame[0]))
+    assert sum(np.prod(b-a) for a, b in boxes) == pytest.approx(original_volume-cut_volume)
+    # Unrelated frame material is retained; the pocket is independent of rotor angle.
+    for point in ([.45, 0, 0], [0, .15, 0], [0, 0, .09]):
+        assert any(np.all(point >= a) and np.all(point <= b) for a, b in boxes)
+
+
+def test_planar_skin_is_explicit_and_cannot_fill_loading_bed(monkeypatch):
+    from robot_worlds import simready_structures
+    from robot_worlds.simready_conveyor import conveyor_frame_envelopes
+
+    boxes = [(np.array([-.1, -2, .1]), np.array([0, -1.9, .2])) for _ in range(179)]
+    boxes += [(np.array([-.1, -2, .1]), np.array([0, -1.9, .1])) for _ in range(12)]
+    monkeypatch.setattr(simready_structures, "component_bounds", lambda *a, **k: boxes)
+    prepared, planar = conveyor_frame_envelopes([])
+    assert planar == list(range(179, 191))
+    assert all(high[2]-low[2] == pytest.approx(.0001) for low, high in prepared[179:])
+    boxes[0] = (np.array([.2, -1, .8]), np.array([.8, -.5, .9]))
+    with pytest.raises(ValueError, match="roller bed"):
+        conveyor_frame_envelopes([])
+
+
+def test_cancelled_conveyor_import_never_downloads(tmp_path, monkeypatch):
+    from robot_worlds import simready_conveyor
+
+    monkeypatch.setattr(simready_conveyor, "download_simready_asset", lambda *a, **k: pytest.fail("unexpected download"))
+    with pytest.raises(ValueError, match="cancelled"):
+        simready_conveyor.import_simready_conveyor(tmp_path / "cache", cancelled=lambda: True)
+    assert not (tmp_path / "cache").exists()

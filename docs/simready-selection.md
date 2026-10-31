@@ -182,22 +182,43 @@ the hash-verified source above, not inferred from the catalog alone.
 
 Eighteen metadata-only checks reject missing/duplicate mappings, disagreeing
 frames, changed axes/pivots, drives, unsupported motion, unreachable geometry
-and malformed mass/collider references. This is an internal preparation step,
-not a public conveyor importer or evidence of physical operation. The intended
+and malformed mass/collider references. These metadata checks are preparation evidence, not evidence of physical operation. The intended
 adaptation is a fixed frame with passive rollers; no motor/controller or powered
 transport is provided. Zero bearing damping/friction loss would be an explicit
 estimate because the inspected source does not specify those properties.
 
-Collision work remains: the frame has 191 connected surface components, 12 of
-which have zero thickness at the existing envelope adapter's tolerance. The
-current rigid adapter correctly rejects them. They need a reviewed treatment
-that preserves source appearance and leaves the roller bed clear; flattening
-the entire conveyor into a solid box is not acceptable. Source center of mass,
-inertia, restitution, actual contacts and rendering still require adaptation or
-explicit disclosure and validation.
+The conveyor adapter now retains all 191 connected frame components. Twelve
+planar surfaces receive an explicit 0.1 mm collision thickness. It removes each
+roller's swept volume plus 1 mm from frame proxies so their conservative boxes
+do not fill bearing openings. This produces 701 frame boxes, 29 articulated
+roller collision meshes and 37 source visual meshes (767 components). Original
+visual geometry stays unchanged; no contact filter or task criterion was relaxed.
+Frame mass is distributed by final proxy volume. Source inertia, center of mass
+and restitution are not retained; bearing friction/damping are set to zero.
 
-Next implementation: complete the conveyor collision/visual adapter, then
-perform native/browser validation when permitted. The viewer now shares source geometry/materials/maps
+The brushed-aluminum material uses a quarter-turn normal-map UV transform.
+Matching unit-scale, integer-offset REPEAT transforms are now baked by permuting
+all material images, keeping the original UV tangent basis and the existing OBJ
+normal Y conversion. Tests compare independent UV sampling against output pixels
+and reject non-equivalent transforms. See the [Khronos texture-transform
+specification](https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_texture_transform).
+
+Actual preparation from cached, hash-verified source bytes took 6.118 s on its
+first successful visual conversion. A warm installer run took 0.538 s and wrote
+a separate 33,089,715-byte portable conveyor library. Reopening that library and
+placing it at 0° and 90° retained all hinges and passed static scene checks.
+These are local preparation/geometry results, not cold downloads, live generation,
+native contacts or rendered appearance. Seventy-one focused lightweight checks
+cover the affected source adapters, installer, materials and rejection paths.
+
+The SDK exposes `import_simready_conveyor`; `prepare-warehouse` now includes this
+fifth source or accepts `--asset conveyor_belt_a05` alone. Existing libraries
+are never overwritten; choose a new output directory for an updated subset.
+The conveyor is explicitly unpowered and still needs native contact and visual
+acceptance. No new supported robot or logistics controller is introduced.
+
+Next: verify native contacts/materials and generated layouts when permitted.
+The viewer now shares source geometry/materials/maps
 across repeated fixtures; real warehouse frame rate, GPU memory and LOD remain
 unmeasured.
 The browser and policy camera must depict the same physical scene. No full

@@ -14,7 +14,7 @@ app = typer.Typer(no_args_is_help=True, help="Generate physical robot worlds and
 
 @app.command()
 def prepare_warehouse(data_dir: Path = Path(".robot-worlds"), output: Path | None = None,
-                      asset: list[str] = typer.Option([], help="Prepare only this source ID; repeat for a subset. Default: all four reviewed assets."),
+                      asset: list[str] = typer.Option([], help="Prepare only this source ID; repeat for a subset. Default: all five reviewed assets."),
                       timeout: float = 300):
     """Install reusable warehouse assets, without model calls or native simulation."""
     from robot_worlds.artifacts import public_error

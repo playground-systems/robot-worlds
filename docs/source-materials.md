@@ -70,3 +70,10 @@ This is CPU-side evidence, not measured GPU memory or viewport frame rate.
 No new browser screenshot, native material compilation or PBR policy-camera
 parity is established by these checks. The
 warehouse visual acceptance gate remains open.
+
+For normal-mapped GLBs, matching quarter-turn texture transforms with unit scale,
+integer offsets and REPEAT wrapping can be baked into all material images. This
+keeps the original UV tangent basis. Other rotated/reflected normal-map transforms
+remain unsupported and fail explicitly. Conversion metadata retains the original
+material definitions and records this pixel-permutation step (float transform
+rounding tolerance: 1e-7). No maps are silently dropped.
