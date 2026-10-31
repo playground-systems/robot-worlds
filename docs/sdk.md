@@ -482,6 +482,12 @@ records the approximations in provenance. It has no motor or powered transport.
 Fork/rail clearances are retained as preparation metadata, not task regions.
 Native scene validation still runs when generation uses this library.
 
+For compound workpieces, process loading accepts fixture contact on any fixed
+collision piece belonging to that workpiece. Holding/release is measured on its
+movable root. A decoy or a separately articulated child cannot supply the root's
+loading contact. Process cycles remain explicit timed abstractions and are only
+part of tasks that request them.
+
 For a local MJCF outside the prepared catalog:
 
 ```python

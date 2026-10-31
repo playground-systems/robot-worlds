@@ -183,6 +183,9 @@ def process_monitor(spec, state):
     monitor._live_view = None  # This fixture bypasses Runtime.__init__ and has no spectator.
     monitor._events = []
     monitor._fixture_members = {"fixture": {"fixture", "top"}}
+    from robot_worlds.rubric import rigid_members
+    objects = {o.id: o for o in spec.objects}
+    monitor._workpiece_members = {w: rigid_members(objects, w) for c in spec.process_cycles for w in c.workpiece_ids}
     monitor._process_snapshot = lambda: copy.deepcopy(state)
     return monitor
 
@@ -323,3 +326,74 @@ def test_ordered_alternative_sequences_do_not_require_both_valid_branches():
     spec = WorldSpec.model_validate(data)
     assert grade(spec, [frame(0), frame(1, held_by="left"), frame(2, placed=True)])["success"]
     assert not grade(spec, [frame(0), frame(1, placed=True)])["success"]
+
+
+def test_process_loading_accepts_contact_on_a_fixed_workpiece_child():
+    from robot_worlds.models import SceneObject
+
+    spec = process_world()
+    spec.objects.append(SceneObject(id="part_foot", label="Attached workpiece foot", kind="box",
+                                    parent_id="part", position=(2, 0, .15), size=(.3, .3, .3)))
+    state = frame(0, placed=True)
+    state["objects"]["part_foot"] = copy.deepcopy(state["objects"]["part"])
+    state["objects"]["part"]["contacts"] = []
+    monitor = process_monitor(spec, state)
+    monitor._advance_processes()
+    monitor.data.time = .11
+    monitor._advance_processes()
+    assert monitor._process_states.get("part", {}).get("cycle") == "processed"
+
+
+def test_articulated_child_contact_cannot_load_its_unconnected_workpiece_root():
+    from robot_worlds.models import SceneObject
+
+    spec = process_world()
+    spec.objects.append(SceneObject(id="hinged_piece", label="Separate articulated part", kind="box",
+        parent_id="part", position=(2, 0, .15), size=(.3, .3, .3),
+        joint=dict(type="hinge", axis=(0, 0, 1), anchor=(2, 0, .15), range=(-1, 1))))
+    # A permissive proximity prerequisite must still require contact on the
+    # actual workpiece's rigid assembly, not a separately moving child.
+    spec.process_cycles[0].prerequisites[0].predicate = "near"
+    spec.process_cycles[0].prerequisites[0].threshold = 1
+    state = frame(0, placed=True)
+    state["objects"]["hinged_piece"] = copy.deepcopy(state["objects"]["part"])
+    state["objects"]["part"]["contacts"] = []
+    monitor = process_monitor(spec, state)
+    monitor._advance_processes()
+    monitor.data.time = .11
+    monitor._advance_processes()
+    assert not monitor._process_states
+
+
+def test_original_bowl_process_monitor_uses_collision_piece_support_without_identity_leakage():
+    """Synthetic monitor input for a pre-placed asset; not a robot placement run."""
+    from test_sourced_household import sourced_scene
+
+    from robot_worlds.models import ProcessCycle
+
+    spec, bowl, microwave = sourced_scene(inside=True)
+    subject, tray = bowl.body_ids['object'], microwave.geom_ids['tray']
+    piece = next(o.id for o in bowl.objects if o.collision and o.id != subject)
+    spec.process_cycles = [ProcessCycle(id='cycle', label='Engineering inspection fixture',
+        fixture_id=tray, workpiece_ids=[subject], duration=.1, output_state='inspected',
+        prerequisites=[dict(predicate='on_top', object_id=subject, target_id=tray, tolerance=.005),
+                       dict(predicate='released', object_id=subject)])]
+    state = {'time': 0, 'objects': {o.id: {
+        'position': list(o.position), 'quaternion': [1, 0, 0, 0], 'size': list(o.size),
+        'contacts': [], 'held_by': None,
+    } for o in spec.objects}}
+    state['objects'][piece]['contacts'] = [tray]
+    monitor = process_monitor(spec, state)
+    monitor._fixture_members = {tray: {tray}}
+    # A held root blocks processing even when the supporting child is released.
+    state['objects'][subject]['held_by'] = 'right'
+    monitor._advance_processes()
+    monitor.data.time = .2
+    monitor._advance_processes()
+    assert not monitor._process_states
+    state['objects'][subject]['held_by'] = None
+    monitor._advance_processes()
+    monitor.data.time = .31
+    monitor._advance_processes()
+    assert monitor._process_states == {subject: {'cycle': 'inspected'}}
+    assert 'process_states' not in state['objects'][piece]  # Monitor never mutates supplied measurements.

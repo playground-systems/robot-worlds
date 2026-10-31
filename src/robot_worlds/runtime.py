@@ -172,6 +172,10 @@ class Runtime:
                 seen.add(root.id)
                 root = self._objects[root.parent_id]
             self._grasp_roots[obj.id] = root.id
+        self._workpiece_members = {
+            workpiece: rigid_members(self._objects, workpiece)
+            for cycle in spec.process_cycles for workpiece in cycle.workpiece_ids
+        }
         for cycle in getattr(spec, "process_cycles", []):
             members = {cycle.fixture_id}
             while True:
@@ -694,9 +698,10 @@ class Runtime:
             # Every workpiece must be a declared prerequisite and physically
             # contact the fixture; time alone cannot process a nearby object.
             grounded = all(
-                bool(
-                    set(state["objects"][w]["contacts"])
+                any(
+                    set(state["objects"].get(member, {}).get("contacts", []))
                     & self._fixture_members.get(cycle.fixture_id, {cycle.fixture_id})
+                    for member in self._workpiece_members[w]
                 )
                 for w in cycle.workpiece_ids
             )

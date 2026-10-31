@@ -65,3 +65,11 @@ as well as position before reporting `reached`. Focused synthetic checks cover
 both hands, rotated/tilted bases, feedback and the public action boundary; no
 robot rollout was executed. This runtime change requires fresh validation of
 release-candidate worlds; historical recordings remain untouched.
+
+Process loading now recognizes contacts on fixed collision pieces of the intended
+workpiece, rather than requiring the root piece itself to touch the fixture.
+Seventeen focused evaluator/monitor checks pass, including original bowl geometry
+with synthetic child-piece contact and root-level holding. Decoy and articulated
+child contacts cannot substitute for the rigid workpiece. This fixes the existing
+optional process abstraction; it adds no heating requirement to the bowl task and
+does not constitute physical placement evidence.
