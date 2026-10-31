@@ -1,0 +1,39 @@
+name: household-asset-conversion
+on:
+  pull_request:
+    paths:
+      - 'tools/decompose_asset.py'
+      - 'src/robot_worlds/assets/household/porcelain_bowl/**'
+      - '.github/workflows/asset-conversion.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  decompose-bowl:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Install conversion tooling
+        run: python -m pip install uv==0.11.28
+      - name: Convert original source surface
+        shell: bash
+        run: |
+          uv sync --frozen
+          uv pip install coacd==1.0.14
+          if test -f src/robot_worlds/assets/household/porcelain_bowl/collision/manifest.json; then
+            cp -R src/robot_worlds/assets/household/porcelain_bowl/collision "$RUNNER_TEMP/bowl-collision"
+          else
+            .venv/bin/python tools/decompose_asset.py src/robot_worlds/assets/household/porcelain_bowl/meshes/model.obj "$RUNNER_TEMP/bowl-collision"
+          fi
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: porcelain-bowl-collision
+          path: ${{ runner.temp }}/bowl-collision
+          if-no-files-found: error
