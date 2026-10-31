@@ -8,8 +8,8 @@ not replace current native, live-model or application evidence.
 
 | Gate | Available evidence | Required work still open |
 | --- | --- | --- |
-| SDK action loop | `test_household_sdk_flow.py` covers mocked generation, original assets, public RGB-D/depth observations, wheel/gripper actions, feedback, in-process and HTTP policies, timeout/disconnection/invalid actions, cancellation, replay, export/reload and regrading. | Execute this native suite on the release candidate. Its policy deliberately does not insert the bowl. |
-| Physical manipulation | Historical native tests check bowl concavity and pre-placed support in the microwave. Arm approach presets now use the same complete base frame as position targets; feedback checks measured orientation as well as position. | Demonstrate robot approach, grasp, door interaction, transport, insertion, release and stable support with a labeled engineering policy. Run native no-op, decoy, partial insertion, held and unstable-placement cases. |
+| SDK action loop | The [focused Linux run](#one-off-hosted-household-check--passed) passed mocked generation, original assets, public RGB-D/depth observations, wheel/gripper actions, feedback, in-process and HTTP policies, timeout/disconnection/invalid actions, cancellation, replay, export/reload and regrading. | This integration scope is verified at `9273a3e`. Its policy deliberately does not insert the bowl; manipulation and live acceptance remain separate. |
+| Physical manipulation | The focused native run passed original-bowl concavity, pre-placed support in the microwave and the no-op failure case. Arm approach presets use the same complete base frame as position targets; feedback checks measured orientation as well as position. | Demonstrate robot approach, grasp, door interaction, transport, insertion, release and stable support with a labeled engineering policy. Run native decoy, partial insertion, held and unstable-placement cases. |
 | Trustworthy grading | Synthetic original-asset traces exercise the negative cases, full containment, duration and missing measurements. Holding/release must name a movable root. Timed-process loading accepts fixed child-piece contact while excluding decoys and separately articulated children. | Current physical evidence for these measurements and outcomes. No heating or closure requirement is added to the bowl task. |
 | Live generation and editing | Prepared assets, compact repetition, scoped edits, immutable versions and source reuse have focused analytical/persistence coverage. Catalog geometry exposes component bounds and six actual rack shelf supports. | A bounded paid prompt-to-sensor-policy-to-report/export/reload run, with actual outcome and spending; usable scene/clearance checks and a verified targeted edit. Earlier assisted factory episodes are not current sensor-only acceptance. |
 | Warehouse appearance | Rack, pallet, carton, barrier and passive conveyor source adapters retain original visuals and disclose collision approximations. The conveyor retains 29 hinges; portable 0°/90° placements pass static checks. Viewer sharing/batching, texture budgets and failure recovery have CPU-only coverage. | Native contacts/materials, two genuinely generated detailed layouts, actual overview/close-up screenshots, reference comparison and viewport performance/LOD. The classic policy camera differs from browser PBR. |
@@ -18,8 +18,9 @@ not replace current native, live-model or application evidence.
 
 ## Execution constraints
 
-The user requested no further CI on October 31. Commits use `[skip ci]`; do not
-trigger workflows without the requested exception being approved. Heavy native
+The user requested no further CI on October 31, then authorized exactly one
+focused household job. That job completed successfully; the exception is consumed.
+Commits use `[skip ci]`; further CI requires authorization. Heavy native
 work must stay off the Mac. No new paid compute, merge or publication is authorized.
 Paid model requests are reserved for bounded full acceptance runs, not development
 probes. Historical worlds and recordings are not rewritten. Runtime changes require
@@ -50,7 +51,32 @@ material behavior, browser frame rate and release-candidate installation remain
 unverified. Detailed measurements and their limits live in the linked evidence
 files rather than being repeated here.
 
-## Proposed one-off hosted household check — not run
+## One-off hosted household check — passed
+
+[Run 41228261769](https://github.com/playground-systems/robot-worlds/actions/runs/41228261769)
+passed **33 tests, zero skips, errors or failures** on October 31. Tests took
+78.093 seconds; the single Ubuntu job took 1 minute 43 seconds against a 15-minute
+cap. Head `9273a3e828cc3def0f3c8019a2c8f97d15ecf9c3` was tested through GitHub's
+merge checkout `76c9619f06b26b46adc5d1a428452859a085ba98`, using Python 3.13.17
+and MuJoCo 3.17.0. No paid model calls ran. Other CI jobs were skipped, and the
+trigger label was removed.
+
+- Both public-interface policies completed five steps and physically moved the
+  robot 0.0760 m. Exported worlds ran again after the original directories were
+  deleted; regrading preserved the results.
+- Timeout, disconnect and invalid-action episodes retained evidence as
+  `policy_error`; cancellation remained `cancelled`. None counted as a valid
+  task failure. Normal movement-only and no-op episodes correctly failed placement.
+- The nine required native cases passed the evidence audit. Bowl concavity and
+  pre-placed support passed, but neither demonstrates robot insertion.
+
+The [committed run record](evidence/household-2026-10-31/run.json),
+[JUnit](evidence/household-2026-10-31/junit.xml) and
+[audit](evidence/household-2026-10-31/acceptance.json) retain exact identity,
+results and limits. The [full artifact](https://github.com/playground-systems/robot-worlds/actions/runs/41228261769/artifacts/13052338207)
+contains reports, traces and recorded frames with seven-day hosted retention;
+a local copy is retained under `.robot-worlds/acceptance/household-41228261769`.
+These recorded simulation frames are not application screenshots.
 
 `.github/workflows/household-acceptance.yml` selects 33 tests from four files:
 `test_household_sdk_flow.py`, `test_sourced_household_physics.py`,
@@ -61,12 +87,10 @@ publication runs. JUnit, reports, traces and checkout/runtime identity are retai
 for seven days. The nine required native cases cover SDK integration, concavity
 and pre-placed support; they cannot prove successful manipulation or full release
 readiness. The evidence auditor rejects skipped/missing/duplicate/failing cases;
-its 12 lightweight checks pass. Collection found all 33 selected tests, and the
-workflow YAML parses. Hosted execution remains unverified.
+its 12 lightweight checks pass. All 33 selected tests executed successfully.
 
-**Keep CI off until the user authorizes this run.** The goal forbids heavy Mac
-runs and new paid compute, while the later CI-off instruction removed the original
-hosted execution path. Preparation is not authorization to run it.
+**Keep further CI off.** The one approved run is complete. The goal still forbids
+heavy Mac runs and new paid compute; this exception does not authorize another job.
 
 Normal commits, PR updates and label removals do not trigger this workflow. The
 `run-household-acceptance` label suppresses the existing full-suite, packaging and

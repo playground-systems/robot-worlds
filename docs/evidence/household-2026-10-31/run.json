@@ -1,0 +1,359 @@
+{
+  "run_url": "https://github.com/playground-systems/robot-worlds/actions/runs/41228261769",
+  "run_id": 41228261769,
+  "attempt": 1,
+  "head_sha": "9273a3e828cc3def0f3c8019a2c8f97d15ecf9c3",
+  "checkout_merge_sha": "76c9619f06b26b46adc5d1a428452859a085ba98",
+  "conclusion": "success",
+  "runner": "ubuntu-24.04",
+  "job_duration_seconds": 103,
+  "test_duration_seconds": 78.093,
+  "tests": 33,
+  "skipped": 0,
+  "errors": 0,
+  "failures": 0,
+  "paid_model_calls": 0,
+  "artifact_url": "https://github.com/playground-systems/robot-worlds/actions/runs/41228261769/artifacts/13052338207",
+  "artifact_size_bytes": 15902923,
+  "artifact_sha256": "02b107b2d78df9b3d5ffb3112597ed6ee8119724779c32bbd0be620fd89c8a6e",
+  "artifact_retention_days": 7,
+  "full_release_accepted": false,
+  "results": [
+    {
+      "path": "_temp/household-acceptance/test_household_cancel_between_0/runs/8813a50ca5094601bacbaf976d851c8b/result.json",
+      "sha256": "11dfdf2558e87600523e2679c15b549f4876935d50ee4609852b104b7473bfbf",
+      "summary": {
+        "attempted": 1,
+        "valid": 0,
+        "successes": 0,
+        "invalid_or_interrupted": 1,
+        "success_rate": null,
+        "success_interval_95": null
+      },
+      "episodes": [
+        {
+          "status": "cancelled",
+          "termination": null,
+          "steps": 1,
+          "replay": {
+            "source": "recorded_simulation_states",
+            "view": "overview",
+            "frame_count": 1
+          }
+        }
+      ],
+      "trace_sha256": "03629fbc7f47cf5ae950b86cf126bc6b53676b1b078f78cdb83d9dc3bd68a426",
+      "robot_x_displacement_m": 0.0
+    },
+    {
+      "path": "_temp/household-acceptance/test_household_remote_failure_0/runs/b29948f670ce4a21aaded990f79779d0/result.json",
+      "sha256": "4f8e78014d86a3a1ab43c3bc04591f603aa588419f492f1191340f94df8dcde0",
+      "summary": {
+        "attempted": 1,
+        "valid": 0,
+        "successes": 0,
+        "invalid_or_interrupted": 1,
+        "success_rate": null,
+        "success_interval_95": null
+      },
+      "episodes": [
+        {
+          "status": "policy_error",
+          "termination": null,
+          "steps": 1,
+          "replay": {
+            "source": "recorded_simulation_states",
+            "view": "overview",
+            "frame_count": 1
+          }
+        }
+      ],
+      "trace_sha256": "03629fbc7f47cf5ae950b86cf126bc6b53676b1b078f78cdb83d9dc3bd68a426",
+      "robot_x_displacement_m": 0.0
+    },
+    {
+      "path": "_temp/household-acceptance/test_household_remote_failure_1/runs/af7678a3a5fe4adf94179c4028113833/result.json",
+      "sha256": "7bffee257be27be8d6524008b60b403f3fd17fbfe001c7b4f0218c32282a6794",
+      "summary": {
+        "attempted": 1,
+        "valid": 0,
+        "successes": 0,
+        "invalid_or_interrupted": 1,
+        "success_rate": null,
+        "success_interval_95": null
+      },
+      "episodes": [
+        {
+          "status": "policy_error",
+          "termination": null,
+          "steps": 1,
+          "replay": {
+            "source": "recorded_simulation_states",
+            "view": "overview",
+            "frame_count": 1
+          }
+        }
+      ],
+      "trace_sha256": "03629fbc7f47cf5ae950b86cf126bc6b53676b1b078f78cdb83d9dc3bd68a426",
+      "robot_x_displacement_m": 0.0
+    },
+    {
+      "path": "_temp/household-acceptance/test_household_remote_failure_2/runs/89d492256c324e8eb06bedc8eeaab271/result.json",
+      "sha256": "fd1c69b4e1c6ebd4cb0f7cea6af2ddd44ef120c60ae72d8e3cd5bb2492ce3c86",
+      "summary": {
+        "attempted": 1,
+        "valid": 0,
+        "successes": 0,
+        "invalid_or_interrupted": 1,
+        "success_rate": null,
+        "success_interval_95": null
+      },
+      "episodes": [
+        {
+          "status": "policy_error",
+          "termination": null,
+          "steps": 1,
+          "replay": {
+            "source": "recorded_simulation_states",
+            "view": "overview",
+            "frame_count": 1
+          }
+        }
+      ],
+      "trace_sha256": "03629fbc7f47cf5ae950b86cf126bc6b53676b1b078f78cdb83d9dc3bd68a426",
+      "robot_x_displacement_m": 0.0
+    },
+    {
+      "path": "_temp/household-acceptance/test_household_sensor_action_r0/regraded/733af12808e94c83871da9ba9848e06f/result.json",
+      "sha256": "1563aee3dd50ce99acea6c263304283c03b8f308300ddcde02600dd4fa520c90",
+      "summary": {
+        "attempted": 1,
+        "valid": 1,
+        "successes": 0,
+        "invalid_or_interrupted": 0,
+        "success_rate": 0.0,
+        "success_interval_95": [
+          0,
+          0.7934506856227626
+        ]
+      },
+      "episodes": [
+        {
+          "status": "completed",
+          "termination": "policy_finished",
+          "steps": 5,
+          "replay": {
+            "source": "recorded_simulation_states",
+            "view": "overview",
+            "frame_count": 8
+          }
+        }
+      ],
+      "trace_sha256": "29f85d6591f5532a50ea18bf037d134d54d5256d7f444210bd13f65f3fb45ead",
+      "robot_x_displacement_m": 0.07603190777772563
+    },
+    {
+      "path": "_temp/household-acceptance/test_household_sensor_action_r0/reloaded-runs/9e4c8a1ff4dd4110b46e5187e1c8aff6/result.json",
+      "sha256": "34743c8af17d54978787dd7454815da2c4d73ffbbffd6f12d92efb98fa6212cf",
+      "summary": {
+        "attempted": 1,
+        "valid": 1,
+        "successes": 0,
+        "invalid_or_interrupted": 0,
+        "success_rate": 0.0,
+        "success_interval_95": [
+          0,
+          0.7934506856227626
+        ]
+      },
+      "episodes": [
+        {
+          "status": "completed",
+          "termination": "policy_finished",
+          "steps": 5,
+          "replay": {
+            "source": "recorded_simulation_states",
+            "view": "overview",
+            "frame_count": 2
+          }
+        }
+      ],
+      "trace_sha256": "29f85d6591f5532a50ea18bf037d134d54d5256d7f444210bd13f65f3fb45ead",
+      "robot_x_displacement_m": 0.07603190777772563
+    },
+    {
+      "path": "_temp/household-acceptance/test_household_sensor_action_r0/restored-report/result.json",
+      "sha256": "2bdec34edb3f78b960c7434b374f2d895f7a5d82c3b5c53ab1cb1143777cfcdc",
+      "summary": {
+        "attempted": 1,
+        "valid": 1,
+        "successes": 0,
+        "invalid_or_interrupted": 0,
+        "success_rate": 0.0,
+        "success_interval_95": [
+          0,
+          0.7934506856227626
+        ]
+      },
+      "episodes": [
+        {
+          "status": "completed",
+          "termination": "policy_finished",
+          "steps": 5,
+          "replay": {
+            "source": "recorded_simulation_states",
+            "view": "overview",
+            "frame_count": 8
+          }
+        }
+      ],
+      "trace_sha256": "29f85d6591f5532a50ea18bf037d134d54d5256d7f444210bd13f65f3fb45ead",
+      "robot_x_displacement_m": 0.07603190777772563
+    },
+    {
+      "path": "_temp/household-acceptance/test_household_sensor_action_r1/regraded/5d2ba8468d104c32902c0539349aefc8/result.json",
+      "sha256": "9fbf93fa3a0624219998bce6157237bd184c9465110248a371b6a7f3d97b02fa",
+      "summary": {
+        "attempted": 1,
+        "valid": 1,
+        "successes": 0,
+        "invalid_or_interrupted": 0,
+        "success_rate": 0.0,
+        "success_interval_95": [
+          0,
+          0.7934506856227626
+        ]
+      },
+      "episodes": [
+        {
+          "status": "completed",
+          "termination": "policy_finished",
+          "steps": 5,
+          "replay": {
+            "source": "recorded_simulation_states",
+            "view": "overview",
+            "frame_count": 8
+          }
+        }
+      ],
+      "trace_sha256": "29f85d6591f5532a50ea18bf037d134d54d5256d7f444210bd13f65f3fb45ead",
+      "robot_x_displacement_m": 0.07603190777772563
+    },
+    {
+      "path": "_temp/household-acceptance/test_household_sensor_action_r1/reloaded-runs/aa402636c07b42e6b8267cf827a9b13e/result.json",
+      "sha256": "18803cd92db6976abe08c57559f7eff71ab803fcfd46f169bd0dc1a9d4f62e75",
+      "summary": {
+        "attempted": 1,
+        "valid": 1,
+        "successes": 0,
+        "invalid_or_interrupted": 0,
+        "success_rate": 0.0,
+        "success_interval_95": [
+          0,
+          0.7934506856227626
+        ]
+      },
+      "episodes": [
+        {
+          "status": "completed",
+          "termination": "policy_finished",
+          "steps": 5,
+          "replay": {
+            "source": "recorded_simulation_states",
+            "view": "overview",
+            "frame_count": 2
+          }
+        }
+      ],
+      "trace_sha256": "29f85d6591f5532a50ea18bf037d134d54d5256d7f444210bd13f65f3fb45ead",
+      "robot_x_displacement_m": 0.07603190777772563
+    },
+    {
+      "path": "_temp/household-acceptance/test_household_sensor_action_r1/restored-report/result.json",
+      "sha256": "e708df172e70366f04b0b9d5a0bb62f63149666fd3a7a3b0e6a47226bb05c3fc",
+      "summary": {
+        "attempted": 1,
+        "valid": 1,
+        "successes": 0,
+        "invalid_or_interrupted": 0,
+        "success_rate": 0.0,
+        "success_interval_95": [
+          0,
+          0.7934506856227626
+        ]
+      },
+      "episodes": [
+        {
+          "status": "completed",
+          "termination": "policy_finished",
+          "steps": 5,
+          "replay": {
+            "source": "recorded_simulation_states",
+            "view": "overview",
+            "frame_count": 8
+          }
+        }
+      ],
+      "trace_sha256": "29f85d6591f5532a50ea18bf037d134d54d5256d7f444210bd13f65f3fb45ead",
+      "robot_x_displacement_m": 0.07603190777772563
+    },
+    {
+      "path": "_temp/household-acceptance/test_sdk_runs_original_assets_0/regraded/8972ebd872c8466495f18b88e24b1ae5/result.json",
+      "sha256": "132e5d39a7a6fb5005658539ab25fc94400d5eed47069b7d211047f9b25138c5",
+      "summary": {
+        "attempted": 1,
+        "valid": 1,
+        "successes": 0,
+        "invalid_or_interrupted": 0,
+        "success_rate": 0.0,
+        "success_interval_95": [
+          0,
+          0.7934506856227626
+        ]
+      },
+      "episodes": [
+        {
+          "status": "completed",
+          "termination": "policy_finished",
+          "steps": 1,
+          "replay": {
+            "source": "recorded_simulation_states",
+            "view": "overview",
+            "frame_count": 1
+          }
+        }
+      ],
+      "trace_sha256": "03629fbc7f47cf5ae950b86cf126bc6b53676b1b078f78cdb83d9dc3bd68a426",
+      "robot_x_displacement_m": 0.0
+    },
+    {
+      "path": "_temp/household-acceptance/test_sdk_runs_original_assets_0/runs/3ef0d79e219b47d4b07beb5e1e673dc6/result.json",
+      "sha256": "ab6b6702be84a154734b69f19284d0d3e37c35337147881ae48e0a89b8b99ecc",
+      "summary": {
+        "attempted": 1,
+        "valid": 1,
+        "successes": 0,
+        "invalid_or_interrupted": 0,
+        "success_rate": 0.0,
+        "success_interval_95": [
+          0,
+          0.7934506856227626
+        ]
+      },
+      "episodes": [
+        {
+          "status": "completed",
+          "termination": "policy_finished",
+          "steps": 1,
+          "replay": {
+            "source": "recorded_simulation_states",
+            "view": "overview",
+            "frame_count": 1
+          }
+        }
+      ],
+      "trace_sha256": "03629fbc7f47cf5ae950b86cf126bc6b53676b1b078f78cdb83d9dc3bd68a426",
+      "robot_x_displacement_m": 0.0
+    }
+  ]
+}
