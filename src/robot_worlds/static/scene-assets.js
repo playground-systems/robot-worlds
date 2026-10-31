@@ -3,11 +3,13 @@ import { OBJLoader } from './vendor/OBJLoader.js';
 import { disposeMaterials, disposeTree, markSharedResources, SceneResourceCache } from './scene-resources.js';
 import { estimatedAppearance } from './scene-appearance.js';
 import { SOURCE_MAPS, sourceMaterialOptions } from './scene-materials.js';
-import { loadBundledTexture, readAssetBytes, TextureBudget } from './scene-textures.js';
+import { fetchAssetBytes, loadBundledTexture, TextureBudget } from './scene-textures.js';
 
 /** Immutable asset resources shared only for the lifetime of one displayed world. */
 export class SceneAssets {
-  constructor({ maxTextureBytes } = {}) {
+  constructor({ maxTextureBytes, assetTimeoutMs = 30000 } = {}) {
+    if (!Number.isSafeInteger(assetTimeoutMs) || assetTimeoutMs <= 0 || assetTimeoutMs > 120000) throw new Error('Invalid asset request timeout');
+    this.assetTimeoutMs = assetTimeoutMs;
     this.cache = new SceneResourceCache({ cacheFailures: true });
     this.textureBudget = new TextureBudget(maxTextureBytes);
     this.controller = new AbortController();
@@ -16,10 +18,9 @@ export class SceneAssets {
   mesh(base, path) {
     return this.cache.get(JSON.stringify(['mesh', base, path]), async () => {
       if (!/^assets\/[a-zA-Z0-9_.-]+\.obj$/i.test(path)) throw new Error('Unbundled mesh path');
-      const response = await fetch(base + path, { signal: this.controller.signal });
-      if (!response.ok) throw new Error('Mesh unavailable');
-      const limit = 24 * 1024 * 1024;
-      const source = new TextDecoder().decode(await readAssetBytes(response, limit, this.controller.signal));
+      const bytes = await fetchAssetBytes(base + path, 24 * 1024 * 1024, this.controller.signal,
+        { timeoutMs: this.assetTimeoutMs, unavailable: 'Mesh unavailable' });
+      const source = new TextDecoder().decode(bytes);
       if (this.controller.signal.aborted) throw new Error('Scene resources disposed');
       const group = new OBJLoader().parse(source);
       try {
@@ -51,7 +52,7 @@ export class SceneAssets {
     // Sampling/color-space differences require distinct GPU textures.
     const wrapS = surface?.wrap_s || 'clamp', wrapT = surface?.wrap_t || 'clamp';
     return this.cache.get(JSON.stringify(['texture', base, path, space, wrapS, wrapT]), async () => {
-      const texture = await loadBundledTexture(THREE, base, path, this.controller.signal, space, this.textureBudget);
+      const texture = await loadBundledTexture(THREE, base, path, this.controller.signal, space, this.textureBudget, this.assetTimeoutMs);
       const wraps = { repeat: THREE.RepeatWrapping, clamp: THREE.ClampToEdgeWrapping, mirror: THREE.MirroredRepeatWrapping };
       texture.wrapS = wraps[wrapS]; texture.wrapT = wraps[wrapT]; texture.needsUpdate = true;
       return texture;

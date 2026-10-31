@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const source = await readFile(new URL('../src/robot_worlds/static/scene-textures.js', import.meta.url));
-const { loadBundledTexture, readAssetBytes, TextureBudget } = await import(`data:text/javascript;base64,${source.toString('base64')}`);
+const { loadBundledTexture, readAssetBytes, fetchAssetBytes, TextureBudget } = await import(`data:text/javascript;base64,${source.toString('base64')}`);
 
 function png(width = 1024, height = 1024) {
   const bytes = new Uint8Array(33);
@@ -112,4 +112,50 @@ test('many small chunks are accumulated into bounded storage without changing by
   const bytes = await readAssetBytes(new Response(body), 80000, signal());
   assert.equal(bytes.byteLength, 70000); assert(bytes.buffer.byteLength <= 80000);
   assert(bytes.every((value, i) => value === i%251));
+});
+
+test('request timeout aborts stalled headers without cancelling the displayed world', async t => {
+  let child;
+  t.mock.method(globalThis, 'fetch', async (_url, { signal }) => {
+    child = signal;
+    return new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('fetch aborted')), { once: true }));
+  });
+  const parent = new AbortController();
+  await assert.rejects(fetchAssetBytes('/asset', 100, parent.signal, { timeoutMs: 10 }), /Source load timed out/);
+  assert(child.aborted); assert.equal(parent.signal.aborted, false);
+});
+
+test('request deadline includes a stalled body after headers arrive', async t => {
+  let cancelled = 0;
+  const body = new ReadableStream({ start(controller) { controller.enqueue(new Uint8Array([1])); }, cancel() { cancelled++; } });
+  t.mock.method(globalThis, 'fetch', async () => new Response(body));
+  await assert.rejects(fetchAssetBytes('/asset', 100, signal(), { timeoutMs: 10 }), /Source load timed out/);
+  assert.equal(cancelled, 1); assert.equal(body.locked, false);
+});
+
+test('parent cancellation propagates immediately and invalid/already-cancelled requests never fetch', async t => {
+  let calls = 0, child;
+  t.mock.method(globalThis, 'fetch', async (_url, { signal }) => {
+    calls++; child = signal;
+    return new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('fetch aborted')), { once: true }));
+  });
+  const parent = new AbortController();
+  const pending = fetchAssetBytes('/asset', 100, parent.signal);
+  parent.abort();
+  await assert.rejects(pending, /cancelled/); assert(child.aborted);
+  await assert.rejects(fetchAssetBytes('/asset', 100, parent.signal), /cancelled/);
+  for (const timeoutMs of [0, NaN, Infinity, 120001]) {
+    await assert.rejects(fetchAssetBytes('/asset', 100, signal(), { timeoutMs }), /Invalid/);
+  }
+  assert.equal(calls, 1);
+});
+
+test('successful request removes its cancellation relay and deadline', async t => {
+  let child;
+  t.mock.method(globalThis, 'fetch', async (_url, { signal }) => { child = signal; return new Response('ok'); });
+  const parent = new AbortController();
+  assert.deepEqual([...await fetchAssetBytes('/asset', 100, parent.signal, { timeoutMs: 10 })], [111,107]);
+  parent.abort();
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert.equal(child.aborted, false);
 });

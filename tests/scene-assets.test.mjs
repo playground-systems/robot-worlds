@@ -50,7 +50,7 @@ function png() {
   return bytes; // Header-only fixture; bitmap decoding is explicitly mocked below.
 }
 
-function fixtures(t, respond) {
+function fixtures(t, respond, options) {
   const calls = [], counts = { closed: 0 };
   t.mock.method(globalThis, 'fetch', async (url, options) => {
     calls.push(url);
@@ -59,7 +59,7 @@ function fixtures(t, respond) {
   const prior = globalThis.createImageBitmap;
   globalThis.createImageBitmap = async () => ({ width: 4, height: 4, close() { counts.closed++; } });
   t.after(() => { globalThis.createImageBitmap = prior; });
-  const assets = new SceneAssets(); t.after(() => assets.dispose());
+  const assets = new SceneAssets(options); t.after(() => assets.dispose());
   return { assets, calls, counts };
 }
 
@@ -336,4 +336,21 @@ test('external request cancellation does not prevent later resource disposal', t
   assets.controller.abort();
   assets.dispose(); assets.dispose();
   assert.equal(released, 1); assert.equal(assets.cache.closed, true);
+});
+
+test('a source timeout is cached without aborting unrelated scene assets', async t => {
+  let stalledRequests = 0;
+  const { assets } = fixtures(t, (url, { signal }) => {
+    if (url.endsWith('/stall.obj')) {
+      stalledRequests++;
+      return new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true }));
+    }
+    return new Response(url.endsWith('.obj') ? source : png());
+  }, { assetTimeoutMs: 10 });
+  const stalled = { ...object, mesh_path: 'assets/stall.obj' };
+  const [failed, loaded] = await Promise.allSettled([assets.load(stalled, '/world/'), assets.load(object, '/world/')]);
+  assert.equal(failed.status, 'rejected'); assert.match(failed.reason.message, /timed out/);
+  assert.equal(loaded.status, 'fulfilled'); assert.equal(assets.controller.signal.aborted, false);
+  await assert.rejects(assets.load(stalled, '/world/'), /timed out/);
+  assert.equal(stalledRequests, 1);
 });

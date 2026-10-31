@@ -36,6 +36,31 @@ export async function readAssetBytes(response, limit, signal) {
   }
 }
 
+/** One deadline covers response headers and body; expiry cancels only this request. */
+export async function fetchAssetBytes(url, limit, signal, { timeoutMs = 30000, unavailable = 'Asset unavailable' } = {}) {
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 120000) throw new Error('Invalid asset request timeout');
+  if (signal.aborted) throw new Error('Asset load cancelled');
+  const controller = new AbortController();
+  let timedOut = false;
+  const cancel = () => controller.abort();
+  signal.addEventListener('abort', cancel, { once: true });
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      try { await response.body?.cancel(); } catch {}
+      throw new Error(unavailable);
+    }
+    return await readAssetBytes(response, limit, controller.signal);
+  } catch (error) {
+    if (timedOut) throw new Error('Source load timed out');
+    if (signal.aborted) throw new Error('Asset load cancelled');
+    throw error;
+  } finally {
+    clearTimeout(timer); signal.removeEventListener('abort', cancel);
+  }
+}
+
 /** Estimated RGBA texels plus mipmaps, not measured total browser/GPU memory. */
 export class TextureBudget {
   constructor(limit = 512 * 1024 * 1024) {
@@ -54,12 +79,11 @@ export class TextureBudget {
 }
 
 /** Load only immutable bundled PNGs; validate dimensions before native decoding. */
-export async function loadBundledTexture(THREE, assetBase, path, signal, colorSpace = 'srgb', budget = null) {
+export async function loadBundledTexture(THREE, assetBase, path, signal, colorSpace = 'srgb', budget = null, timeoutMs = 30000) {
   if (!['srgb', 'linear'].includes(colorSpace)) throw new Error('Unsupported texture color space');
   if (!/^assets\/[a-zA-Z0-9_.-]+\.png$/i.test(path)) throw new Error('Unbundled texture path');
-  const response = await fetch(assetBase + path, { signal });
-  if (!response.ok) throw new Error('Texture unavailable');
-  const bytes = await readAssetBytes(response, 16 * 1024 * 1024, signal);
+  const bytes = await fetchAssetBytes(assetBase + path, 16 * 1024 * 1024, signal,
+    { timeoutMs, unavailable: 'Texture unavailable' });
   const signature = [137, 80, 78, 71, 13, 10, 26, 10];
   if (bytes.length < 33 || signature.some((value, index) => bytes[index] !== value)) throw new Error('Invalid PNG header');
   const header = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);

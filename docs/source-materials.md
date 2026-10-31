@@ -109,3 +109,12 @@ at most 16 source labels and one overflow summary. Source geometry, physics and
 saved results are unchanged. Twenty-five focused CPU-only checks cover this
 failure behavior, retry, selection, batching and cleanup; rendered acceptance
 remains open.
+
+Each OBJ/PNG network transfer has a 30-second deadline covering response headers
+and body consumption. Timeout aborts only that request, allowing other queued
+objects to proceed, and shows a `Source load timed out` marker. Scene disposal
+still cancels all outstanding requests. Internal callers can configure a positive
+`assetTimeoutMs` up to 120,000 ms; this is a transfer deadline, not a deadline for
+OBJ parsing, image decoding or GPU upload. Thirty-six focused loader/cache/viewer
+checks pass with simulated fetches and without a renderer. Real network and
+viewport performance remain unmeasured.

@@ -1,78 +1,54 @@
 # Alpha acceptance evidence
 
-The active release target is the customer path from installation through generated
-environment, policy execution, evidence inspection and portable export. Bowl and
-microwave manipulation is the functional scenario; a detailed generated warehouse
-is the visual scenario. This checklist does not replace missing live evidence with
-mocked tests.
+The release target is install → text generation → policy execution → evidence →
+portable export/reload. The functional scenario is the original bowl and microwave;
+the visual scenario is a detailed generated warehouse with an alternative layout.
+The release is **not yet accepted**. Mocked, analytical and historical results do
+not replace current native, live-model or application evidence.
 
-| Gate | Current evidence | Remaining acceptance work |
+| Gate | Available evidence | Required work still open |
 | --- | --- | --- |
-| SDK action loop | `test_household_sdk_flow.py` adds original-asset generation with a mocked model, onboard RGB-D, depth queries, wheel motion, gripper commands, feedback, replay, export/reload and regrading through in-process and real loopback HTTP policies. It also covers HTTP timeout/disconnection, malformed actions and cancellation. | Native execution remains unverified; CI cancellation requested at the user's direction. |
-| Physical manipulation and grading | Existing native tests check bowl concavity and pre-placed support inside the original microwave. Synthetic original-asset traces reject no-op, wrong object, partial insertion, continued holding and interrupted support. Fixed/visual subjects are rejected for gripper predicates. | Actual grasp, transport, door interaction, insertion and release; native task-specific negative cases. The new action-loop test intentionally does not attempt insertion. |
-| Live generation and evaluation | Earlier assisted factory episodes are development evidence, not current sensor-only acceptance. | Complete a bounded paid generation-to-report run with the current sensor contract; preserve actual outcome and spending. |
-| Warehouse assets and appearance | Five pinned source assets now register in portable libraries: rack, pallet, sealed carton, barrier and passive conveyor. The conveyor preserves 29 hinges; its original and quarter-turned placements pass static checks. Original visual data and explicit collision approximations pass geometric checks for shelves, fork channels and rail openings. Repeated viewer assets share geometry, materials and maps with lightweight lifecycle coverage. See `simready-selection.md` and `source-materials.md`. | Verify native contacts/materials, verify conveyor bearing/contact behavior, address renderer differences, generate two layouts and inspect actual screenshots/performance, including LOD needs. |
-| Fresh installation and recovery | Existing hosted clean-install jobs and offline diagnostics. Warehouse preparation now has an SDK/CLI installer, subset selection, progress, bounded imports and atomic library publication; failure/cancellation/worker-handoff checks pass. The actual installer ran in 2.31 s with cached sources, with a 0.2333 s warm repeat. | Run the built release-candidate journey, including cold setup, native execution and recovery evidence. |
-| UI and release | Existing workbench, reports, export, attribution and draft PR. | Current browser acceptance, reference comparison, versioned artifacts and reconciled walkthrough. |
+| SDK action loop | `test_household_sdk_flow.py` covers mocked generation, original assets, public RGB-D/depth observations, wheel/gripper actions, feedback, in-process and HTTP policies, timeout/disconnection/invalid actions, cancellation, replay, export/reload and regrading. | Execute this native suite on the release candidate. Its policy deliberately does not insert the bowl. |
+| Physical manipulation | Historical native tests check bowl concavity and pre-placed support in the microwave. Arm approach presets now use the same complete base frame as position targets; feedback checks measured orientation as well as position. | Demonstrate robot approach, grasp, door interaction, transport, insertion, release and stable support with a labeled engineering policy. Run native no-op, decoy, partial insertion, held and unstable-placement cases. |
+| Trustworthy grading | Synthetic original-asset traces exercise the negative cases, full containment, duration and missing measurements. Holding/release must name a movable root. Timed-process loading accepts fixed child-piece contact while excluding decoys and separately articulated children. | Current physical evidence for these measurements and outcomes. No heating or closure requirement is added to the bowl task. |
+| Live generation and editing | Prepared assets, compact repetition, scoped edits, immutable versions and source reuse have focused analytical/persistence coverage. Catalog geometry exposes component bounds and six actual rack shelf supports. | A bounded paid prompt-to-sensor-policy-to-report/export/reload run, with actual outcome and spending; usable scene/clearance checks and a verified targeted edit. Earlier assisted factory episodes are not current sensor-only acceptance. |
+| Warehouse appearance | Rack, pallet, carton, barrier and passive conveyor source adapters retain original visuals and disclose collision approximations. The conveyor retains 29 hinges; portable 0°/90° placements pass static checks. Viewer sharing/batching, texture budgets and failure recovery have CPU-only coverage. | Native contacts/materials, two genuinely generated detailed layouts, actual overview/close-up screenshots, reference comparison and viewport performance/LOD. The classic policy camera differs from browser PBR. |
+| Fresh-user journey | Installer, cache verification, subset selection, cancellation, atomic publication, CLI library selection and workbench handoff have focused checks. Historical clean-install jobs exist. | Build the versioned candidate and test documented commands in a clean environment: diagnostics, BYO key, progress/errors, policy connection, cancellation, saved-result recovery and portable artifacts. Verify supported Mac operation. |
+| Application and release | Workbench, selection, edit/progress controls, reports, replay and export are implemented. | Current application walkthrough: inspection, validation/error state, targeted edit, policy execution/cancellation, replay and evidence navigation; camera framing without obstruction. Capture warehouse, bowl/interior, interaction and report screenshots. Reconcile release docs/artifacts and reproducible walkthrough. |
 
-The action-loop probe uses only public sensor observations. Its deliberately
-unsuccessful bowl placement must remain a valid failed task, while transport or
-policy errors must be classified separately. Privileged trace assertions occur
-only in the test evaluator to verify that the robot physically moved.
+## Execution constraints
 
-As of October 31, the user requested no further CI runs. Keep verification to
-focused lightweight local checks; do not move heavy native tests onto the Mac.
-Native acceptance remains pending. Do not trigger workflows through routine
-pushes while this instruction is in effect. Paid model requests are reserved for
-bounded full acceptance runs, not individual development probes. No new paid
-compute, merge or publication is authorized.
+The user requested no further CI on October 31. Commits use `[skip ci]`; do not
+trigger workflows without the requested exception being approved. Heavy native
+work must stay off the Mac. No new paid compute, merge or publication is authorized.
+Paid model requests are reserved for bounded full acceptance runs, not development
+probes. Historical worlds and recordings are not rewritten. Runtime changes require
+fresh candidate validation; older green CI does not validate the current code.
 
-Prepared assets and mesh assemblies now support all four quarter-turn placements
-without rewriting source files. Focused checks cover original microwave parts,
-hinge/cavity frames, mocked library generation and typed edits, portable worlds,
-off-center native XML geometry and browser transforms. These are analytical and
-serialization checks; rotated native contact/render acceptance remains open.
+Current browser acceptance is also missing. No CPU-only viewer check, mocked
+bitmap decoder, source-scene import or prior screenshot establishes it.
 
-Prepared repetition now verifies a source once per group, expands independent
-copies with stable IDs, and rejects budget/ID failures before publishing the
-group. Mocked planning with actual carton assets produced two 960-component
-arrangements in under 0.3 s each. This is static expansion evidence, not the
-required live generated-warehouse visual acceptance.
+## Evidence details
 
-The layout viewer now batches compatible opaque source meshes by spatial cell.
-CPU checks cover picking, transforms, material/visibility separation, cleanup and
-failure recovery. Actual carton geometry yielded 28 batches from 840 visual mesh
-objects in a harness without rendering or real image decoding. Frame rate, GPU
-memory, screenshots and visual acceptance remain unverified.
+- [Household sources and native-test limits](household-assets.md): original geometry,
+  attribution, convex bowl pieces and articulated appliance.
+- [Warehouse source/adaptation evidence](simready-selection.md): pinned sources,
+  collision approximations, cached preparation timings and portable placement.
+- [Material and viewer evidence](source-materials.md): source channels, renderer
+  differences, batching and resource/error handling. Latest focused loader checks:
+  36 passing; transfer timeout covers headers/body, not decoding/rendering.
+- `test_prepared_assets.py`, `test_simready_rack.py`, `test_asset_library.py`: 31
+  focused checks for catalog references, rotated support targets and persistence.
+  Actual bowl/microwave/rack/conveyor metadata occupies 39,511 characters.
+- `test_arm_orientation.py`, `test_sensors.py`: 25 focused mathematical/action-boundary
+  checks; no physical rollout. `test_eval_adversarial.py`: 17 evaluator/monitor
+  checks, including synthetic original-bowl child-piece support.
 
-Focused grading checks use fabricated traces with the original bowl and microwave
-bounds. They verify object identity, full-rim containment, sampled release/support
-duration and missing-measurement handling. They are evaluator regressions, not
-robot manipulation evidence. Holding/released criteria and process prerequisites
-must reference a movable workpiece root; fixed child meshes cannot prove release.
-
-The generation catalog now supplies local component geometry and rigid-assembly
-bounds for named references, while the rack importer names all six shelf panels.
-Thirty-one focused catalog/library checks passed, including mocked generation
-with a quarter-turned shelf target. Actual bowl/microwave/rack/conveyor metadata
-occupies 39,511 characters, below the existing 200,000-character planning cap.
-This does not establish a live generated scene or physical shelf placement.
-
-Arm approach presets now use the same complete base-link rotation as depth and
-position targets. Previously TIAGo used fixed world directions, and G1 only
-partially accounted for base rotation. Measured arm feedback checks orientation
-as well as position before reporting `reached`. Focused synthetic checks cover
-both hands, rotated/tilted bases, feedback and the public action boundary; no
-robot rollout was executed. This runtime change requires fresh validation of
-release-candidate worlds; historical recordings remain untouched.
-
-Process loading now recognizes contacts on fixed collision pieces of the intended
-workpiece, rather than requiring the root piece itself to touch the fixture.
-Seventeen focused evaluator/monitor checks pass, including original bowl geometry
-with synthetic child-piece contact and root-level holding. Decoy and articulated
-child contacts cannot substitute for the rigid workpiece. This fixes the existing
-optional process abstraction; it adds no heating requirement to the bowl task and
-does not constitute physical placement evidence.
+Reported local timings distinguish cached preparation/static expansion from live
+customer latency. Actual model latency, successful manipulation, current native
+material behavior, browser frame rate and release-candidate installation remain
+unverified. Detailed measurements and their limits live in the linked evidence
+files rather than being repeated here.
 
 ## Proposed one-off hosted household check — not run
 
@@ -80,47 +56,26 @@ does not constitute physical placement evidence.
 `test_household_sdk_flow.py`, `test_sourced_household_physics.py`,
 `test_household_grading.py` and `test_arm_orientation.py`. It uses one Ubuntu
 runner, a 15-minute job limit, single-threaded numeric libraries, mocked models
-and an empty model API key. It performs no package build, catalog conversion,
-live model request or publication. Reports, traces, JUnit and runtime/checkout
-identity are retained for seven days. This is a subset check, not full release
-acceptance or successful bowl manipulation.
+and an empty model API key. No package build, conversion, live model request or
+publication runs. JUnit, reports, traces and checkout/runtime identity are retained
+for seven days. The nine required native cases cover SDK integration, concavity
+and pre-placed support; they cannot prove successful manipulation or full release
+readiness. The evidence auditor rejects skipped/missing/duplicate/failing cases;
+its 12 lightweight checks pass. Collection found all 33 selected tests, and the
+workflow YAML parses. Hosted execution remains unverified.
 
-The workflow has only explicit label/manual triggers. Normal commits, PR updates
-and label removal do not trigger it. The label `run-household-acceptance` also
-suppresses the existing full-suite, packaging and conversion jobs while present.
-GitHub documents label activity types in its [workflow trigger reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request).
+**Keep CI off until the user authorizes this run.** The goal forbids heavy Mac
+runs and new paid compute, while the later CI-off instruction removed the original
+hosted execution path. Preparation is not authorization to run it.
 
-**Keep CI off until the user authorizes this run.** This proposal is needed because
-the goal forbids heavy native work on the Mac and new paid compute, while the
-later user instruction disabled CI. Preparing this workflow is not authorization
-to trigger it.
+Normal commits, PR updates and label removals do not trigger this workflow. The
+`run-household-acceptance` label suppresses the existing full-suite, packaging and
+conversion jobs while present. For the unmerged draft, use the explicit label
+event after authorization ([GitHub trigger reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)):
 
-For this unmerged draft, use the label event after authorization rather than
-assuming a new manual-dispatch workflow is already registered on `main`:
-
-1. Apply the dedicated label while the current head still has `[skip ci]`.
-2. Push one empty commit without a skip marker. The existing jobs stay suppressed
-   by the label; the household workflow does not listen for commit updates.
-3. Remove and reapply that label once to request the single household job.
-4. Record the resulting run ID and remove the label. Keep subsequent commits
-   marked `[skip ci]`; any additional native attempt requires a concrete diagnosed
-   change and authorization covering another run.
-
-`tools/check_household_evidence.py` audits nine required native cases and rejects
-missing, skipped, duplicate or failing evidence. It always reports full release
-acceptance as false because this subset cannot establish successful manipulation,
-live generation, warehouse screenshots or clean installation. Twelve lightweight
-auditor checks pass. Collection found all 33 selected tests without executing
-the native cases. Workflow YAML parses; actual hosted execution is unverified.
-
-Viewer loading now enforces encoded byte limits during streaming and checks PNG
-dimensions before decoding. Shared textures use a per-world 512 MiB estimated
-texel/mipmap budget with cancellation/disposal accounting. Twenty-six focused
-viewer checks pass without a renderer. This bounds texture reservations, not
-all browser memory, and does not establish viewport performance or visual acceptance.
-
-Repeated missing viewer assets now issue one request per resource until an
-explicit retry or world reload. Shared, batchable wireframe bounds retain
-selection and cutaway behavior, and failure annotations are capped at 17 nodes.
-Twenty-five focused checks passed without rendering or CI. This is bounded
-failure handling, not evidence that the required generated scenes render correctly.
+1. Apply the dedicated label while the head still has `[skip ci]`.
+2. Push one empty commit without a skip marker. Existing jobs remain suppressed;
+   the household workflow does not listen for commit updates.
+3. Remove/reapply the label once to request the single household job.
+4. Record the run ID and remove the label. Subsequent commits retain `[skip ci]`.
+   Another attempt needs a diagnosed change and authorization covering that run.

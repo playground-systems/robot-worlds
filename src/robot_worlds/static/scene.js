@@ -225,7 +225,7 @@ export class WorldViewer {
   }
 
   showAssetError(object, error) {
-    const message = error.message === 'Scene texture budget reached' ? error.message : 'mesh unavailable';
+    const message = ['Scene texture budget reached', 'Source load timed out'].includes(error.message) ? error.message : 'mesh unavailable';
     const key = JSON.stringify([object.mesh_path, object.texture_path, object.normal_texture_path,
       object.orm_texture_path, object.emissive_texture_path, message]);
     const existing = this.assetErrorLabels.get(key);
