@@ -18,6 +18,7 @@ from robot_worlds.collision_preparation import (
     prepare_collision_mesh,
 )
 from robot_worlds.gltf_decode import DecodedGLB, GLBDecodeError, decode_glb
+from robot_worlds.gltf_visuals import GLBVisuals, prepare_glb_visuals
 from robot_worlds.models import Criterion, SceneObject, SurfaceMaterial, WorldSpec
 from robot_worlds.policy import LLMAgent
 from robot_worlds.prepared_assets import load_prepared_asset, prepared_asset_catalog
@@ -35,3 +36,4 @@ __all__ = ["AssetResolutionError", "FuelAssetResolver", "SourceAssetRequest", "C
 __all__ += ["SimReadySource", "download_simready_asset", "simready_asset_catalog", "simready_asset_search"]
 __all__ += ["DecodedGLB", "GLBDecodeError", "decode_glb"]
 __all__ += ["SurfaceMaterial"]
+__all__ += ["GLBVisuals", "prepare_glb_visuals"]

@@ -84,9 +84,32 @@ maps](source-materials.md); the current classic policy camera has declared
 rendering limitations. This is infrastructure for source conversion, not a
 completed warehouse import.
 
-Next implementation: write the material/visual artifacts into the existing
-source-backed asset library, add separate interaction-aware collisions, and
-perform native validation when permitted. PBR maps, vertex colors and physical
-metadata must not be silently discarded by that next step.
+`prepare_glb_visuals` now writes immutable OBJ/PNG visual bundles from decoded
+geometry. It retains source attribution and the glTF document, composes source
+transforms, writes normals/UVs, converts images without resizing, and records
+normal-map Y inversion and ORM packing. Uniform vertex colors are folded into
+the material factor. Conflicting UV/sampler settings, nonuniform vertex colors
+and unsupported material features fail explicitly. They do not authorize
+procedural substitutes.
+
+The returned `GLBVisuals` requires an explicit mapping from every source mesh
+node to a physical parent before producing `SceneObject` children. It cannot
+register a decorative rack as a physically usable asset by itself. A synthetic
+fixture proves the source-backed library/world/export path survives deletion of
+the original conversion cache. This is persistence evidence, not rack physics.
+
+The actual rack produced three OBJ parts and nine PNG material maps (about
+11.9 MB including source metadata/notices). Fifteen small conversion checks
+cover image channels, normal-map orientation, source preservation, cache
+corruption/cancellation and portable-library handoff. The preparation is cached
+by source, notice, metadata and converter identity; warm reuse hashes files
+without repeating conversion.
+One actual rack preparation took 0.8462 seconds, followed by a 0.0084-second
+verified warm repeat. These are visual-artifact preparation timings, not native
+validation, rendering or complete environment generation.
+
+Next implementation: attach source-derived interaction-aware collisions,
+preserve or explicitly label physical mechanisms, share viewer resources across
+repeated fixtures, and perform native/browser validation when permitted.
 The browser and policy camera must depict the same physical scene. No full
 catalog download or new asset design is needed for these candidates.
