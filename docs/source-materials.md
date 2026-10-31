@@ -27,6 +27,13 @@ does not break loading/export. Changed map bytes invalidate a saved world's
 integrity checks. Targeted surface edits retain existing dynamics and require
 normal world revalidation because appearance affects policy observations.
 
+Within a displayed world, repeated OBJ instances share parsed geometry,
+materials and decoded maps. Position, size, rotation and selection stay per
+object. Texture sharing respects color space and wrapping, and different
+material factors keep separate materials. Changing worlds aborts pending loads
+and releases the scene-owned resources. The viewer still starts at most four
+object loads at once; this does not yet batch OBJ draw calls or supply LODs.
+
 The browser uses the PBR map channels. MJCF export retains material layers and
 coefficients, with shared texture/material definitions. The current runtime uses
 MuJoCo's classic renderer; it approximates highlights and does not reproduce all
@@ -37,6 +44,10 @@ is not yet integrated into the policy camera or replay path.
 
 Verification so far is lightweight: schema validation, library/world persistence,
 source removal, hash tampering, scoped edits, XML material sharing, channel/color
-space selection and texture cleanup. No new browser screenshot, native material
+space selection and texture cleanup. A small real-Three test loads 64 repeated
+fixtures with one OBJ request and three map requests, checks independent bounds
+and selection IDs, and verifies disposal on replacement or late completion.
+This is CPU-side evidence, not measured GPU memory or viewport frame rate.
+No new browser screenshot, native material
 compilation or PBR policy-camera parity is established by these checks. The
 warehouse visual acceptance gate remains open.

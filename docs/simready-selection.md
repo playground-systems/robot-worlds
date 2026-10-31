@@ -126,7 +126,9 @@ remain pending. The adapter records these limits in the asset and exported
 collision provenance; registration does not certify task solvability.
 
 Next implementation: adapt the remaining fixtures,
-preserve or explicitly label physical mechanisms, share viewer resources across
-repeated fixtures, and perform native/browser validation when permitted.
+preserve or explicitly label physical mechanisms, and perform native/browser
+validation when permitted. The viewer now shares source geometry/materials/maps
+across repeated fixtures; real warehouse frame rate, GPU memory and LOD remain
+unmeasured.
 The browser and policy camera must depict the same physical scene. No full
 catalog download or new asset design is needed for these candidates.

@@ -28,11 +28,27 @@ function fixture() {
 
 test('disposing a viewer cancels work, aborts assets and removes event listeners exactly once', () => {
   const { viewer, calls, canvas, document } = fixture(), request = new AbortController(); viewer.loads.add(request);
+  viewer.assets = { dispose: () => request.abort() };
   viewer.pendingLoads.push(['later asset']); viewer.dispose(); viewer.dispose();
   canvas.dispatchEvent(new Event('pointerdown')); document.dispatchEvent(new Event('visibilitychange')); viewer.invalidate();
   assert(request.signal.aborted); assert.equal(viewer.pendingLoads.length, 0);
   assert.deepEqual(calls, [['cancel', 4], ['observer'], ['controls'], ['scene'], ['labels'], ['renderer'], ['context']]);
   assert.equal(viewer.disposed, true);
+});
+
+test('late results from a replaced scene cannot attach objects to the current scene', async () => {
+  const { viewer } = fixture();
+  const controller = new AbortController();
+  let resolve, attached = 0;
+  viewer.assets = { controller, dispose: () => controller.abort(), load: () => new Promise(done => { resolve = done; }) };
+  viewer.group = { add: () => attached++ }; viewer.objects = []; viewer.loadGeneration = 1;
+  const pending = viewer.loadOBJ({ id: 'old' }, '/old/', 1);
+  assert.equal(viewer.loads.size, 1);
+  viewer.abortLoads(); viewer.loadGeneration = 2;
+  resolve({ traverse(callback) { callback({ isMesh: true }); } });
+  await pending;
+  assert(controller.signal.aborted);
+  assert.equal(attached, 0); assert.equal(viewer.objects.length, 0); assert.equal(viewer.loads.size, 0);
 });
 
 test('inactive view pauses frames and queued mesh starts; reactivation caps concurrent loads at four', () => {
