@@ -87,6 +87,9 @@ def test_generator_resolves_before_preview_replans_grounded_geometry_and_exports
     assert "Move the painted source object" in client.prompts[-1]
     assert "asset_requests" not in spec.model_dump()
     assert len([event for event in events if event["type"] == "asset_requests"]) == 1
+    phases = [event["phase"] for event in events if event["type"] == "generation_phase_started"]
+    assert phases.count("assets") == 1 and phases.count("source_assets") == 1
+    assert phases.index("source_assets") < phases.index("assets")
     world = World.from_spec(spec, tmp_path / "worlds", validate=False)
     shutil.rmtree(tmp_path / "cache")
     assert load(world.path).id == world.id

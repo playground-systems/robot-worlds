@@ -350,37 +350,37 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
             raise GenerationError("World generation request failed; latest candidate retained", candidate=candidate, attempts=attempt+1, history=history, errors=[type(exc).__name__]) from exc
         previous = raw
         try:
+            plan = GenerationSpec.model_validate(raw)
+            if plan.asset_requests:
+                from .asset_resolution import AssetResolutionError, extend_asset_library
+                from .collision_preparation import CollisionPreparationCancelled
+                try:
+                    if asset_resolver is None:
+                        raise AssetResolutionError("Online asset resolution is disabled; install a source library or enable it")
+                    if source_rounds >= 2 or len(resolved_ids) + len(plan.asset_requests) > 8:
+                        raise AssetResolutionError("Online asset resolution exceeded two rounds/eight assets; no world was substituted")
+                    if event_callback:
+                        event_callback({"type": "asset_requests", "requests": [r.model_dump(mode="json") for r in plan.asset_requests]})
+                    with _generation_phase(event_callback, "source_assets", attempt + 1):
+                        asset_library = extend_asset_library(asset_library, plan.asset_requests, asset_resolver,
+                                                             [item["asset_id"] for item in json.loads(catalog)])
+                        catalog = json.dumps(prepared_asset_catalog(asset_library), separators=(",", ":"))
+                    resolved_ids.update(r.asset_id for r in plan.asset_requests)
+                    source_rounds += 1
+                    errors = ["Requested source assets are now in the catalog. Plan with their actual dimensions/IDs, use all requested assets, and clear asset_requests."]
+                    continue
+                except CollisionPreparationCancelled as exc:
+                    raise GenerationCancelled("Asset resolution cancelled", candidate=candidate, attempts=attempt+1,
+                                              history=history, errors=["Asset resolution cancelled"]) from exc
+                except Exception as exc:
+                    from .artifacts import public_error
+                    raise GenerationError("Source asset resolution failed; no procedural fallback", candidate=candidate,
+                                          attempts=attempt+1, history=history, errors=[public_error(exc)["message"]]) from exc
+                finally:
+                    if event_callback:
+                        from .llm import audit_value
+                        event_callback({"type": "model_usage", "usage": audit_value(getattr(client, "usage", {}))})
             with _generation_phase(event_callback, "assets", attempt + 1):
-                plan = GenerationSpec.model_validate(raw)
-                if plan.asset_requests:
-                    from .asset_resolution import AssetResolutionError, extend_asset_library
-                    from .collision_preparation import CollisionPreparationCancelled
-                    try:
-                        if asset_resolver is None:
-                            raise AssetResolutionError("Online asset resolution is disabled; install a source library or enable it")
-                        if source_rounds >= 2 or len(resolved_ids) + len(plan.asset_requests) > 8:
-                            raise AssetResolutionError("Online asset resolution exceeded two rounds/eight assets; no world was substituted")
-                        if event_callback:
-                            event_callback({"type": "asset_requests", "requests": [r.model_dump(mode="json") for r in plan.asset_requests]})
-                        with _generation_phase(event_callback, "source_assets", attempt + 1):
-                            asset_library = extend_asset_library(asset_library, plan.asset_requests, asset_resolver,
-                                                                 [item["asset_id"] for item in json.loads(catalog)])
-                            catalog = json.dumps(prepared_asset_catalog(asset_library), separators=(",", ":"))
-                        resolved_ids.update(r.asset_id for r in plan.asset_requests)
-                        source_rounds += 1
-                        errors = ["Requested source assets are now in the catalog. Plan with their actual dimensions/IDs, use all requested assets, and clear asset_requests."]
-                        continue
-                    except CollisionPreparationCancelled as exc:
-                        raise GenerationCancelled("Asset resolution cancelled", candidate=candidate, attempts=attempt+1,
-                                                  history=history, errors=["Asset resolution cancelled"]) from exc
-                    except Exception as exc:
-                        from .artifacts import public_error
-                        raise GenerationError("Source asset resolution failed; no procedural fallback", candidate=candidate,
-                                              attempts=attempt+1, history=history, errors=[public_error(exc)["message"]]) from exc
-                    finally:
-                        if event_callback:
-                            from .llm import audit_value
-                            event_callback({"type": "model_usage", "usage": audit_value(getattr(client, "usage", {}))})
                 spec = WorldSpec.model_validate(plan.model_dump(mode="json", exclude={"prepared_assets", "asset_requests"}))
                 assembly_errors = []
                 missing = resolved_ids - {item.asset_id for item in plan.prepared_assets}
