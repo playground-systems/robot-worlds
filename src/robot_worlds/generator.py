@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 import math
+import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable
 
@@ -80,6 +82,9 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
     if validation_profile not in {"strict", "fixed_reference"}:
         raise ValueError("validation_profile must be strict or fixed_reference")
     errors = validate_rubric(spec)
+    # These results live for one pass only: a later validation must observe
+    # edited source bytes. Shared assets still report errors per component.
+    checked_textures, checked_metadata = {}, {}
     collider_count = sum(collision_count(obj) for obj in spec.objects)
     if collider_count > MAX_SCENE_COLLIDERS:
         errors.append(f"Scene needs {collider_count} collision pieces, exceeding the {MAX_SCENE_COLLIDERS} budget; lower revolved segments or repeated geometry")
@@ -150,10 +155,14 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
             path = Path(obj.texture_path).expanduser()
             if not path.is_absolute() and asset_root is not None:
                 path = Path(asset_root) / path
-            try:
-                validate_texture(path)
-            except (ValueError, OSError) as exc:
-                errors.append(f"{obj.id}: invalid texture: {exc}")
+            if path not in checked_textures:
+                try:
+                    validate_texture(path)
+                    checked_textures[path] = None
+                except (ValueError, OSError) as exc:
+                    checked_textures[path] = str(exc)
+            if checked_textures[path] is not None:
+                errors.append(f"{obj.id}: invalid texture: {checked_textures[path]}")
         if obj.source_notice:
             path = Path(obj.source_notice).expanduser()
             if not path.is_absolute() and asset_root is not None:
@@ -164,13 +173,17 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
             path = Path(obj.source_metadata).expanduser()
             if not path.is_absolute() and asset_root is not None:
                 path = Path(asset_root) / path
-            if not path.is_file() or path.suffix.lower() != ".json" or path.stat().st_size > 2 * 1024 * 1024:
-                errors.append(f"{obj.id}: source metadata must be an existing JSON file of at most 2 MiB")
-            else:
-                try:
-                    json.loads(path.read_text())
-                except (ValueError, OSError) as exc:
-                    errors.append(f"{obj.id}: invalid source metadata: {exc}")
+            if path not in checked_metadata:
+                if not path.is_file() or path.suffix.lower() != ".json" or path.stat().st_size > 2 * 1024 * 1024:
+                    checked_metadata[path] = "source metadata must be an existing JSON file of at most 2 MiB"
+                else:
+                    try:
+                        json.loads(path.read_text())
+                        checked_metadata[path] = None
+                    except (ValueError, OSError) as exc:
+                        checked_metadata[path] = f"invalid source metadata: {exc}"
+            if checked_metadata[path] is not None:
+                errors.append(f"{obj.id}: {checked_metadata[path]}")
         if not obj.visible:
             if not any(objects[oid].visible for oid in rigid_members(objects, welded_roots[obj.id])):
                 errors.append(f"{obj.id}: hidden collision geometry needs a visible member of its rigid assembly")
@@ -250,6 +263,25 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
     return errors
 
 
+@contextmanager
+def _generation_phase(emit, phase: str, attempt: int):
+    """Wall-clock diagnostics only; completion does not mean validation passed."""
+    started = time.perf_counter()
+    if emit:
+        emit({"type": "generation_phase_started", "phase": phase, "attempt": attempt})
+    error_type = None
+    try:
+        yield
+    except BaseException as exc:
+        error_type = type(exc).__name__
+        raise
+    finally:
+        if emit:
+            emit({"type": "generation_phase_finished", "phase": phase, "attempt": attempt,
+                  "duration_seconds": max(0.0, time.perf_counter() - started),
+                  "status": "failed" if error_type else "finished", "error_type": error_type})
+
+
 def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", client=None, max_repairs=2, on_candidate: Callable | None = None, event_callback: Callable | None = None, validator: Callable | None = None, asset_root=None,
                   cancelled: Callable | None = None, client_options: dict | None = None,
                   scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0) -> WorldSpec:
@@ -280,7 +312,8 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
         materialize_prepared_assets,
         prepared_asset_catalog,
     )
-    catalog = json.dumps(prepared_asset_catalog(), separators=(",", ":"))
+    with _generation_phase(event_callback, "catalog", 0):
+        catalog = json.dumps(prepared_asset_catalog(), separators=(",", ":"))
     asset_instructions = "\nPrefer prepared_assets when the supplied catalog matches the requested object. These are previously sourced online originals, already downloaded and converted. Emit one reference with asset_id, instance id, bottom-center position and required mass instead of recreating its geometry or inventing local file paths. Use catalog body/geom/joint/region IDs with {prefix} replaced by the instance id in rubric and process references. Referenced objects and cavity regions are added automatically; do not duplicate them in objects/regions. Catalog coordinates are relative to the instance bottom-center at position [0,0,0]. Preserve original size/orientation; record incompatible requirements as unvalidated rather than silently shrinking, rotating or substituting geometry. The catalog is an asset library, not a fixed scene or task. Keep generating arbitrary surrounding layouts and requested tasks."
     history, candidate, previous = [], None, None
     errors = []
@@ -297,7 +330,8 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
             request += "\nPrevious candidate:\n" + json.dumps(previous, ensure_ascii=False)
             request += "\nRepair these validation failures without dropping requirements:\n" + json.dumps(errors)
         try:
-            raw = client.complete_json(INSTRUCTIONS + asset_instructions, request, GenerationSpec.model_json_schema())
+            with _generation_phase(event_callback, "model", attempt + 1):
+                raw = client.complete_json(INSTRUCTIONS + asset_instructions, request, GenerationSpec.model_json_schema())
             if event_callback:
                 from .llm import audit_value
                 event_callback({"type": "model_usage", "usage": audit_value(getattr(client, "usage", {}))})
@@ -307,14 +341,15 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
             raise GenerationError("World generation request failed; latest candidate retained", candidate=candidate, attempts=attempt+1, history=history, errors=[type(exc).__name__]) from exc
         previous = raw
         try:
-            plan = GenerationSpec.model_validate(raw)
-            spec = WorldSpec.model_validate(plan.model_dump(mode="json", exclude={"prepared_assets"}))
-            assembly_errors = []
-            try:
-                spec = materialize_prepared_assets(plan, max_objects=max_objects, event_callback=event_callback)
-                spec = expand_assemblies(spec, max_objects=max_objects)
-            except (ValueError, ValidationError) as exc:
-                assembly_errors = [str(exc)]
+            with _generation_phase(event_callback, "assets", attempt + 1):
+                plan = GenerationSpec.model_validate(raw)
+                spec = WorldSpec.model_validate(plan.model_dump(mode="json", exclude={"prepared_assets"}))
+                assembly_errors = []
+                try:
+                    spec = materialize_prepared_assets(plan, max_objects=max_objects, event_callback=event_callback)
+                    spec = expand_assemblies(spec, max_objects=max_objects)
+                except (ValueError, ValidationError) as exc:
+                    assembly_errors = [str(exc)]
             spec.source_prompt = prompt
             if PHYSICAL_DEFAULTS not in spec.assumptions:
                 spec.assumptions.append(PHYSICAL_DEFAULTS)
@@ -324,17 +359,20 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
                     spec.assumptions.append(disclosure)
             candidate = spec
             if on_candidate:
-                on_candidate(spec)
+                with _generation_phase(event_callback, "preview", attempt + 1):
+                    on_candidate(spec)
             if event_callback:
                 event_callback({"type": "candidate", "attempt": attempt+1, "spec": spec.model_dump(mode="json")})
-            errors = assembly_errors + validate_spec(spec, asset_root=asset_root)
-            if len(spec.objects) < min_objects:
-                errors.append(f"Scene has {len(spec.objects)} physical objects but the explicit minimum is {min_objects}; add meaningful physical detail using generated assemblies without changing the requested task/layout")
+            with _generation_phase(event_callback, "static_validation", attempt + 1):
+                errors = assembly_errors + validate_spec(spec, asset_root=asset_root)
+                if len(spec.objects) < min_objects:
+                    errors.append(f"Scene has {len(spec.objects)} physical objects but the explicit minimum is {min_objects}; add meaningful physical detail using generated assemblies without changing the requested task/layout")
             if cancelled and cancelled():
                 raise GenerationCancelled("World generation cancelled", candidate=candidate, attempts=attempt+1,
                                           history=history, errors=["Generation cancelled before physical validation"])
             if not errors and validator is not None:
-                errors.extend(validator(spec))
+                with _generation_phase(event_callback, "physical_validation", attempt + 1):
+                    errors.extend(validator(spec))
         except ValidationError as exc:
             errors = [f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors(include_url=False)]
         history.append({"attempt": attempt+1, "errors": list(errors)})

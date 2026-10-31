@@ -79,6 +79,27 @@ new evaluations. Saved recordings are unchanged.
 
 Earlier development runs used world-frame arm commands and ideal semantic detections. Those recordings retain their original contracts. New evaluations use the revised manifest and require revalidation of older world bundles; policies written against the earlier observation shape need updating.
 
+## Generation latency
+
+`generate(..., on_event=callback)` emits `generation_phase_started` and
+`generation_phase_finished` events for the asset catalog, model request, asset
+assembly, preview saving, static checks and physical validation/world saving.
+Each event identifies its attempt; finished phases include `duration_seconds`.
+The workbench shows these timings in the generation log. “Finished” describes
+the stage, not a validation pass.
+
+The saved `generation-<id>.json` contains the event history and total
+`elapsed_seconds`, including repair attempts. SDK events also carry elapsed time
+since generation started. Timings use a monotonic clock and stay outside immutable
+world identity. Failed model calls retain their duration and error type without
+saving transport exception text. Unexpected import failures leave a terminal
+`failed` diagnostic record and still raise to the caller.
+
+`tools/benchmark_generation.py` measures the bundled bowl/microwave pipeline with
+a mocked model and real native validation in Linux CI. It reports time to preview,
+time to a ready world and stage durations; it does not measure live model latency
+or autonomous manipulation. Run native benchmarks on a capable host.
+
 ## Search before creating assets
 
 Search for an existing object before authoring a new asset. The SDK exposes a bounded,

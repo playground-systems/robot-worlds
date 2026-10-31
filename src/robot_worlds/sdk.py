@@ -681,6 +681,7 @@ def generate(prompt: str, *, output: str | Path = "worlds", model: str = "gpt-6-
              cancelled: Callable | None = None, client_options: dict | None = None,
              scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0) -> World:
     from robot_worlds.generator import GenerationCancelled, GenerationError, generate_spec
+    started = time.perf_counter()
     emit = on_event or (lambda event: None)
     output = Path(output).resolve()
     generation_id = uuid.uuid4().hex
@@ -688,6 +689,9 @@ def generate(prompt: str, *, output: str | Path = "worlds", model: str = "gpt-6-
     record_path = output / f"generation-{generation_id}.json"
     latest = None
     def event(value):
+        elapsed = max(0.0, time.perf_counter() - started)
+        value = {**value, "elapsed_seconds": elapsed}
+        record["elapsed_seconds"] = elapsed
         record["events"].append(value)
         write_json(record_path, record)
         emit(value)
@@ -722,6 +726,13 @@ def generate(prompt: str, *, output: str | Path = "worlds", model: str = "gpt-6-
         if latest is None:
             raise
         return latest
+    except Exception as exc:
+        # Keep unexpected importer/filesystem failures terminal in the diagnostic
+        # record too. The exception still propagates; it never authorizes fallback.
+        record.update(status="failed", error_type=type(exc).__name__)
+        event({"type": "generation_failed", "error_type": type(exc).__name__,
+               "world_id": latest.id if latest else None, "generation_path": str(record_path)})
+        raise
     record.update(status="completed", world_id=latest.id)
     event({"type": "world_created", "world_id": latest.id, "path": str(latest.path),
           "validation": latest.manifest["validation"], "generation_path": str(record_path)})

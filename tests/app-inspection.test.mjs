@@ -194,3 +194,11 @@ test('small-screen object inspection opens a dismissible inspector, not an overf
   nodes.get('close-inspector').onclick(); assert(!shell.classList.contains('show-inspector'));
   nodes.get('close-left').onclick(); assert(!shell.classList.contains('show-left'));
 });
+
+test('generation phases distinguish measured elapsed time from successful validation', () => {
+  const {run} = fixture();
+  assert.equal(run("eventLabel({type:'generation_phase_started',phase:'model',attempt:2})"), 'Design scene · attempt 2 · started');
+  assert.equal(run("eventLabel({type:'generation_phase_finished',phase:'physical_validation',attempt:2,duration_seconds:12.34,status:'finished'})"), 'Check simulation and save world · attempt 2 · 12.3 s · finished');
+  assert.equal(run("eventLabel({type:'generation_phase_finished',phase:'model',attempt:1,duration_seconds:8,status:'failed',error_type:'RuntimeError'})"), 'Design scene · attempt 1 · 8.0 s · interrupted');
+  assert.doesNotMatch(run("eventLabel({type:'generation_phase_finished',phase:'preview',attempt:1,duration_seconds:NaN})"), /NaN|passed|ready|success/);
+});

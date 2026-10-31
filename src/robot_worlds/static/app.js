@@ -472,13 +472,21 @@ function renderChanges(root) {
 }
 
 function eventLabel(event) {
+  if (event.type === 'generation_phase_started' || event.type === 'generation_phase_finished') {
+    const phases = { catalog: 'Prepare asset library', model: 'Design scene', assets: 'Assemble geometry', preview: 'Save preview', static_validation: 'Check layout and rubric', physical_validation: 'Check simulation and save world' };
+    const phase = phases[event.phase] || 'Prepare scene';
+    const attempt = Number.isInteger(event.attempt) && event.attempt > 0 ? ` · attempt ${event.attempt}` : '';
+    if (event.type === 'generation_phase_started') return `${phase}${attempt} · started`;
+    const seconds = Number.isFinite(event.duration_seconds) && event.duration_seconds >= 0 ? ` · ${event.duration_seconds.toFixed(1)} s` : '';
+    return `${phase}${attempt}${seconds} · ${event.status === 'failed' ? 'interrupted' : 'finished'}`;
+  }
   if (event.type === 'asset_loading') return event.message || 'Loading prepared asset';
   if (event.type === 'asset_loaded') return event.message || 'Prepared asset ready';
   if (event.type === 'policy_started') return `Choosing action ${event.step + 1}`;
   if (event.type === 'action_started') return `Action ${event.step + 1}: ${(event.action?.tool || 'move').replaceAll('_', ' ')}`;
   if (event.type === 'step') return `Feedback: ${(event.result?.status || 'executed').replaceAll('_', ' ')}`;
   if (event.type === 'task_progress') return `${(event.criteria || []).filter(c => c.satisfied).length}/${(event.criteria || []).length} checks observed`;
-  const labels = { edit_started: 'Planning targeted changes', repair_started: 'Diagnosing unresolved checks', candidate: 'Candidate ready for checks', preview: 'Candidate preview', validation: 'Checking geometry and physics', edit_validated: 'Verifying preserved entities', edit_completed: 'Saved version and computed changes', generation_incomplete: 'Budget exhausted · saved unresolved candidate', generation_cancelled: 'Cancelled · preserving available evidence' };
+  const labels = { edit_started: 'Planning targeted changes', repair_started: 'Diagnosing unresolved checks', candidate: 'Candidate ready for checks', preview: 'Candidate preview', validation: 'Checking geometry and physics', edit_validated: 'Verifying preserved entities', edit_completed: 'Saved version and computed changes', generation_incomplete: 'Budget exhausted · saved unresolved candidate', generation_cancelled: 'Cancelled · preserving available evidence', generation_failed: 'Generation stopped · saved diagnostic record' };
   const type = labels[event.type] || String(event.type || event.phase || 'update').replaceAll('_', ' ');
   const detail = event.message || (event.errors?.length ? event.errors.map(message).join('; ') : event.error ? message(event.error) : '');
   return detail ? `${type}: ${detail}` : type;
@@ -550,7 +558,7 @@ async function pollJob(id) {
     if (job.live_frame) showLiveFrame(job.live_frame);
     for (const event of job.events || []) {
       const signature = JSON.stringify(event); if (state.eventSeen.has(signature)) continue; state.eventSeen.add(signature);
-      const row = el('li', event.error || event.errors?.length ? 'stage-error' : '', eventLabel(event)); $('job-events').append(row);
+      const row = el('li', event.error || event.errors?.length || event.status === 'failed' ? 'stage-error' : '', eventLabel(event)); $('job-events').append(row);
       showLiveEvent(event);
       if (event.type === 'preview' && event.spec) { state.worldId = null; state.world = { spec: event.spec, manifest: { validation: { status: 'preview', checks: [] } } }; displaySpec(event.spec, true); }
     }

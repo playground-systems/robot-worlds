@@ -32,6 +32,9 @@ jobs:
       - name: Original asset preparation benchmark and bounds equivalence
         if: runner.os == 'Linux'
         run: uv run --frozen python tools/benchmark_asset_preparation.py
+      - name: Generation timing with mocked model and native validation
+        if: runner.os == 'Linux'
+        run: xvfb-run -a uv run --frozen python tools/benchmark_generation.py
       - name: Test on macOS
         if: runner.os == 'macOS'
         run: uv run --frozen pytest -q -ra

@@ -598,3 +598,47 @@ def test_from_spec_revalidates_mutated_model_instances_before_creating_artifact(
     with pytest.raises(ValidationError, match="mesh_path"):
         World.from_spec(edited, tmp_path / "worlds", runtime_factory=FakeRuntime)
     assert not (tmp_path / "worlds").exists()
+
+
+def test_generation_record_retains_total_and_stage_times_without_changing_world_identity(tmp_path, monkeypatch):
+    clock = [100.0]
+    monkeypatch.setattr("robot_worlds.sdk.time.perf_counter", lambda: clock[0])
+
+    class Timed(Client):
+        def complete_json(self, *args):
+            clock[0] += 5
+            return super().complete_json(*args)
+
+    def factory(*args, **kwargs):
+        clock[0] += 2
+        return FakeRuntime(*args, **kwargs)
+
+    worlds, records = [], []
+    for attempt in range(2):
+        world = generate("same task", client=Timed(), output=tmp_path / str(attempt), runtime_factory=factory)
+        worlds.append(world)
+        records.append(read_json(next((tmp_path / str(attempt)).glob("generation-*.json"))))
+        clock[0] += 100
+    assert worlds[0].id == worlds[1].id
+    for record in records:
+        assert record["elapsed_seconds"] == 7
+        phases = [e for e in record["events"] if e["type"] == "generation_phase_finished"]
+        assert next(e for e in phases if e["phase"] == "model")["duration_seconds"] == 5
+        assert next(e for e in phases if e["phase"] == "physical_validation")["duration_seconds"] == 2
+        assert record["events"][-1]["elapsed_seconds"] == record["elapsed_seconds"]
+        assert all(a["elapsed_seconds"] <= b["elapsed_seconds"] for a, b in zip(record["events"], record["events"][1:]))
+        assert "elapsed_seconds" not in str(worlds[0].manifest)
+
+
+def test_unexpected_asset_failure_saves_terminal_timing_record(tmp_path, monkeypatch):
+    def unavailable():
+        raise OSError("private local setup detail")
+    monkeypatch.setattr("robot_worlds.prepared_assets.prepared_asset_catalog", unavailable)
+    with pytest.raises(OSError, match="private local setup detail"):
+        generate("mission", client=Client(), output=tmp_path)
+    record = read_json(next(tmp_path.glob("generation-*.json")))
+    assert record["status"] == "failed"
+    assert record["elapsed_seconds"] >= 0
+    assert record["error_type"] == "OSError"
+    assert record["events"][-1]["type"] == "generation_failed"
+    assert "private local setup detail" not in str(record)
