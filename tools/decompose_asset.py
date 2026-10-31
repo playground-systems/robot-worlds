@@ -11,7 +11,7 @@ import importlib.metadata
 import json
 from pathlib import Path
 
-from robot_worlds.mesh_assets import convex_volume, read_triangle_obj
+from robot_worlds.mesh_assets import MAX_CONVEX_COMPONENTS, convex_volume, read_triangle_obj
 
 SETTINGS = dict(threshold=.002, real_metric=True, preprocess_mode="auto",
                 preprocess_resolution=100, resolution=2000, mcts_nodes=20,
@@ -28,8 +28,8 @@ def decompose(source: Path, output: Path):
         raise ValueError("Use an empty conversion output directory")
     vertices, faces = read_triangle_obj(source)
     parts = coacd.run_coacd(coacd.Mesh(vertices, faces), **SETTINGS)
-    if not 1 <= len(parts) <= 128:
-        raise ValueError("Decomposition must have 1–128 pieces; review parameters rather than silently merging")
+    if not 1 <= len(parts) <= MAX_CONVEX_COMPONENTS:
+        raise ValueError(f"Decomposition must have 1–{MAX_CONVEX_COMPONENTS} pieces; review parameters rather than silently merging")
     # Check every hull before writing any outputs.
     volumes = [convex_volume(v, f) for v, f in parts]
     output.mkdir(parents=True, exist_ok=True)

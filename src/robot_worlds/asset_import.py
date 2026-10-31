@@ -7,6 +7,7 @@ Source actuators and global simulation settings are deliberately not imported.
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -210,4 +211,95 @@ def import_mjcf_asset(path: str | Path, *, prefix: str, position=(0, 0, 0), sour
         raise ValueError("Source contains no supported physical asset")
     for obj in result.objects:
         obj.source_notice = str(notice)
+    return result
+
+
+def import_convex_mesh_asset(mesh_path: str | Path, collision_manifest: str | Path, *,
+                             prefix: str, mass: float, source_notice: str | Path,
+                             texture_path: str | Path | None = None,
+                             position=(0, 0, 0), movable=True, friction=.7) -> ImportedAsset:
+    """Use original appearance with verified, source-bound convex components.
+
+    Conversion is an offline step; importing never invokes a decomposer. Each
+    component's checksum, closed surface and convexity are checked. Mass is
+    distributed by component volume and remains a caller-supplied estimate.
+    ``position`` translates the original mesh coordinates without recentering.
+    """
+    from .mesh_assets import (
+        MAX_CONVEX_COMPONENTS,
+        convex_volume,
+        read_triangle_obj,
+        validate_texture,
+    )
+
+    mesh_path, collision_manifest, notice = (Path(p).resolve() for p in (mesh_path, collision_manifest, source_notice))
+    if not notice.is_file() or notice.suffix.lower() not in {".md", ".txt"} or notice.stat().st_size > 1024 * 1024:
+        raise ValueError("Import requires a retained source/license attribution notice")
+    if isinstance(mass, bool) or not math.isfinite(mass) or mass <= 0:
+        raise ValueError("Total asset mass must be finite and positive")
+    offset = np.asarray(position, dtype=float)
+    if offset.shape != (3,) or not np.isfinite(offset).all():
+        raise ValueError("Asset position must have three finite coordinates")
+    vertices, _ = read_triangle_obj(mesh_path)
+    visual_lower, visual_upper = vertices.min(0), vertices.max(0)
+    if collision_manifest.stat().st_size > 2 * 1024 * 1024:
+        raise ValueError("Collision manifest exceeds import budget")
+    manifest = json.loads(collision_manifest.read_text())
+    source_hash = hashlib.sha256(mesh_path.read_bytes()).hexdigest()
+    if not isinstance(manifest, dict) or manifest.get("schema_version") != 1 or manifest.get("source_sha256") != source_hash:
+        raise ValueError("Collision conversion does not match the original source mesh")
+    parts = manifest.get("parts")
+    if not isinstance(parts, list) or not 1 <= len(parts) <= MAX_CONVEX_COMPONENTS:
+        raise ValueError(f"Collision manifest must contain 1–{MAX_CONVEX_COMPONENTS} verified components")
+    result = ImportedAsset(disclosures=[
+        "Original textured visual surface is retained; collision geometry is an approximate convex decomposition.",
+        "Collision components are checksum-bound to the source and checked for closed convex surfaces; native cavity/contact checks are still required.",
+        "Total mass and friction are caller-supplied estimates; component masses are distributed by volume.",
+    ])
+    result.source_files["visual/"+mesh_path.name] = source_hash
+    result.source_files["collision/manifest.json"] = hashlib.sha256(collision_manifest.read_bytes()).hexdigest()
+    result.source_files["notice/"+notice.name] = hashlib.sha256(notice.read_bytes()).hexdigest()
+    if texture_path is not None:
+        texture_path = Path(texture_path).resolve()
+        validate_texture(texture_path)
+        result.source_files["texture/"+texture_path.name] = hashlib.sha256(texture_path.read_bytes()).hexdigest()
+    verified, seen = [], set()
+    for record in parts:
+        if not isinstance(record, dict):
+            raise ValueError("Invalid collision component record")
+        name = record.get("file")
+        if not isinstance(name, str) or Path(name).name != name or name in seen:
+            raise ValueError("Collision files must have unique local filenames")
+        seen.add(name)
+        path = (collision_manifest.parent / name).resolve()
+        if not path.is_relative_to(collision_manifest.parent):
+            raise ValueError("Collision file escapes its conversion directory")
+        v, f = read_triangle_obj(path)
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if digest != record.get("sha256"):
+            raise ValueError("Converted collision file was modified")
+        volume = convex_volume(v, f)
+        lower, upper = v.min(0), v.max(0)
+        if np.any(lower < visual_lower-.005) or np.any(upper > visual_upper+.005):
+            raise ValueError("Collision conversion expands more than 5 mm outside source bounds")
+        verified.append((path, lower, upper, volume))
+        result.source_files["collision/"+name] = digest
+    total_volume = sum(part[3] for part in verified)
+    root_id = prefix + "_body"
+    result.body_ids["object"] = root_id
+    for index, (path, lower, upper, volume) in enumerate(verified):
+        oid = root_id if index == 0 else f"{prefix}_collision{index}"
+        result.objects.append(SceneObject(
+            id=oid, label="Imported convex collision component", kind="mesh", mesh_path=str(path),
+            source_notice=str(notice), position=offset+(lower+upper)/2, size=upper-lower,
+            mass=mass*volume/total_volume, friction=friction,
+            movable=movable if index == 0 else False, parent_id=None if index == 0 else root_id,
+            visible=False,
+        ))
+    result.objects.append(SceneObject(
+        id=prefix+"_visual", label="Original source appearance", kind="mesh", mesh_path=str(mesh_path),
+        texture_path=str(texture_path) if texture_path else None, source_notice=str(notice),
+        position=offset+(visual_lower+visual_upper)/2, size=visual_upper-visual_lower,
+        color=(1, 1, 1), parent_id=root_id, collision=False,
+    ))
     return result

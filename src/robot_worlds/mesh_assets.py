@@ -6,6 +6,7 @@ from PIL import Image
 
 MAX_TEXTURE_BYTES = 16 * 1024 * 1024
 MAX_TEXTURE_PIXELS = 4096 * 4096
+MAX_CONVEX_COMPONENTS = 256
 
 
 def validate_texture(path: str | Path) -> None:
