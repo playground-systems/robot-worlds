@@ -51,6 +51,22 @@ Implement `reset(context)`, `act(observation)` and optionally `record_result(res
 
 There are no simulator-generated semantic labels, object detections or world maps. These are idealized sensor measurements, without a calibrated hardware noise/dropout model. The spectator camera and rubric progress shown in the browser are evaluator-side displays, never policy inputs. `render=False` disables RGB and depth; it does not substitute hidden geometry.
 
+Drive primitives also avoid global-position feedback. TIAGo closes its distance
+loop on encoder odometry and its turn loop on relative IMU heading. Tool results
+identify `translation_feedback="wheel_odometry"`; `estimated_distance_m` is the
+odometric projection along the initial heading, while `encoder_distance_m` is
+signed accumulated wheel travel. Slipping wheels can make both differ from actual
+displacement, so a completed command does not establish task progress.
+
+G1 has no position estimator in this release. Its `drive(distance, turn)` command
+requests nominal travel at 0.25 m/s for `abs(distance)/0.25` seconds, followed by an
+IMU-controlled turn. Results identify `translation_feedback="unavailable"` and
+`commanded_translation_seconds`; they do not claim a measured linear displacement.
+The policy must use RGB-D to assess actual progress. The learned joint controller
+still controls balance; contacts and payloads can prevent the requested travel.
+These are controller v2 contracts and invalidate earlier runtime validation for
+new evaluations. Saved recordings are unchanged.
+
 `query_depth(pixel=[u,v])` samples the full-resolution depth camera and returns a visible surface point in the robot base frame. Pixels start at the image's top-left. It does not identify an object, return its center, or see behind an occluder. `move_arm` accepts the same base frame: X forward, Y left, Z up. G1's origin is its pelvis; TIAGo's is its base link. A measured surface point may need an approach/grasp offset chosen by your policy.
 
 ```python

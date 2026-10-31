@@ -35,6 +35,7 @@ SENSOR_CONTRACT = {
     "object_labels": False,
     "global_localization": False,
     "odometry": "TIAGo wheel-encoder dead reckoning from episode start; unavailable for G1",
+    "drive_translation": "TIAGo uses wheel odometry; G1 commands nominal travel by velocity/time with no measured displacement. Neither drive primitive terminates from global position.",
     "noise": "ideal camera, depth, encoders and IMU; no calibrated hardware noise model",
     "vision_requires_render": True,
 }
@@ -90,7 +91,7 @@ HAND = {"type": "string", "enum": ["left", "right"]}
 TOOLS = [
     _tool(
         "drive",
-        "Drive forward/backward distance in metres, then turn radians. Wheel contact motion; obstacles may prevent reaching the target. Positive turn is left. Maximum distance 2m, turn pi radians.",
+        "Drive forward/backward distance in metres, then turn radians. Stops using wheel-encoder odometry and relative IMU heading, not global localization. Wheel slip or obstacles can make actual travel differ from the estimate. Positive turn is left. Maximum distance 2m, turn pi radians.",
         {"distance": NUMBER, "turn": NUMBER},
         ["distance", "turn"],
     ),
@@ -834,18 +835,20 @@ class Runtime:
             or abs(turn) > math.pi
         ):
             raise ValueError("drive distance must be within±2m and turn within±pi radians")
-        beginning = self.data.qpos[:2].copy()
-        initial_yaw = self._yaw()
+        if self._odometry is None:
+            raise RuntimeError("Wheel drive requires encoder odometry")
+        beginning = self._odometry.position.copy()
+        initial_yaw = self._odometry.yaw
         direction = np.array([math.cos(initial_yaw), math.sin(initial_yaw)])
         elapsed = 0
         while elapsed < abs(distance) / 0.13 + 2:
-            traveled = float((self.data.qpos[:2] - beginning) @ direction)
+            traveled = float((self._odometry.position - beginning) @ direction)
             error = distance - traveled
             if abs(error) < 0.015:
                 break
             speed = float(np.clip(error * 2, -0.18, 0.18))
             heading_error = math.atan2(
-                math.sin(initial_yaw - self._yaw()), math.cos(initial_yaw - self._yaw())
+                math.sin(initial_yaw - self._odometry.yaw), math.cos(initial_yaw - self._odometry.yaw)
             )
             yaw_rate = float(np.clip(heading_error * 3, -0.5, 0.5))
             correction = yaw_rate * 0.223175 / 0.0762
@@ -857,11 +860,11 @@ class Runtime:
             elapsed += 0.04
         for _ in range(25):
             self._wheel_command(np.zeros(4), 0.04)
-        yaw_start = self._yaw()
+        yaw_start = self._odometry.yaw
         elapsed = 0
         while elapsed < abs(turn) / 0.2 + 2:
             turned = math.atan2(
-                math.sin(self._yaw() - yaw_start), math.cos(self._yaw() - yaw_start)
+                math.sin(self._odometry.yaw - yaw_start), math.cos(self._odometry.yaw - yaw_start)
             )
             error = turn - turned
             if abs(error) < 0.025:
@@ -872,16 +875,11 @@ class Runtime:
             elapsed += 0.04
         for _ in range(25):
             self._wheel_command(np.zeros(4), 0.04)
-        traveled = float((self.data.qpos[:2] - beginning) @ direction)
-        turned = math.atan2(math.sin(self._yaw() - yaw_start), math.cos(self._yaw() - yaw_start))
+        traveled = float((self._odometry.position - beginning) @ direction)
         return {
-            "status": "reached"
-            if abs(traveled - distance) < 0.06 and abs(turned - turn) < 0.08
-            else "blocked_or_unreached",
-            "distance_traveled": traveled,
-            "turn_reached": turned,
-            "position": self.data.qpos[:3].tolist(),
-            "yaw": self._yaw(),
+            "status": "executed",
+            "translation_feedback": "wheel_odometry",
+            "estimated_distance_m": traveled,
         }
 
     def _arm_controls(self, hand):
@@ -1124,7 +1122,7 @@ class Runtime:
             "timestep": float(self.model.opt.timestep),
             "robot": ROBOT_MANIFESTS[self.spec.robot],
             "trace_interval": 0.05,
-            "controller": "tiago-wheel-pd-local-ik-v1",
+            "controller": "tiago-encoder-odometry-pd-local-ik-v2",
             "clock": "stepped",
             "seed": self.seed,
             "model_fingerprint": self._model_fingerprint,

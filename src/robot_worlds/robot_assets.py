@@ -23,6 +23,7 @@ ROBOT_MANIFESTS = {
             "Wheel collisions use explicit simplified passive rollers; lateral driving is not exposed.",
             "Finger collision hulls are replaced by shaft/pad primitives with estimated friction.",
             "RGB-D, encoders and relative IMU; no object labels, global localization or calibrated sensor noise model.",
+            "Drive termination uses wheel odometry; wheel slip is not corrected from simulator position.",
             "Cartesian arm control uses local IK and does not guarantee collision-free paths.",
         ],
     },
@@ -44,6 +45,7 @@ ROBOT_MANIFESTS = {
         "limitations": [
             "Velocity policy validated on flat ground; arbitrary terrain and payloads are not certified.",
             "Independent arm mode masks nominal upper-body policy features; balance can still fail.",
+            "No position estimator: drive distance is nominal timed travel, not measured displacement. Policy must assess progress through RGB-D.",
         ],
     },
 }

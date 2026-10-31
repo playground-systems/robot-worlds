@@ -228,19 +228,18 @@ class G1Runtime(Runtime):
             or abs(turn) > math.pi
         ):
             raise ValueError("distance must be within±2m and turn within±pi radians")
-        start = self.data.qpos[:2].copy()
+        # This preset has IMU/encoders but no position estimator. Command
+        # nominal travel by velocity and time; never close the loop on qpos XY.
         yaw = self._yaw()
-        direction = np.array([math.cos(yaw), math.sin(yaw)])
-        elapsed = 0
-        while elapsed < abs(distance) / 0.2 + 3:
-            error = distance - float((self.data.qpos[:2] - start) @ direction)
-            if abs(error) < 0.025:
-                break
-            speed = math.copysign(max(0.12, min(0.35, abs(error) * 1.5)), error)
+        speed = .25
+        translation_seconds = abs(distance) / speed
+        elapsed = 0.
+        while elapsed + 1e-9 < translation_seconds:
             heading_error = math.atan2(math.sin(yaw - self._yaw()), math.cos(yaw - self._yaw()))
-            self._command[:] = [speed, 0, np.clip(heading_error * 1.5, -0.35, 0.35)]
-            self._step(0.04)
-            elapsed += 0.04
+            self._command[:] = [math.copysign(speed, distance), 0, np.clip(heading_error * 1.5, -0.35, 0.35)]
+            duration = min(.04, translation_seconds-elapsed)
+            self._step(duration)
+            elapsed += duration
         self._command[:] = 0
         self._step(0.6)
         turn_start = self._yaw()
@@ -257,16 +256,10 @@ class G1Runtime(Runtime):
             elapsed += 0.04
         self._command[:] = 0
         self._step(0.6)
-        traveled = float((self.data.qpos[:2] - start) @ direction)
-        turned = math.atan2(math.sin(self._yaw() - turn_start), math.cos(self._yaw() - turn_start))
         return {
-            "status": "reached"
-            if abs(distance - traveled) < 0.1 and abs(turn - turned) < 0.12
-            else "blocked_or_unreached",
-            "distance_traveled": traveled,
-            "turn_reached": turned,
-            "position": self.data.qpos[:3].tolist(),
-            "yaw": self._yaw(),
+            "status": "executed",
+            "translation_feedback": "unavailable",
+            "commanded_translation_seconds": translation_seconds,
         }
 
     def _arm_controls(self, hand):
@@ -340,7 +333,7 @@ class G1Runtime(Runtime):
         tools = [dict(t) for t in TOOLS if t["name"] != "gripper"]
         tools[0] = _tool(
             "drive",
-            "Walk forward/backward distance metres then turn radians through a learned joint controller. Contact, balance and obstacles can cause failure. Maximum2m and pi radians.",
+            "Walk a nominal distance using a timed 0.25m/s velocity command, then turn using relative IMU heading. Linear displacement is not measured: use RGB-D to assess actual progress. Contact, balance and obstacles can cause failure. Maximum2m and pi radians.",
             {"distance": NUMBER, "turn": NUMBER},
             ["distance", "turn"],
         )
@@ -358,7 +351,7 @@ class G1Runtime(Runtime):
     def manifest(self):
         result = super().manifest
         result.update(
-            controller="unitree-g1-dex1-velocity-onnx-with-arm-override-v1",
+            controller="unitree-g1-dex1-timed-velocity-onnx-with-arm-override-v2",
             policy_frequency_hz=50,
             policy_sha256=self._policy_sha256,
             policy_source_revision="1425b15f73bd4095f0df53709d7c389c3eb9e790",
