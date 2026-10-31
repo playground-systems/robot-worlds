@@ -336,7 +336,9 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
     asset_instructions = "\nPrefer prepared_assets when the supplied catalog matches the requested object. These are previously sourced online originals, already downloaded and converted. Emit one reference with asset_id, instance id, bottom-center position and required mass instead of recreating its geometry or inventing local file paths. Use catalog body/geom/joint/region IDs with {prefix} replaced by the instance id in rubric and process references. Referenced objects and cavity regions are added automatically; do not duplicate them in objects/regions. Catalog coordinates are relative to the instance bottom-center at position [0,0,0]. Preserve original size/orientation; record incompatible requirements as unvalidated rather than silently shrinking, rotating or substituting geometry. The catalog is an asset library, not a fixed scene or task. Keep generating arbitrary surrounding layouts and requested tasks."
     asset_instructions += "\nBefore creating an object asset absent from the installed catalog, request it through asset_requests. Layout floor and wall primitives remain freely generated; other new object assets require discovery. A request pauses scene materialization: keep its current scene fields minimal because they are only a draft until the actual source geometry arrives. Do not invent source dimensions, joint IDs or collision parts. After resolution, use the new grounded catalog, place every requested asset through prepared_assets and clear asset_requests. Never replace a failed lookup/import with procedural geometry. Search is limited to Fuel's supported single-link scanned OBJ sources; openable mechanisms and declared cavities need compatible installed assets or further source preparation. Use existing catalog matches first to avoid unnecessary network/model work. At most two resolution rounds and eight new assets are allowed."
     asset_instructions += "\nOnline asset resolution is " + ("available." if asset_resolver is not None else "disabled; missing assets remain unresolved.")
+    asset_instructions += "\nOnly a supplied completed empty-search record authorizes a generated object asset. For each such request, author procedural objects/assemblies and list every component and owned cavity under created_assets with that asset_id. One connected physical root per group; all attached components belong to the group, with no parent outside it. Do not invent mesh, texture or provenance files. Preserve the request's dimensions, mobility and required articulation/cavity, and distribute its exact estimated total mass across collision components. Different instances may use separate groups for the same authorized asset_id. Search absence is scoped to the recorded catalog, not the whole internet. Failed lookup, rejected metadata selection and unsupported import never authorize creation. Clear asset_requests after receiving evidence and retain every requested asset in prepared_assets or an authorized created_assets group."
     history, candidate, previous = [], None, None
+    creation_evidence = {}
     source_rounds, resolved_ids, attempt = 0, set(), 0
     errors = []
     while attempt <= max_repairs:
@@ -346,6 +348,10 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
         request = "Original user request (preserve all requirements):\n" + prompt
         request += "\nPrepared source asset catalog:\n" + catalog
         request += f"\nResource profile: {scene_profile}; materialized physical object count must be between {min_objects} and {max_objects}."
+        if creation_evidence:
+            from dataclasses import asdict
+            request += "\nCompleted empty-search evidence (authorizes procedural groups only for these requests):\n" + json.dumps(
+                {key: {"request": value.request.model_dump(mode="json"), "search": asdict(value.search)} for key, value in creation_evidence.items()})
         if scene_profile == "large":
             request += "\nKeep the JSON source compact: aim for at most 40 template parts total, 20 bespoke physical objects, and 30 placement/repetition blocks; these are planning guides, not layout restrictions. Do NOT individually emit hundreds of repeated objects. Compute materialized_count = len(objects) + sum(template_part_count * nx * ny * nz for each instance). For example a 7-part rack repeated [8,5,1] creates 280 real physical objects from just 7 part definitions and one placement block; its last top part is instanceID_7_4_0_top. Use several distinct functional-zone assemblies and avoid tiny meaningless pieces solely to inflate the count. Unless the user's dimensions/detail constraints say otherwise, create an explorable facility at least 100m by 60m, with at least 500 meaningful physical geometries across several connected functional zones. Use reusable model-authored assembly_templates and placement/repetition assembly_instances for repeated infrastructure and furniture. Keep a clear connected main circulation network, short robot decision-level missions that cross at least two nearby zones, distinctive zone geometry, safe starting location and physical workpieces. Large scale is not achieved by empty bounds, distant duplicate props, or thousands of tiny decorative colliders. Preserve the user's requested task; do not add unrelated required chores."
         if previous is not None:
@@ -376,11 +382,12 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
                         event_callback({"type": "asset_requests", "requests": [r.model_dump(mode="json") for r in plan.asset_requests]})
                     with _generation_phase(event_callback, "source_assets", attempt + 1):
                         asset_library = extend_asset_library(asset_library, plan.asset_requests, asset_resolver,
-                                                             [item["asset_id"] for item in json.loads(catalog)])
+                                                             [item["asset_id"] for item in json.loads(catalog)] + list(creation_evidence),
+                                                             creation_evidence=creation_evidence)
                         catalog = json.dumps(prepared_asset_catalog(asset_library), separators=(",", ":"))
                     resolved_ids.update(r.asset_id for r in plan.asset_requests)
                     source_rounds += 1
-                    errors = ["Requested source assets are now in the catalog. Plan with their actual dimensions/IDs, use all requested assets, and clear asset_requests."]
+                    errors = ["Use the resolved source catalog and any supplied completed empty-search evidence. Preserve every requested asset, then clear asset_requests."]
                     continue
                 except CollisionPreparationCancelled as exc:
                     raise GenerationCancelled("Asset resolution cancelled", candidate=candidate, attempts=attempt+1,
@@ -394,16 +401,25 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
                         from .llm import audit_value
                         event_callback({"type": "model_usage", "usage": audit_value(getattr(client, "usage", {}))})
             with _generation_phase(event_callback, "assets", attempt + 1):
-                spec = WorldSpec.model_validate(plan.model_dump(mode="json", exclude={"prepared_assets", "asset_requests"}))
+                spec = WorldSpec.model_validate(plan.model_dump(mode="json", exclude={"prepared_assets", "asset_requests", "created_assets"}))
                 assembly_errors = []
-                missing = resolved_ids - {item.asset_id for item in plan.prepared_assets}
+                creation_ok = True
+                missing = resolved_ids - {item.asset_id for item in [*plan.prepared_assets, *plan.created_assets]}
                 if missing:
                     assembly_errors.append("Requested source assets were dropped: " + ", ".join(sorted(missing)))
+                    creation_ok = False
                 try:
                     spec = materialize_prepared_assets(plan, max_objects=max_objects, event_callback=event_callback, asset_library=asset_library)
                     spec = expand_assemblies(spec, max_objects=max_objects)
                 except (ValueError, ValidationError) as exc:
                     assembly_errors.append(str(exc))
+                try:
+                    from .generated_assets import materialize_created_assets
+                    spec = materialize_created_assets(spec, plan.created_assets, creation_evidence,
+                                                      output=online_asset_cache, on_event=event_callback)
+                except ValueError as exc:
+                    assembly_errors.append(str(exc))
+                    creation_ok = False
             spec.source_prompt = prompt
             if PHYSICAL_DEFAULTS not in spec.assumptions:
                 spec.assumptions.append(PHYSICAL_DEFAULTS)
@@ -412,10 +428,10 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
                 if disclosure not in spec.assumptions:
                     spec.assumptions.append(disclosure)
             candidate = spec
-            if on_candidate:
+            if on_candidate and creation_ok:
                 with _generation_phase(event_callback, "preview", attempt + 1):
                     on_candidate(spec)
-            if event_callback:
+            if event_callback and creation_ok:
                 event_callback({"type": "candidate", "attempt": attempt+1, "spec": spec.model_dump(mode="json")})
             with _generation_phase(event_callback, "static_validation", attempt + 1):
                 errors = assembly_errors + validate_spec(spec, asset_root=asset_root)

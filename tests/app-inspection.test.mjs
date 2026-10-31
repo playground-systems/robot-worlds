@@ -211,4 +211,6 @@ test('online asset stages show discovery and cache reuse separately from world v
   assert.equal(run("eventLabel({type:'generation_phase_started',phase:'source_assets',attempt:1})"), 'Find and prepare source assets · attempt 1 · started');
   assert.equal(run("eventLabel({type:'asset_cache_catalog',message:'Added 1 prepared sources from previous generations'})"), 'Added 1 prepared sources from previous generations');
   assert.equal(run("eventLabel({type:'asset_cache_unavailable',message:'Recent source unavailable; files unchanged'})"), 'Recent source unavailable; files unchanged');
+  assert.equal(run("eventLabel({type:'asset_creation_available',message:'No candidates in the recorded catalog'})"), 'No candidates in the recorded catalog');
+  assert.equal(run("eventLabel({type:'asset_created_after_search',message:'Created fixture after search; physics checks follow'})"), 'Created fixture after search; physics checks follow');
 });

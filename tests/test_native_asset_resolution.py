@@ -46,3 +46,21 @@ def test_online_request_to_native_world_and_portable_export(tmp_path, monkeypatc
     assert load(second.path).id == second.id
     assert world.export(tmp_path / "world.zip").is_file()
     assert second.export(tmp_path / "second.zip").is_file()
+
+
+def test_empty_search_to_generated_hinged_fixture_native_validation_and_export(tmp_path, monkeypatch, native_rendering):
+    from test_generated_assets import created_cabinet, empty_search
+    req, plan = created_cabinet()
+    monkeypatch.setattr(asset_resolution, "search_online_assets", empty_search)
+    client = Client([draft(req), plan])
+    world = generate("Synthetic hollow cabinet with a hinged door", client=client,
+                     output=tmp_path / "worlds", max_repairs=0)
+    assert world.manifest["validation"]["status"] == "ready", world.manifest["validation"]
+    assert len(client.prompts) == 2
+    door = next(obj for obj in world.spec.objects if obj.id == "door")
+    assert door.joint.type == "hinge" and door.source_metadata
+    metadata = json.loads((world.path / door.source_metadata).read_text())
+    assert metadata["decision"] == "created_after_search" and metadata["search"]["candidates"] == []
+    shutil.rmtree(tmp_path / "asset-cache")
+    assert load(world.path).id == world.id
+    assert world.export(tmp_path / "generated-fixture.zip").is_file()

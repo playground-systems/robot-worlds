@@ -127,13 +127,31 @@ replans placement. No preview is published from the unresolved asset draft.
   scene response, without repeating acquisition or selection. The catalog includes
   mobility, dimensions, physical mass and whether mass must be preserved or supplied
   as an estimate. Installed library IDs keep precedence.
-- Installed assets need no extra model request. A new lookup adds one selection
+- Installed assets need no extra model request. A new lookup with candidates adds one selection
   call per asset and another scene-planning call per resolution round.
 - Search, selection, download, preparation and reuse appear in progress events.
   Exported metadata retains the query, catalog results, source revision/license
   and selection rationale.
-- Missing results, unsupported source features, unmet dimensions/mobility and
-  failed imports stop resolution. They never authorize procedural replacement.
+- Incomplete searches, unsupported source features, unmet dimensions/mobility,
+  rejected metadata selection and failed imports stop resolution. They never
+  authorize procedural replacement.
+
+When a completed catalog search returns **zero candidates**, generation can create
+the object from supported procedural shapes. It receives the recorded search and
+request constraints, then lists the generated components and cavity regions in
+`created_assets`. Each instance must form one connected physical hierarchy, retain
+the requested size/mobility/mechanisms and distribute the requested estimated mass
+across its collision components. Invented mesh/texture files, omitted children,
+foreign parents and overlapping ownership are rejected. The normal scene and native
+validation/repair steps still apply; this is not an automatic physics pass.
+
+Generated groups retain the search scope, query, requested properties and geometry
+in exported metadata, with a notice distinguishing them from imported originals.
+An empty Fuel result does not prove that no suitable asset exists elsewhere. These
+generated groups are not added to the imported-source cache. Geometry repairs reuse
+the current generation's evidence; a later generation searches again instead of
+treating an old empty result as permanent absence. Failed structural/provenance
+checks are repaired before a generated-asset preview is published.
 
 The automatic adapter currently supports single-link SDF/OBJ scans. Newly found
 articulated appliances and verified cavity declarations need further preparation;
@@ -155,7 +173,9 @@ Use `generate(..., online_assets=False)` for installed and cached sources withou
 fresh online acquisition. Advanced callers
 can supply `asset_resolver=callable` returning a provenance-backed `SourcedAsset` for
 a `SourceAssetRequest`; required dimensions/mobility/features are checked again
-before registration. The built-in `FuelAssetResolver(cache_dir, client=...)` is also
+before registration. An `AssetCreationEvidence` from `robot_worlds.generated_assets`
+can instead retain a completed, matching search with zero candidates; it does not
+contain or certify generated geometry. The built-in `FuelAssetResolver(cache_dir, client=...)` is also
 available directly. Native preparation of new concave sources requires the optional
 `preparation` extra; cached sources and already-convex meshes do not.
 

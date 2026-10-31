@@ -69,9 +69,9 @@ def _compatible(asset, request):
     if any(obj.movable for obj in asset.objects) != request.movable:
         raise AssetResolutionError(f"{request.asset_id}: source mobility does not match the request")
     if request.requires_articulation and not asset.joint_ids:
-        raise AssetResolutionError(f"{request.asset_id}: no imported articulation; an articulated source/adapter is required")
+        raise AssetResolutionError(f"{request.asset_id}: required physical joint is missing")
     if request.requires_cavity and not any(region.interior_of for region in asset.regions):
-        raise AssetResolutionError(f"{request.asset_id}: no verified cavity declaration; cavity preparation is unresolved")
+        raise AssetResolutionError(f"{request.asset_id}: required cavity region is missing")
 
 
 class FuelAssetResolver:
@@ -218,13 +218,20 @@ description does not establish visual or task-level physical correctness.
         if not report.completed or report.query != request.query or not report.sources:
             raise AssetResolutionError("Asset search is incomplete; no replacement geometry will be generated")
         candidates = {item.id: item for item in report.candidates}
-        if len(candidates) != len(report.candidates) or not candidates:
+        if len(candidates) != len(report.candidates):
             raise AssetResolutionError(f"No unique source candidates found for {request.query}; the asset remains unresolved")
         payload = json.dumps({"request": request.model_dump(mode="json"), "candidates": [asdict(item) for item in report.candidates]})
         if len(payload) > 200_000:
             raise AssetResolutionError("Asset selection exceeds its metadata budget; narrow the query")
         self.emit({"type": "asset_search_finished", "asset_id": request.asset_id, "report": asdict(report),
                    "message": f"Found {len(candidates)} source candidates for {request.asset_id}"})
+        if not candidates:
+            from .generated_assets import AssetCreationEvidence
+            result = AssetCreationEvidence(request, report)
+            result.validate()
+            self.emit({"type": "asset_creation_available", "asset_id": request.asset_id, "report": asdict(report),
+                       "message": f"No candidates found in the recorded catalog; {request.asset_id} can be generated with retained search evidence"})
+            return result
         try:
             raw = self.client.complete_json(
                 "Select an existing asset matching the requested identity, appearance, material and role. "
@@ -296,7 +303,7 @@ description does not establish visual or task-level physical correctness.
         return self._cached(destination, request, emit_reused=False)
 
 
-def extend_asset_library(library, requests, resolver, installed_ids):
+def extend_asset_library(library, requests, resolver, installed_ids, *, creation_evidence=None):
     """Resolve a batch into a new library, never mutating the caller's library."""
     ids = [request.asset_id for request in requests]
     if len(set(ids)) != len(ids) or set(ids) & set(installed_ids):
@@ -304,8 +311,18 @@ def extend_asset_library(library, requests, resolver, installed_ids):
     if len(ids) + len(library.asset_ids if library is not None else ()) > 32:
         raise AssetResolutionError("Source requests exceed the 32-asset library budget")
     result = library.copy() if library is not None else AssetLibrary()
+    pending = {}
     for request in requests:
         sourced = resolver(request)
+        from .generated_assets import AssetCreationEvidence
+        if isinstance(sourced, AssetCreationEvidence):
+            sourced.validate()
+            if creation_evidence is None or sourced.request != request:
+                raise AssetResolutionError("Caller must retain matching empty-search evidence before generating geometry")
+            pending[request.asset_id] = sourced
+            continue
         _compatible(sourced.asset, request)
         result.add(request.asset_id, sourced, description=request.description)
+    if creation_evidence is not None:
+        creation_evidence.update(pending)
     return result

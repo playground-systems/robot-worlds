@@ -15,6 +15,7 @@ from .asset_import import import_convex_mesh_asset, import_mjcf_asset
 from .asset_library import resolve_asset_library
 from .asset_resolution import SourceAssetRequest
 from .asset_sourcing import AssetCandidate, AssetSearch, source_asset
+from .generated_assets import CreatedAssetGroup
 from .models import Identifier, Model, Number, Positive, Vec3, WorldSpec
 
 PreparedAssetId = Identifier
@@ -36,6 +37,8 @@ class PreparedAssetInstance(Model):
 
 
 class GenerationSpec(WorldSpec):
+    created_assets: list[CreatedAssetGroup] = Field(default_factory=list, max_length=100,
+        description="Group generated object/cavity IDs only for assets authorized by the supplied completed empty-search evidence. Components live in objects or expanded assemblies.")
     asset_requests: list[SourceAssetRequest] = Field(default_factory=list, max_length=8,
         description="Request missing online assets before final scene planning. Resolved dimensions/IDs arrive in the next catalog; leave empty when using installed assets.")
     prepared_assets: list[PreparedAssetInstance] = Field(default_factory=list, max_length=100,
@@ -195,7 +198,7 @@ def materialize_prepared_assets(plan: GenerationSpec, *, max_objects: int, event
     """Expand references atomically before geometry validation or preview saving."""
     if plan.asset_requests:
         raise ValueError("Resolve online asset requests before materializing a scene")
-    payload = plan.model_dump(mode="json", exclude={"prepared_assets", "asset_requests"})
+    payload = plan.model_dump(mode="json", exclude={"prepared_assets", "asset_requests", "created_assets"})
     prefixes = [instance.id for instance in plan.prepared_assets]
     if len(prefixes) != len(set(prefixes)):
         raise ValueError("Prepared asset instance prefixes must be unique")

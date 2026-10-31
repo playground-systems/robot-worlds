@@ -482,6 +482,7 @@ function eventLabel(event) {
   }
   if (['asset_search_started', 'asset_search_finished', 'asset_source_selected', 'asset_download_started', 'asset_preparation_started', 'asset_preparation_waiting', 'asset_preparation_reused', 'asset_preparation_finished', 'asset_resolution_reused', 'asset_resolution_finished'].includes(event.type)) return event.message || 'Prepare source asset';
   if (event.type === 'asset_requests') return `Find ${(event.requests || []).length} source assets`;
+  if (['asset_creation_available', 'asset_created_after_search'].includes(event.type)) return event.message || 'Generate asset after source search';
   if (['asset_cache_catalog', 'asset_cache_unavailable', 'asset_cache_index_unavailable'].includes(event.type)) return event.message || 'Check recent source assets';
   if (event.type === 'asset_loading') return event.message || 'Loading prepared asset';
   if (event.type === 'asset_loaded') return event.message || 'Prepared asset ready';
