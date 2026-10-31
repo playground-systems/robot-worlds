@@ -13,7 +13,7 @@ from pathlib import Path
 
 from robot_worlds.mesh_assets import convex_volume, read_triangle_obj
 
-SETTINGS = dict(threshold=.001, real_metric=True, preprocess_mode="auto",
+SETTINGS = dict(threshold=.002, real_metric=True, preprocess_mode="auto",
                 preprocess_resolution=100, resolution=2000, mcts_nodes=20,
                 mcts_iterations=100, mcts_max_depth=3, seed=0,
                 merge=True, decimate=True, max_ch_vertex=128, max_convex_hull=-1)
@@ -46,7 +46,7 @@ def decompose(source: Path, output: Path):
     manifest = {"schema_version": 1, "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
                 "tool": "CoACD", "tool_version": version, "settings": SETTINGS, "parts": records,
                 "limitations": ["Approximate convex collision decomposition, not the original visual mesh.",
-                                "The 1 mm concavity setting is a converter parameter, not a certified maximum surface error.",
+                                "The 2 mm concavity setting is a converter parameter, not a certified maximum surface error.",
                                 "Native cavity/contact checks are required before physical use."]}
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2)+"\n")
     print(json.dumps({"parts": len(parts), "volume_m3": sum(volumes), "output": str(output)}))
