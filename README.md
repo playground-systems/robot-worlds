@@ -18,7 +18,7 @@ uv run robot-worlds serve
 
 Open **http://127.0.0.1:8765**. Enter a scene and task, inspect the generated geometry and rubric, then start an evaluation. The workbench stores worlds, job progress and reports under `.robot-worlds/`. A failed validation preserves its candidate and explains the failed checks.
 
-See [setup and model access](docs/setup.md) for offline `doctor` checks, API requirements, the optional Codex SDK transport, and clean installation.
+See the [SDK and sensor contract](docs/sdk.md) for custom policies and appliance environments. See [setup and model access](docs/setup.md) for offline `doctor` checks, API requirements, the optional Codex SDK transport, and clean installation.
 
 ```python
 from robot_worlds import generate, LLMAgent
@@ -49,7 +49,7 @@ For larger facilities, select the large-scene generation profile. For repeated e
 
 The first release models rigid bodies and articulated mechanisms. Internal machining may be represented by an explicit timed process with physical loading prerequisites and persistent workpiece identity. That abstraction appears in the saved specification and report. Cutting, welding, fluids, cloth and material deformation are outside this release.
 
-Mass, friction and visual material defaults are estimates. Sensors currently use ideal semantic RGB-D and proprioception. The arm controller uses local inverse kinematics; it does not guarantee a collision-free motion plan. Evaluation keeps rubric and full simulator state outside the policy observations.
+Mass, friction and visual material defaults are estimates. Policies receive onboard RGB-D, joint encoders and relative IMU measurements; TIAGo also has wheel-encoder odometry. Object labels and global positions are not supplied. Sensor noise is not yet calibrated to hardware. Arm commands use robot-base coordinates. The arm controller uses local inverse kinematics; it does not guarantee a collision-free motion plan. Evaluation keeps rubric and full simulator state outside the policy observations.
 
 ## Development
 

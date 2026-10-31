@@ -95,6 +95,7 @@ class Region(Model):
     label: str
     position: Vec3
     size: Size3
+    interior_of: Identifier | None = Field(default=None, description="Physical appliance/container root whose cavity this region describes; never a substitute for hollow collision geometry")
 
 
 class Condition(Model):

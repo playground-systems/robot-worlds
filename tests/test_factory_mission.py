@@ -13,6 +13,7 @@ from robot_worlds.models import (
 )
 from robot_worlds.rubric import grade
 from robot_worlds.runtime import Runtime
+from robot_worlds.sensors import local_point
 
 
 def mission_spec():
@@ -92,6 +93,8 @@ def test_three_station_grasp_carry_process_delivery():
     runtime = Runtime(spec, render=False, max_sim_seconds=150)
 
     def execute(tool, **arguments):
+        if tool == "move_arm":
+            arguments["position"] = local_point(arguments["position"], *runtime._base_transform())
         result = runtime.execute({"tool": tool, "arguments": arguments})
         assert result["status"] in ("executed", "reached"), result
         return result
@@ -102,7 +105,8 @@ def test_three_station_grasp_carry_process_delivery():
         # Explicit oracle access is confined to this engineering test policy.
         position = runtime.snapshot()["objects"]["part"]["position"]
         execute("move_arm", hand="right", position=position, approach="down")
-        assert execute("gripper", hand="right", opening=0)["contact_detected"]
+        execute("gripper", hand="right", opening=0)
+        assert runtime.snapshot()["objects"]["part"]["held_by"] == "right"
         execute("move_arm", hand="right", position=[x, -0.4, 0.78], approach="down")
         assert runtime.snapshot()["objects"]["part"]["held_by"] == "right"
 

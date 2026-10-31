@@ -13,7 +13,7 @@ def package_tree(tmp_path, monkeypatch):
     root = tmp_path / "installed-package"
     root.mkdir()
     for name in (
-        "runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "g1_runtime.py", "appearance.py", "live.py", "spectator.py"
+        "runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "g1_runtime.py", "appearance.py", "live.py", "spectator.py", "sensors.py"
     ):
         (root / name).write_text(f"# installed source for {name}\n")
     monkeypatch.setattr(runtime.resources, "files", lambda package: root)

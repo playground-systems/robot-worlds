@@ -36,7 +36,7 @@ def test_protocol_sends_only_actor_context_and_observations_and_resets():
         assert action["tool"] == "wait"
         reset, act, result = [r[1] for r in service.requests]
         assert set(reset["context"]) == {"task", "robot"}
-        assert set(act["observation"]) == {"time", "image", "visible_objects"}
+        assert set(act["observation"]) == {"time", "image"}
         assert act["observation"]["image"] == {"encoding": "base64", "data": "cG5nLWRhdGE="}
         assert result["result"] == {"status": "executed"}
         assert "private-token" not in json.dumps(policy.transcript)

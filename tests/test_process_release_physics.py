@@ -21,7 +21,8 @@ def test_supported_but_grasped_workpiece_cannot_complete_released_process():
         for point in ([.55, -.4, .78], [.55, -.4, .625]):
             result = action(runtime, "move_arm", hand="right", position=point, approach="down")
             assert result["status"] == "reached", result
-        assert action(runtime, "gripper", hand="right", opening=0)["contact_detected"]
+        action(runtime, "gripper", hand="right", opening=0)
+        assert runtime.snapshot()["objects"]["block"]["held_by"] == "right"
         # Closing can lift it slightly; press down with joint servos until the
         # workpiece contacts its support again. No object pose is assigned.
         result = action(runtime, "move_arm", hand="right", position=[.55, -.4, .615], approach="down")

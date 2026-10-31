@@ -112,6 +112,34 @@ def _extents(obj, state):
     return [sum(abs(row[i])*size[i]/2 for i in range(3)) for row in rotation]
 
 
+def rigid_members(objects, identifier):
+    """Include fixed child geometry; articulated children have their own motion."""
+    members = {identifier}
+    while True:
+        expanded = members | {o.id for o in objects.values()
+                              if o.parent_id in members and not o.joint and not o.movable}
+        if expanded == members:
+            return members
+        members = expanded
+
+
+def _body_bounds(objects, identifier, states):
+    low, high = [math.inf] * 3, [-math.inf] * 3
+    contacts = set()
+    for member in rigid_members(objects, identifier):
+        state = states.get(member)
+        if not isinstance(state, dict):
+            raise ValueError(f"missing attached geometry state for {member}")
+        position = _vector(state.get("position"))
+        half = _extents(objects[member], state)
+        low = [min(low[i], position[i] - half[i]) for i in range(3)]
+        high = [max(high[i], position[i] + half[i]) for i in range(3)]
+        # A missing contact measurement cannot prove release or support.
+        if isinstance(state.get("contacts"), list):
+            contacts.update(state["contacts"])
+    return [(low[i] + high[i]) / 2 for i in range(3)], [(high[i] - low[i]) / 2 for i in range(3)], contacts
+
+
 def measure_predicate(spec: WorldSpec, condition: Condition, snapshot: dict) -> dict[str, Any]:
     """Return three-valued truth; missing measurements are never task failures."""
     c = condition
@@ -153,7 +181,10 @@ def measure_predicate(spec: WorldSpec, condition: Condition, snapshot: dict) -> 
         elif c.predicate in {"in_region", "robot_in_region"}:
             position = _vector(state.get("position"))
             region = regions[c.target_id]
-            half = [0, 0, 0] if c.predicate == "robot_in_region" else _extents(objects[c.object_id], state)
+            if c.predicate == "robot_in_region":
+                half = [0, 0, 0]
+            else:
+                position, half, _ = _body_bounds(objects, c.object_id, snapshot.get("objects", {}))
             margins = [region.size[i]/2 - abs(position[i]-region.position[i]) - half[i] for i in range(3)]
             measured = {"position": position, "containment_margins": margins}
             satisfied = all(x >= -c.tolerance for x in margins)
@@ -167,12 +198,15 @@ def measure_predicate(spec: WorldSpec, condition: Condition, snapshot: dict) -> 
                 measured = math.dist(position, target_position)
                 satisfied = measured <= c.threshold
             else:
-                half, target_half = _extents(objects[c.object_id], state), _extents(objects[c.target_id], target)
+                position, half, contacts = _body_bounds(objects, c.object_id, snapshot.get("objects", {}))
+                # Support names a particular surface (e.g. microwave floor), not
+                # the highest point of every component attached to the appliance.
+                target_half = _extents(objects[c.target_id], target)
                 if "contacts" not in state or not isinstance(state["contacts"], list):
                     raise ValueError("on_top requires measured object contact IDs")
                 gap = position[2]-half[2] - target_position[2]-target_half[2]
                 overlap = [min(position[i]+half[i], target_position[i]+target_half[i]) - max(position[i]-half[i], target_position[i]-target_half[i]) for i in (0, 1)]
-                measured = {"vertical_gap": gap, "overlap": overlap, "contact": c.target_id in state["contacts"]}
+                measured = {"vertical_gap": gap, "overlap": overlap, "contact": c.target_id in contacts}
                 satisfied = abs(gap) <= c.tolerance and all(x > 0 for x in overlap) and measured["contact"]
         else:
             raise ValueError("unimplemented predicate")

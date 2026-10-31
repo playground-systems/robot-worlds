@@ -60,6 +60,7 @@ class RemoveObject(Model):
 
 
 class RegionValues(Model):
+    interior_of: Identifier | None = None
     label: str | None = None
     position: Vec3 | None = None
     size: Size3 | None = None

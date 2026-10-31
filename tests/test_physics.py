@@ -5,6 +5,7 @@ import pytest
 
 from robot_worlds.models import Criterion, SceneObject, WorldSpec
 from robot_worlds.runtime import Runtime
+from robot_worlds.sensors import local_point
 
 
 def world(objects=()):
@@ -42,6 +43,9 @@ def block_and_support():
 
 
 def action(runtime, name, **args):
+    # Engineering fixtures intentionally use known world targets, not actor perception.
+    if name == "move_arm":
+        args["position"] = local_point(args["position"], *runtime._base_transform())
     return runtime.execute({"tool": name, "arguments": args})
 
 
@@ -50,9 +54,10 @@ def test_wheel_contact_navigation_and_replay():
     try:
         initial = runtime.snapshot()
         result = action(runtime, "drive", distance=0.25, turn=0.3)
-        assert result["status"] == "reached"
-        assert 0.18 < result["distance_traveled"] < 0.32
-        assert 0.20 < result["turn_reached"] < 0.4
+        assert result["status"] == "executed"
+        assert 0.18 < runtime.data.qpos[0] - initial["robot"]["position"][0] < 0.32
+        assert 0.18 < result["encoder_distance_m"] < 0.32
+        assert 0.20 < result["measured_turn_rad"] < 0.4
         assert len(runtime.trace) > 20
         assert runtime.data.ncon > 0
         runtime.restore_snapshot(initial)
@@ -70,7 +75,8 @@ def test_contact_grasp_lift_and_release():
                 action(runtime, "move_arm", hand="right", position=point, approach="down")["status"]
                 == "reached"
             )
-        assert action(runtime, "gripper", hand="right", opening=0)["contact_detected"]
+        action(runtime, "gripper", hand="right", opening=0)
+        assert runtime.snapshot()["objects"]["block"]["held_by"] == "right"
         action(runtime, "move_arm", hand="right", position=[0.55, -0.4, 0.78], approach="down")
         lifted = runtime.snapshot()["objects"]["block"]
         assert lifted["held_by"] == "right"
@@ -109,8 +115,8 @@ def test_g1_uses_physical_balance_policy_for_walking_and_reaching():
     runtime = Runtime(spec, render=False)
     try:
         result = action(runtime, "drive", distance=0.5, turn=0.3)
-        assert result["status"] == "reached"
-        assert 0.4 < result["distance_traveled"] < 0.65
+        assert result["status"] == "executed"
+        assert 0.4 < runtime.data.qpos[0] < 0.65
         assert runtime.data.qpos[2] > 0.7
         assert runtime.model.neq == 0
         assert runtime.manifest["policy_frequency_hz"] == 50
@@ -205,7 +211,8 @@ def test_g1_dex1_contact_grasp_carry_and_release():
         for point in ([0.18, -0.3, 1.0], [0.43, -0.25, 0.98], [0.43, -0.25, 0.85]):
             result = action(runtime, "move_arm", hand="right", position=point, approach="forward")
             assert result["status"] == "reached", result
-        assert action(runtime, "gripper", hand="right", closure=0.8)["contact_detected"]
+        action(runtime, "gripper", hand="right", closure=0.8)
+        assert runtime.snapshot()["objects"]["block"]["held_by"] == "right"
         action(runtime, "move_arm", hand="right", position=[0.43, -0.25, 0.98], approach="forward")
         action(runtime, "wait", seconds=2)
         held = runtime.snapshot()["objects"]["block"]

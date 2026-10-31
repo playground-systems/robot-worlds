@@ -22,12 +22,19 @@ from PIL import Image
 from .appearance import add_appearance, finish_name
 from .artifacts import digest
 from .robot_assets import ROBOT_MANIFESTS, robot_asset_path
+from .rubric import rigid_members
+from .sensors import WheelOdometry, depth_point, local_point, world_point
 
 SENSOR_CONTRACT = {
-    "kind": "ideal_semantic_rgbd_and_proprioception",
+    "kind": "rgbd_joint_encoders_relative_imu",
     "camera": "robot_rgbd",
     "image_size": [640, 480],
-    "object_positions": "visible_segmented_surface_estimates",
+    "coordinate_frame": "robot base: X forward, Y left, Z up; G1 origin at pelvis",
+    "depth": "optical-axis metres, 0.05–10 m; query_depth returns calibrated base-frame surface point",
+    "object_labels": False,
+    "global_localization": False,
+    "odometry": "TIAGo wheel-encoder dead reckoning from episode start; unavailable for G1",
+    "noise": "ideal camera, depth, encoders and IMU; no calibrated hardware noise model",
     "vision_requires_render": True,
 }
 
@@ -39,7 +46,7 @@ def runtime_implementation_identity(robot: str, action_contract: list[dict]) -> 
     nonbehavioral edit. Missing resources/version metadata fail closed. These
     hashes identify an implementation; they do not attest to an untampered host.
     """
-    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py", "spectator.py"]
+    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py", "spectator.py", "sensors.py"]
     dependencies = ["mujoco", "numpy", "pillow", "pydantic"]
     if robot == "g1":
         modules.append("g1_runtime.py")
@@ -88,7 +95,7 @@ TOOLS = [
     ),
     _tool(
         "move_arm",
-        "Move a gripper grasp center toward world XYZ metres through joint servos. Local IK can fail or encounter obstacles; inspect actual reached position. Optional approach chooses down, forward, or keep (default). Maximum reach is limited by the robot.",
+        "Move a gripper grasp center toward robot-base XYZ metres (X forward, Y left, Z up; origin at the base, pelvis for G1) through joint servos. Local IK can fail or encounter obstacles; inspect actual reached position. Optional approach chooses down, forward, or keep (default). Maximum reach is limited by the robot.",
         {
             "hand": HAND,
             "position": {"type": "array", "items": NUMBER, "minItems": 3, "maxItems": 3},
@@ -108,6 +115,8 @@ TOOLS = [
         {"seconds": NUMBER},
         ["seconds"],
     ),
+    _tool("query_depth", "Read depth at an RGB pixel [u,v] (640x480, origin top-left), returning a measured visible surface point in robot-base coordinates. No object recognition or hidden geometry.",
+          {"pixel": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2}}, ["pixel"]),
     _tool("look", "Read the robot camera and proprioception without advancing simulation.", {}, []),
 ]
 
@@ -151,6 +160,16 @@ class Runtime:
         self._next_sample = 0.0
         self._closed = False
         self._objects = {o.id: o for o in spec.objects}
+        self._grasp_roots = {}
+        for obj in spec.objects:
+            root = obj
+            seen = set()
+            while root.parent_id in self._objects and not root.joint and not root.movable:
+                if root.id in seen:
+                    raise ValueError("Cyclic rigid assembly")
+                seen.add(root.id)
+                root = self._objects[root.parent_id]
+            self._grasp_roots[obj.id] = root.id
         for cycle in getattr(spec, "process_cycles", []):
             members = {cycle.fixture_id}
             while True:
@@ -176,6 +195,8 @@ class Runtime:
                     self._geom_objects[gid] = oid
         self._setup_robot()
         self._reset()
+        self._initial_yaw = self._yaw()
+        self._odometry = WheelOdometry(self._wheel_angles(), self._yaw()) if spec.robot == "tiago++" else None
 
     def _setup_robot(self):
         self._finger_bodies = {
@@ -506,6 +527,8 @@ class Runtime:
                 raise SimulationTimeLimit()
             self._before_step()
             mujoco.mj_step(self.model, self.data)
+            if getattr(self, "_odometry", None) is not None:
+                self._odometry.update(self._wheel_angles(), self._yaw())
             if not np.isfinite(self.data.qpos).all() or np.max(np.abs(self.data.qvel)) > 1e4:
                 raise RuntimeError("Simulator diverged; trajectory is invalid")
             if getattr(self.spec, "process_cycles", []):
@@ -523,10 +546,12 @@ class Runtime:
                 pairs.add(tuple(sorted((oa, ob))))
             for obj, robot_geom in ((oa, b), (ob, a)):
                 if obj:
+                    # Opposing fingers may touch different welded pieces of one bowl.
+                    grasp_root = self._grasp_roots[obj]
                     bid = int(self.model.geom_bodyid[robot_geom])
                     for hand, bids in self._finger_bodies.items():
                         if bid in bids:
-                            fingers[hand].setdefault(obj, set()).add(bid)
+                            fingers[hand].setdefault(grasp_root, set()).add(bid)
         held = {
             (hand, obj)
             for hand, objects in fingers.items()
@@ -579,6 +604,7 @@ class Runtime:
             if identifier in self._objects
         }
         state = {"time": float(self.data.time), "objects": {}}
+        needed = set().union(*(rigid_members(self._objects, oid) for oid in needed))
         for oid in needed:
             obj = self._objects[oid]
             bid = self._object_bodies[oid]
@@ -671,13 +697,15 @@ class Runtime:
             raise RuntimeError("Runtime is closed")
         name, args = action.get("tool"), action.get("arguments", {})
         start = float(self.data.time)
+        initial_yaw = self._yaw()
+        initial_distance = self._odometry.distance if self._odometry is not None else None
         try:
             if name == "drive":
                 result = self._drive(float(args.get("distance", 0)), float(args.get("turn", 0)))
             elif name == "move_arm":
                 result = self._move_arm(
                     args["hand"],
-                    np.asarray(args["position"], dtype=float),
+                    world_point(args["position"], *self._base_transform()),
                     args.get("approach", "keep"),
                 )
             elif name == "gripper":
@@ -688,6 +716,8 @@ class Runtime:
                     raise ValueError("seconds must be between0 and5")
                 self._step(seconds)
                 result = {"status": "executed"}
+            elif name == "query_depth":
+                result = self._query_depth(args["pixel"])
             elif name == "look":
                 result = {"status": "executed"}
             else:
@@ -701,6 +731,20 @@ class Runtime:
             }
         except (KeyError, ValueError, TypeError) as exc:
             result = {"status": "invalid_action", "error": str(exc)}
+        # Controller internals may use world coordinates; none cross the actor boundary.
+        if "actual_position" in result:
+            result["actual_position"] = local_point(result["actual_position"], *self._base_transform())
+            result["frame"] = "base"
+        for field in ("position", "yaw", "contact_detected", "note"):
+            result.pop(field, None)
+        if name == "drive":
+            result.pop("distance_traveled", None)
+            result.pop("turn_reached", None)
+            if result.get("status") in {"reached", "blocked_or_unreached"}:
+                result["status"] = "executed"
+            result["measured_turn_rad"] = math.atan2(math.sin(self._yaw() - initial_yaw), math.cos(self._yaw() - initial_yaw))
+            if initial_distance is not None:
+                result["encoder_distance_m"] = self._odometry.distance - initial_distance
         self._last_result = {
             "tool": name,
             **result,
@@ -941,42 +985,37 @@ class Runtime:
         Image.fromarray(pixels).save(output, format="PNG")
         return output.getvalue()
 
-    def _perception(self):
+    def _base_transform(self):
+        bid = int(self.model.jnt_bodyid[0])
+        return self.data.xpos[bid].copy(), self.data.xmat[bid].reshape(3, 3).copy()
+
+    def _wheel_angles(self):
+        return [float(self.data.joint(f"wheel_{end}_{side}_joint").qpos[0])
+                for end in ("front", "rear") for side in ("right", "left")]
+
+    def _camera_calibration(self):
+        camera = self.model.camera("robot_rgbd").id
+        origin, rotation = self._base_transform()
+        focal = 240 / math.tan(math.radians(self.model.cam_fovy[camera]) / 2)
+        position = np.asarray(local_point(self.data.cam_xpos[camera], origin, rotation))
+        orientation = rotation.T @ self.data.cam_xmat[camera].reshape(3, 3)
+        return focal, position, orientation
+
+    def _depth(self):
         renderer = self._get_renderer()
         renderer.enable_depth_rendering()
-        renderer.update_scene(self.data, camera="robot_rgbd")
-        depth = renderer.render().copy()
-        renderer.disable_depth_rendering()
-        renderer.enable_segmentation_rendering()
-        renderer.update_scene(self.data, camera="robot_rgbd")
-        segmentation = renderer.render().copy()
-        renderer.disable_segmentation_rendering()
-        camera = self.model.camera("robot_rgbd").id
-        rotation = self.data.cam_xmat[camera].reshape(3, 3)
-        origin = self.data.cam_xpos[camera]
-        focal = 240 / math.tan(math.radians(self.model.cam_fovy[camera]) / 2)
-        detections = []
-        for oid, obj in self._objects.items():
-            gids = [g for g, o in self._geom_objects.items() if o == oid]
-            mask = np.isin(segmentation[:, :, 0], gids) & (
-                segmentation[:, :, 1] == int(mujoco.mjtObj.mjOBJ_GEOM)
-            )
-            ys, xs = np.where(mask)
-            if len(xs) < 8:
-                continue
-            zs = depth[ys, xs]
-            points = np.column_stack(((xs - 319.5) * zs / focal, -(ys - 239.5) * zs / focal, -zs))
-            observed = np.median(points @ rotation.T + origin, axis=0)
-            detections.append(
-                {
-                    "id": oid,
-                    "label": obj.label,
-                    "estimated_surface_position": np.round(observed, 3).tolist(),
-                    "pixel_bounds": [int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())],
-                    "median_depth_m": round(float(np.median(zs)), 3),
-                }
-            )
-        return detections
+        try:
+            renderer.update_scene(self.data, camera="robot_rgbd")
+            return renderer.render().copy()
+        finally:
+            renderer.disable_depth_rendering()
+
+    def _query_depth(self, pixel):
+        if not self._render_enabled:
+            return {"status": "sensor_unavailable"}
+        if not isinstance(pixel, (list, tuple)) or len(pixel) != 2:
+            raise ValueError("pixel must be [u,v]")
+        return depth_point(self._depth(), pixel, *self._camera_calibration())
 
     def _finger_positions(self, hand):
         return [
@@ -989,30 +1028,42 @@ class Runtime:
         return TOOLS
 
     def observe(self):
+        origin, rotation = self._base_transform()
+        yaw = self._yaw() - self._initial_yaw
         observation = {
             "time": float(self.data.time),
             "robot": {
-                "position": self.data.qpos[:3].tolist(),
-                "yaw": self._yaw(),
+                "frame": "base",
+                "relative_heading_rad": math.atan2(math.sin(yaw), math.cos(yaw)),
+                "gravity_direction": (rotation.T @ np.array([0., 0., -1.])).tolist(),
+                "odometry": self._odometry.observation() if self._odometry is not None else None,
                 "hands": {
-                    h: {
-                        "position": self.data.site_xpos[s].tolist(),
-                        "finger_positions": self._finger_positions(h),
-                    }
+                    h: {"position": local_point(self.data.site_xpos[s], origin, rotation),
+                        "arm_joint_positions": self.data.qpos[self.model.jnt_qposadr[self._arm_joints[h]]].tolist(),
+                        "finger_positions": self._finger_positions(h)}
                     for h, s in self._sites.items()
                 },
             },
             "tools": self.tools,
             "last_tool_result": self._last_result,
-            "sensors": {
-                "model": "ideal semantic RGB-D; reported object points are visible surface estimates, not ground-truth centers",
-                "camera_available": self._render_enabled,
-            },
-            "visible_objects": [],
+            "sensors": {"model": SENSOR_CONTRACT["kind"],
+                        "camera_available": self._render_enabled,
+                        "noise": SENSOR_CONTRACT["noise"]},
         }
         if self._render_enabled:
             observation["image"] = self.render()
-            observation["visible_objects"] = self._perception()
+            focal, position, orientation = self._camera_calibration()
+            observation["sensors"]["camera"] = {
+                "width": 640, "height": 480, "fx": focal, "fy": focal, "cx": 319.5, "cy": 239.5,
+                "frame": "base", "position": position.tolist(), "rotation": orientation.tolist(),
+                "axes": "camera X right, Y up, looks along -Z",
+            }
+            depth = self._depth()[10::20, 10::20]
+            observation["sensors"]["depth"] = {
+                "units": "optical-axis metres", "pixel_origin": [10, 10], "pixel_stride": 20,
+                "values": [[round(float(z), 3) if np.isfinite(z) and .05 <= z <= 10 else None for z in row] for row in depth],
+                "missing": "null means outside supported depth range; query_depth samples a full-resolution pixel",
+            }
         return observation
 
     @property

@@ -584,7 +584,7 @@ def test_episode_contract_is_sent_once_with_sensor_history_and_full_audit():
     agent.reset(context)
     for step in range(12):
         observation = {"tools": TOOLS, "time": step,
-                       "visible_objects": [{"id": "observed_part", "position": [step, 0, 1]}]}
+                       "sensors": {"depth_m": step}, "visible_objects": [{"id": "must_not_leak"}]}
         agent.act(observation)
         agent.record_result({"distance_traveled": 0.09, "step": step})
     _, current, _, history = fake.decisions[-1]
@@ -593,7 +593,8 @@ def test_episode_contract_is_sent_once_with_sensor_history_and_full_audit():
     assert [entry["observation"]["time"] for entry in history] == list(range(5, 11))
     assert all("episode_context" not in entry["observation"] and
                "task" not in entry["observation"] for entry in history)
-    assert history[-1]["observation"]["visible_objects"][0]["position"] == [10, 0, 1]
+    assert history[-1]["observation"]["sensors"]["depth_m"] == 10
+    assert all("visible_objects" not in entry["observation"] for entry in history)
     assert history[-1]["tool_result"] == {"distance_traveled": 0.09, "step": 10}
     assert agent.transcript[0]["observation"]["episode_context"] == context
 

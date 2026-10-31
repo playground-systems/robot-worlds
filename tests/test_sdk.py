@@ -106,7 +106,7 @@ def test_evaluation_resets_runtime_and_policy_and_saves_valid_evidence(tmp_path)
     assert report.summary["valid"] == 2
     assert [e["seed"] for e in report.result["episodes"]] == [7, 8]
     assert len(policy.contexts) == 2
-    assert all(set(context) == {"task", "robot", "action_contract"} for context in policy.contexts)
+    assert all(set(context) == {"task", "robot", "action_contract", "sensor_contract"} for context in policy.contexts)
     assert len(FakeRuntime.instances) == 3
     assert all(runtime.closed for runtime in FakeRuntime.instances)
     assert read_json(report.path / "episode-001" / "trace.json")[0]["objects"]["part"]["position"] == [2, 0, .1]

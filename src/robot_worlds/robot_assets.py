@@ -22,7 +22,7 @@ ROBOT_MANIFESTS = {
         "limitations": [
             "Wheel collisions use explicit simplified passive rollers; lateral driving is not exposed.",
             "Finger collision hulls are replaced by shaft/pad primitives with estimated friction.",
-            "Ideal semantic RGB-D and proprioception; no real sensor noise model.",
+            "RGB-D, encoders and relative IMU; no object labels, global localization or calibrated sensor noise model.",
             "Cartesian arm control uses local IK and does not guarantee collision-free paths.",
         ],
     },

@@ -27,7 +27,6 @@ PUBLIC_OBSERVATION_KEYS = frozenset(
     {
         "time",
         "robot",
-        "visible_objects",
         "sensors",
         "image",
         "images",

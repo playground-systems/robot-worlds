@@ -84,7 +84,7 @@ f 4 5 8
 
         runtime._sample = record_contacts
         result = runtime.execute({"tool": "drive", "arguments": {"distance": 1, "turn": 0}})
-        assert result["status"] == "blocked_or_unreached"
+        assert result["status"] == "executed"  # Encoder feedback alone cannot certify obstacle clearance.
         assert runtime.snapshot()["robot"]["position"][0] < 0.55
         assert scene_contacts
         assert np.isfinite(runtime.data.qpos).all()

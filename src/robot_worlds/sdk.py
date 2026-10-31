@@ -446,7 +446,8 @@ class World:
                 phase = "policy"
                 episode_policy = policy if policy is not None else policy_factory() if policy_factory else LLMAgent(max_steps=max_steps)
                 episode_policy.reset({"task": frozen._spec.task, "robot": frozen._spec.robot,
-                                      "action_contract": episode["runtime"].get("action_contract")})
+                                      "action_contract": episode["runtime"].get("action_contract"),
+                                      "sensor_contract": episode["runtime"].get("sensor_contract")})
                 episode["policy"] = policy_record(episode_policy)
                 if policy_factory is None and episode_index == 0:
                     result["policy"] = copy.deepcopy(episode["policy"])
