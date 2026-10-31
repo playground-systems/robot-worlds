@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from robot_worlds import asset_import
-from robot_worlds.mesh_assets import convex_volume, read_triangle_obj
+from robot_worlds.mesh_assets import convex_volume, obj_bounds, read_triangle_obj
 
 
 def cube():
@@ -53,3 +53,19 @@ def test_invalid_obj_indices_and_untriangulated_faces_fail(tmp_path, face):
     path.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\n"+face+"\n")
     with pytest.raises(ValueError):
         read_triangle_obj(path)
+
+
+def test_visual_bounds_accept_detailed_meshes_and_polygon_faces(tmp_path):
+    path = tmp_path / "detailed.obj"
+    path.write_text("v 2 3 4\n"*100_001 + "v 3 5 6\nv 3 3 4\nv 2 5 6\nf 1 2 3 4\n")
+    lower, upper = obj_bounds(path)
+    assert lower == pytest.approx([2, 3, 4])
+    assert upper == pytest.approx([3, 5, 6])
+
+
+@pytest.mark.parametrize("value", ["nan", "inf", "-inf"])
+def test_visual_bounds_reject_nonfinite_vertices(tmp_path, value):
+    path = tmp_path / "invalid.obj"
+    path.write_text("v 0 0 0\n"*4 + f"v {value} 1 1\n")
+    with pytest.raises(ValueError, match="Invalid OBJ"):
+        obj_bounds(path)

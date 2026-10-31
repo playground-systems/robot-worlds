@@ -1,5 +1,6 @@
 """Bounded asset geometry checks and reusable verification results."""
 import hashlib
+import math
 from collections import OrderedDict
 from pathlib import Path
 from threading import Lock
@@ -51,19 +52,24 @@ def obj_bounds(path: str | Path):
     Faces/UVs stay untouched and are validated by the final MuJoCo compiler.
     Accept polygon faces here, unlike the triangle-only collision verifier.
     """
-    vertices = []
-    for line in _obj_bytes(path).decode().splitlines():
-        fields = line.split()
-        if fields and fields[0] == "v":
-            if len(fields) != 4:
-                raise ValueError("Expected three-coordinate OBJ vertices")
-            vertices.append([float(v) for v in fields[1:]])
-            if len(vertices) > 100_000:
-                raise ValueError("Mesh exceeds the geometry import budget")
-    vertices = np.asarray(vertices, dtype=float)
-    if vertices.ndim != 2 or len(vertices) < 4 or not np.isfinite(vertices).all():
+    # Stream bounds in constant memory. Detailed visual meshes need not fit
+    # the stricter triangle/vertex budget used by collision conversion.
+    lower, upper, count = [math.inf]*3, [-math.inf]*3, 0
+    with Path(path).open() as stream:
+        for line in stream:
+            fields = line.split("#", 1)[0].split()
+            if fields and fields[0] == "v":
+                if len(fields) != 4:
+                    raise ValueError("Expected three-coordinate OBJ vertices")
+                point = [float(v) for v in fields[1:]]
+                if not all(math.isfinite(v) for v in point):
+                    raise ValueError("Invalid OBJ vertices")
+                lower = [min(a, b) for a, b in zip(lower, point)]
+                upper = [max(a, b) for a, b in zip(upper, point)]
+                count += 1
+    if count < 4:
         raise ValueError("Invalid OBJ vertices")
-    return vertices.min(0), vertices.max(0)
+    return np.array(lower), np.array(upper)
 
 
 def verified_convex_obj(path: str | Path, expected_digest: str):
