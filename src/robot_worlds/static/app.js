@@ -431,6 +431,8 @@ function renderChanges(root) {
 }
 
 function eventLabel(event) {
+  if (event.type === 'asset_loading') return event.message || 'Loading prepared asset';
+  if (event.type === 'asset_loaded') return event.message || 'Prepared asset ready';
   if (event.type === 'policy_started') return `Choosing action ${event.step + 1}`;
   if (event.type === 'action_started') return `Action ${event.step + 1}: ${(event.action?.tool || 'move').replaceAll('_', ' ')}`;
   if (event.type === 'step') return `Feedback: ${(event.result?.status || 'executed').replaceAll('_', ' ')}`;

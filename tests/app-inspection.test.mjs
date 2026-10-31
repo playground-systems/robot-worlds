@@ -44,6 +44,12 @@ function fixture() {
   return { run, nodes, calls, events, context, shell };
 }
 
+test('prepared asset progress names reuse without claiming a fresh search or physics pass', () => {
+  const {run} = fixture();
+  assert.equal(run("eventLabel({type:'asset_loading',message:'Reusing google-porcelain-bowl'})"), 'Reusing google-porcelain-bowl');
+  assert.equal(run("eventLabel({type:'asset_loaded',message:'Reused source; original geometry retained'})"), 'Reused source; original geometry retained');
+});
+
 test('saved geometry previews do not offer a nonexistent native frame', () => {
   const {run, nodes} = fixture();
   run("state.world.manifest.validation={status:'preview',checks:[{check:'schema',passed:true}]};displaySpec(state.world.spec);");

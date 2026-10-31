@@ -61,4 +61,11 @@ The Google bowl's unchanged OBJ, PNG, metadata and attribution are bundled with 
 
 Customers using these prepared assets need neither a download nor CoACD. Each import checks current bytes, then reuses verified geometry by content hash in a bounded process-local cache. Repeated local imports of both assets fell from about 140 ms to 38 ms on the development Mac; this measures import only, not model generation or simulation. OBJ bounds are read directly, eliminating 163 temporary native model compilations for this pair. `tools/benchmark_asset_preparation.py` compares the old/new paths and checks bounds equivalence in Linux CI. General conversion of a new asset remains an offline preparation step.
 
-Automatic sourcing in environment generation remains unfinished. Existing recorded worlds and replays are not rewritten by the importer.
+Generation now offers these two pinned assets through compact `prepared_assets`
+references. The model chooses instances and placement; the importer supplies the
+original components and cavity/joint IDs before validation. SDK callers can use
+`load_prepared_asset` directly. Each resolution uses retained online-source evidence
+and reports reuse progress, not a fresh internet search. Saved worlds contain copied
+files and expanded geometry, so catalog changes cannot rewrite their contents.
+General online discovery/download/conversion during generation remains unfinished.
+Existing recorded worlds and replays are not rewritten by the importer.

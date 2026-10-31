@@ -1,5 +1,6 @@
 """Native original-asset checks on CI. No model request or autonomous placement."""
 import pytest
+from test_prepared_assets import prepared_plan
 from test_sourced_household import sourced_scene
 
 from robot_worlds import generate, load
@@ -44,7 +45,7 @@ def test_original_bowl_fits_and_stays_supported_inside_original_appliance():
 def test_sdk_runs_original_assets_from_mocked_generation_through_export(tmp_path, native_rendering):
     class MockModel:
         def complete_json(self, *args):
-            return sourced_scene()[0].model_dump(mode="json")
+            return prepared_plan()
 
     class NoOp:
         def reset(self, context):

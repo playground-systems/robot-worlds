@@ -96,12 +96,41 @@ the object needs to be recreated. Creation receives the query, completed search 
 rejection records. The returned `SourcedAsset` retains that evidence and the selected
 source; save it alongside the resulting asset.
 
-**Integration status:** this SDK coordinator is not yet called automatically by
-`generate()` or the workbench. The [selected bowl and microwave](household-assets.md)
-have pinned originals. A restricted MJCF importer now supports the microwave's
+**Integration status:** `generate()` and the workbench now expose a prepared-asset
+catalog to the model. Compact references load the [selected bowl and microwave](household-assets.md)
+through this coordinator using retained source evidence, without another network
+lookup or conversion. General online discovery/download/conversion is not yet
+automatic. A restricted MJCF importer supports the microwave's
 primitive colliders, textured OBJ appearances and hinged body hierarchy. The bowl
 ships with 158 prepared convex collision pieces and its original textured surface;
 `import_convex_mesh_asset` imports them without running a converter.
+
+For SDK placement, use the prepared loader:
+
+```python
+from robot_worlds import load_prepared_asset, prepared_asset_catalog
+
+catalog = prepared_asset_catalog()  # Dimensions, physical IDs, cavity and joint contracts.
+sourced = load_prepared_asset(
+    "google-porcelain-bowl", prefix="bowl", position=(1, 0, 0.601), mass=0.6,
+)
+asset = sourced.asset
+# position is bottom-center, not the source file's origin. Retain sourced.search
+# and sourced.selected as provenance, and asset.disclosures as world assumptions.
+```
+
+The model can use `prepared_assets` in its generation response with `asset_id`,
+`id`, `position`, `mass` and optional `joint_initials`. Referenced geometry and
+cavity regions are materialized before preview/validation; they must not also
+appear in `objects`/`regions`. Catalog IDs use `{prefix}` for the instance ID.
+Original dimensions and orientation are preserved. Unsupported rotations/scales,
+missing mass, invalid joints and ID collisions must be resolved explicitly.
+This compact representation is generation input only: saved worlds contain the
+expanded objects and copied files, and load/export never resolves the catalog.
+Surrounding layouts remain model-authored. Mocked generation exercises this path;
+live model selection and autonomous appliance manipulation are not yet demonstrated.
+
+For a local MJCF outside the prepared catalog:
 
 ```python
 from importlib.resources import files
