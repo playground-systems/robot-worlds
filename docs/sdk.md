@@ -100,7 +100,8 @@ source; save it alongside the resulting asset.
 `generate()` or the workbench. The [selected bowl and microwave](household-assets.md)
 have pinned originals. A restricted MJCF importer now supports the microwave's
 primitive colliders, textured OBJ appearances and hinged body hierarchy. The bowl
-still needs concave collision conversion before native import.
+ships with 158 prepared convex collision pieces and its original textured surface;
+`import_convex_mesh_asset` imports them without running a converter.
 
 ```python
 from importlib.resources import files
@@ -128,8 +129,31 @@ Physical pieces may have `visible=False` when their welded assembly has a visibl
 member. This keeps an original concave surface from becoming a solid collision
 hull, while keeping collision pieces out of the rendered image. `texture_path`
 uses source OBJ UVs; `source_notice` retains attribution. World freezing hashes and
-copies meshes, PNGs and notices, so ZIP exports remain self-contained. Texture files
+copies meshes, PNGs, notices and source/conversion metadata, so ZIP exports remain self-contained. Texture files
 are bounded to 16 MiB and 16 megapixels.
+
+### Import a prepared concave asset
+
+```python
+from robot_worlds import import_convex_mesh_asset
+
+bowl_source = files("robot_worlds") / "assets/household/porcelain_bowl"
+bowl = import_convex_mesh_asset(
+    bowl_source / "meshes/model.obj",
+    bowl_source / "collision/manifest.json",
+    prefix="bowl", mass=0.6,  # Caller estimate, not a measured source property.
+    source_notice=bowl_source / "ATTRIBUTION.md",
+    texture_path=bowl_source / "materials/textures/texture.png",
+)
+# Add bowl.objects to the scene; place the full assembly above its support.
+# Use bowl.body_ids["object"] for compound-body rubric references.
+```
+
+The importer verifies up to 256 closed convex pieces, preserves the original visual
+mesh and distributes total mass by component volume. Retain its disclosures and
+source hashes. A bounded cache reuses geometry verification by content hash;
+checksums are still checked on every import. Fresh prefixes and positions produce
+independent objects. Prepared assets need no network request or converter at runtime.
 
 ## Hollow objects and appliance validation
 
@@ -140,9 +164,9 @@ A cavity region can declare `interior_of` with the appliance's physical root ID.
 A mesh with `collision=True` still collides as a convex hull. For a concave source
 asset, retain its original surface as an appearance-only mesh and supply verified
 collision components separately. The MJCF importer does this for appliances with
-existing primitive colliders. General concave mesh decomposition, the selected
-Google bowl's collision conversion and autonomous appliance manipulation remain
-development work.
+existing primitive colliders. The selected Google bowl has a prepared decomposition;
+new concave assets still require an offline conversion and native validation.
+Autonomous appliance manipulation remains development work.
 
 ## Checks without model charges
 

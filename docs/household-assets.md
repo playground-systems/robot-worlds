@@ -1,6 +1,6 @@
 # Existing household assets
 
-Inspected 2026-10-30. Prefer the original **Google Scanned Objects porcelain bowl** and **NVIDIA/Lightwheel Microwave079** over procedural substitutes. Both have downloadable geometry and textures. The microwave already has articulated parts; the bowl needs a concave collision decomposition for MuJoCo. No native simulation or model trial was run for this selection.
+Inspected 2026-10-30. Prefer the original **Google Scanned Objects porcelain bowl** and **NVIDIA/Lightwheel Microwave079** over procedural substitutes. Both have downloadable geometry and textures. The microwave has articulated parts. The bowl now ships with a prepared concave collision decomposition for MuJoCo. Selection involved source inspection; subsequent native CI checks are described below.
 
 ## Selected sources
 
@@ -57,4 +57,8 @@ Rank candidates on semantics/material, scale, usable interior, articulation, sou
 
 The exact downloaded source-file hashes are retained in [the selection manifest](household-assets.manifest.json). Microwave079's unchanged source files and attribution are now included in the package. `import_mjcf_asset` converts its 20 collision/visual components, door and turntable joints, original OBJ UVs and PNG texture; a world export retains the texture and attribution. Native CI checks the imported cavity with a falling sphere and applies test torque to the passive door hinge. This is an import/physics check, not autonomous microwave-task success.
 
-Automatic sourcing in environment generation and the Google bowl's concave collision conversion remain unfinished. Existing recorded worlds and replays are not rewritten by the importer.
+The Google bowl's unchanged OBJ, PNG, metadata and attribution are bundled with **158 convex collision pieces** prepared using CoACD 1.0.14. The conversion manifest binds every piece to its source hash and records all settings. The 2 mm threshold is a converter setting, not a certified maximum surface error. `import_convex_mesh_asset` checks checksums, closed convex surfaces, bounds and volume; supplied total mass is distributed across the pieces. The fixture uses an explicitly estimated 0.6 kg. Native tests check a sphere settling inside the bowl, pre-placed support inside the original appliance, and SDK generation/evaluation/export with a mocked model and no-op policy. These do not demonstrate autonomous insertion.
+
+Customers using these prepared assets need neither a download nor CoACD. Each import checks current bytes, then reuses verified geometry by content hash in a bounded process-local cache. Repeated local imports of both assets fell from about 140 ms to 38 ms on the development Mac; this measures import only, not model generation or simulation. OBJ bounds are read directly, eliminating 163 temporary native model compilations for this pair. `tools/benchmark_asset_preparation.py` compares the old/new paths and checks bounds equivalence in Linux CI. General conversion of a new asset remains an offline preparation step.
+
+Automatic sourcing in environment generation remains unfinished. Existing recorded worlds and replays are not rewritten by the importer.
