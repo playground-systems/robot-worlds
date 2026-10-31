@@ -179,3 +179,34 @@ def test_unvalidated_requirement_prevents_a_misleading_pass():
     assert result["criteria"][0]["status"] == "passed"
     assert result["status"] == "unscorable"
     assert not result["success"]
+
+
+@pytest.mark.parametrize("predicate", ["holding", "released"])
+@pytest.mark.parametrize("subject", ["table", "part_visual"])
+def test_gripper_predicates_reject_fixed_or_visual_child_subjects(predicate, subject):
+    from robot_worlds.models import SceneObject
+
+    spec = world([{"id": "grip", "description": "gripper state", "predicate": predicate,
+                   "object_id": subject, "intent": "maintain"}])
+    spec.objects.append(SceneObject(id="part_visual", label="part appearance", kind="mesh", mesh_path="part.obj",
+                                    parent_id="part", position=(2, 0, .1), size=(.2, .2, .2),
+                                    collision=False))
+    state = frame(1, holding="left")
+    # Runtime records holding on the movable body, not its fixed appearance child.
+    state["objects"]["part_visual"] = {**state["objects"]["part"], "held_by": None}
+    assert any("movable workpiece" in error for error in validate_rubric(spec))
+    assert measure_predicate(spec, spec.rubric[0], state)["satisfied"] is None
+    with pytest.raises(ValueError, match="movable workpiece"):
+        grade(spec, [state])
+
+
+def test_process_prerequisites_reject_unmeasurable_release_subject():
+    data = world().model_dump()
+    data["process_cycles"] = [{
+        "id": "cycle", "label": "timed surrogate", "fixture_id": "table",
+        "workpiece_ids": ["part"], "duration": 2, "output_state": "processed",
+        "prerequisites": [{"predicate": "released", "object_id": "table"}],
+    }]
+    spec = WorldSpec.model_validate(data)
+    assert any("process cycle" in error and "movable workpiece" in error
+               for error in validate_rubric(spec))

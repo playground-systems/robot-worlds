@@ -40,6 +40,11 @@ def validate_rubric(spec: WorldSpec) -> list[str]:
                 errors.append(f"{label}: target_id must reference a different physical object")
         if c.predicate == "near" and (c.threshold is None or c.threshold <= 0):
             errors.append(f"{label}: near requires a positive distance threshold")
+        if c.predicate in {"holding", "released"}:
+            obj = objects.get(c.object_id)
+            if obj is not None and not obj.movable:
+                errors.append(f"{label}: {c.predicate} requires a movable workpiece; "
+                              "reference the movable assembly root, not a fixed component or visual mesh")
         if c.predicate == "carried_distance":
             if c.threshold is None or c.threshold <= 0:
                 errors.append(f"{label}: carried_distance requires a positive distance threshold")
@@ -153,6 +158,9 @@ def measure_predicate(spec: WorldSpec, condition: Condition, snapshot: dict) -> 
             raise ValueError(f"missing state for {c.object_id or 'robot'}")
         measured: Any
         if c.predicate in {"holding", "released"}:
+            if not objects[c.object_id].movable:
+                raise ValueError(f"{c.predicate} requires a movable workpiece; "
+                                 "reference the movable assembly root, not a fixed component or visual mesh")
             if "held_by" not in state:
                 raise ValueError("missing measured gripper contact/holding state")
             measured = state["held_by"]

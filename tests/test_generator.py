@@ -288,3 +288,21 @@ def test_shared_texture_validation_preserves_per_object_errors_and_rechecks(tmp_
     assert len(checks) == 2
     assert any(e.startswith("part: invalid texture:") for e in errors)
     assert any(e.startswith("other: invalid texture:") for e in errors)
+
+
+def test_generation_repairs_release_subject_to_movable_body():
+    correct = valid()
+    correct["objects"].append({
+        "id": "part_shell", "label": "Attached shell", "kind": "box", "parent_id": "part",
+        "position": [2, 0, .1], "size": [.18, .18, .18],
+    })
+    correct["rubric"].append({"id": "release", "description": "Leave the part released",
+                              "predicate": "released", "object_id": "part", "intent": "maintain"})
+    bad = copy.deepcopy(correct)
+    bad["rubric"][-1]["object_id"] = "part_shell"
+    client = Client([bad, correct])
+    result = generate_spec("Transfer the part and release it at the destination", client=client)
+    assert len(client.prompts) == 2
+    assert "movable workpiece" in client.prompts[1]
+    assert result.rubric[-1].object_id == "part"
+    assert result.rubric[0].target_id == "destination"
