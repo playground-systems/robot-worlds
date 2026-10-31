@@ -372,6 +372,29 @@ current limits are 32 registered assets, 1,000 components per asset, 32 MiB per
 source file and 256 MiB of referenced files per library. Automatic online
 selection and broader SDF import remain separate, unfinished work.
 
+For the reviewed NVIDIA/CodePawl warehouse rack, the bounded importer downloads
+only the pinned model, retains its detailed materials, and prepares separate
+structural collision envelopes:
+
+```python
+from robot_worlds import AssetLibrary, import_simready_rack
+
+rack = import_simready_rack("asset-cache", timeout=60)
+library = AssetLibrary().add(
+    "warehouse-rack", rack,
+    description="Fixed 4 m wide rack with three open shelf regions; conservative collision proxies.",
+)
+library.save("warehouse-library")
+# Pass asset_library="warehouse-library" to generate() or load_prepared_asset().
+```
+
+First preparation requires Node.js for meshopt decoding. Verified caches avoid
+repeat downloads and visual conversion. The rack is explicitly fixed: source
+mass and friction are retained, but small structural holes are filled by the
+collision approximation. Shelf openings pass geometric checks; native contact,
+robot reach and rendered appearance remain unverified. See
+[source evidence and limitations](simready-selection.md).
+
 For a local MJCF outside the prepared catalog:
 
 ```python

@@ -36,7 +36,8 @@ print(source.glb_path, source.notice_path, source.metadata_path)
 
 This acquires source data only; do not pass its GLB into `WorldSpec.mesh_path`.
 The runtime currently consumes OBJ/STL/MSH geometry. The source candidates are
-therefore not advertised as prepared assets to the scene-generation model yet.
+not prepared assets by themselves. The reviewed rack now has an explicit adapter
+that can be registered in a generation library; the other four remain source-only.
 
 One measured rack acquisition took 1.1139 seconds, with a 0.0024-second verified
 offline repeat for 870,796 bytes. These are source-download/cache timings on the
@@ -108,7 +109,23 @@ One actual rack preparation took 0.8462 seconds, followed by a 0.0084-second
 verified warm repeat. These are visual-artifact preparation timings, not native
 validation, rendering or complete environment generation.
 
-Next implementation: attach source-derived interaction-aware collisions,
+`import_simready_rack` now joins those stages with a pinned static-fixture
+adapter. It welds source vertices on a 10-micrometre grid for connectivity only,
+then bounds each connected component using original coordinates. The actual
+rack yields 120 conservative collision boxes and three separate appearance
+meshes. These preserve its three shelf openings; a single filled hull is rejected.
+Source mass (1,650.4048 kg) and dynamic friction (0.3) are retained as source
+estimates, not calibrated measurements. The fixed assembly distributes mass by
+proxy volume; source inertia and small structural holes are not retained.
+
+Seven lightweight checks cover shelf geometry, rejection of filled openings or
+articulation, cancellation, placement and portable reuse at two positions. The
+actual cached rack passed static scene checks and library registration in
+0.1565 seconds. Native contact, reach, rendering and generated-layout acceptance
+remain pending. The adapter records these limits in the asset and exported
+collision provenance; registration does not certify task solvability.
+
+Next implementation: adapt the remaining fixtures,
 preserve or explicitly label physical mechanisms, share viewer resources across
 repeated fixtures, and perform native/browser validation when permitted.
 The browser and policy camera must depict the same physical scene. No full
