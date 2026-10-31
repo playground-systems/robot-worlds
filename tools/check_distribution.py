@@ -39,7 +39,7 @@ REQUIRED_SOURCE_FILES = (
     "pyproject.toml", "uv.lock", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md",
     "CONTRIBUTING.md", "SECURITY.md", "docs/setup.md", "docs/releasing.md", "PKG-INFO",
 )
-FORBIDDEN_PARTS = {".git", ".venv", ".robot-worlds", "__pycache__", "worlds", "runs"}
+FORBIDDEN_PARTS = {".git", ".venv", ".robot-worlds", "__pycache__", "worlds", "runs", "asset-cache"}
 MAX_ARCHIVE_BYTES = 512 * 1024 * 1024
 
 
