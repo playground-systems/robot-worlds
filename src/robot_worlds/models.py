@@ -88,6 +88,7 @@ class SceneObject(Model):
     parent_id: Identifier | None = None
     joint: JointSpec | None = None
     mesh_path: str | None = None
+    mesh_quarter_turns: Literal[0, 1, 2, 3] = Field(default=0, description="Source mesh rotation about Z in 90-degree counterclockwise steps; size is the resulting full bounding extents. Does not rotate the body/joint frame.")
     texture_path: str | None = None
     normal_texture_path: str | None = None
     orm_texture_path: str | None = None
@@ -108,6 +109,8 @@ class SceneObject(Model):
             raise ValueError("mesh requires mesh_path (local asset, never executable code)")
         if self.kind != "mesh" and self.mesh_path is not None:
             raise ValueError("mesh_path is only valid for mesh geometry")
+        if self.kind != "mesh" and self.mesh_quarter_turns:
+            raise ValueError("mesh_quarter_turns is only valid for mesh geometry")
         if any(getattr(self, field) is not None for field in TEXTURE_FIELDS) and self.kind != "mesh":
             raise ValueError("texture_path and material maps require mesh geometry with source UV coordinates")
         if (self.surface is not None or any(getattr(self, field) for field in TEXTURE_FIELDS[1:])) and self.kind != "mesh":

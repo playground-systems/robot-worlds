@@ -123,8 +123,8 @@ def _fingerprint(path):
 class AssetLibrary:
     """Register existing imports once; reuse them through SDK or self-hosted jobs.
 
-    Source mass, scale and orientation are preserved. Instances support translated
-    placement and valid joint initial values, not implicit remeshing or rescaling.
+    Source mass and scale are preserved. Prepared instances support translation,
+    whole-asset quarter turns and valid joint initial values, without remeshing.
     Saved libraries contain the referenced geometry, textures, notices, metadata
     and import/search evidence. Source file digests are rechecked before reuse.
     """

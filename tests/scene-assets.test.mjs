@@ -101,6 +101,32 @@ test('different finishes share geometry/maps but wrapping, color space and world
   assert.equal(calls.filter(url => url.endsWith('rack.obj')).length, 2);
 });
 
+test('source quarter turns preserve shared bytes and declared bounds, including articulated body poses', async t => {
+  const { assets, calls } = fixtures(t);
+  const original = await assets.load(object, '/world/');
+  const sourcePoint = new THREE.Vector3(-1, -2, -3);
+  for (let turn = 0; turn < 4; turn++) {
+    const placed = { ...object, mesh_quarter_turns: turn, size: turn % 2 ? [4, 2, 6] : [2, 4, 6] };
+    const group = await assets.load(placed, '/world/');
+    const bounds = new THREE.Box3().setFromObject(group);
+    bounds.getSize(new THREE.Vector3()).toArray().forEach((value, i) => assert(Math.abs(value-placed.size[i]) < 1e-6));
+    assert.equal(group.children[0].geometry, original.children[0].geometry);
+    assert.equal(group.children[0].material, original.children[0].material);
+    const actual = new THREE.Vector3(-.5, -.5, -.5).applyMatrix4(group.matrixWorld);
+    const expected = sourcePoint.clone().applyAxisAngle(new THREE.Vector3(0,0,1), turn*Math.PI/2).add(new THREE.Vector3(...object.position));
+    assert(actual.distanceTo(expected) < 1e-6);
+  }
+  const bodyRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), Math.PI/2);
+  const articulated = await assets.load({ ...object, mesh_quarter_turns: 1, size: [4,2,6],
+    quaternion: [bodyRotation.w, bodyRotation.x, bodyRotation.y, bodyRotation.z] }, '/world/');
+  articulated.updateMatrixWorld(true);
+  const actual = new THREE.Vector3(-.5,-.5,-.5).applyMatrix4(articulated.matrixWorld);
+  const expected = sourcePoint.clone().applyAxisAngle(new THREE.Vector3(0,0,1), Math.PI/2)
+    .applyQuaternion(bodyRotation).add(new THREE.Vector3(...object.position));
+  assert(actual.distanceTo(expected) < 1e-6);
+  assert.equal(calls.length, 4);
+});
+
 test('failed map loads do not dispose shared successful maps; explicit retry can recover', async t => {
   let fail = true;
   const { assets, calls, counts } = fixtures(t, url => {

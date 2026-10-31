@@ -477,9 +477,8 @@ class Runtime:
                             lower, upper = vertices.min(0), vertices.max(0)
                         mesh_bounds[mesh_path] = (lower, upper)
                     lower, upper = mesh_bounds[mesh_path]
-                    if np.any(upper - lower < 1e-8):
-                        raise ValueError(f"Mesh {obj.id} must have three nonzero dimensions")
-                    scale = size / (upper - lower)
+                    from .mesh_assets import mesh_placement
+                    scale, offset, orientation = mesh_placement(size, lower, upper, obj.mesh_quarter_turns)
                     key = (mesh_path, _vec(scale))
                     if key not in mesh_names:
                         name = "mesh_" + obj.id
@@ -487,7 +486,7 @@ class Runtime:
                                       file=str(mesh_path), scale=key[1])
                         mesh_names[key] = name
                     geom.update(
-                        type="mesh", mesh=mesh_names[key], pos=_vec(-0.5 * (lower + upper) * scale)
+                        type="mesh", mesh=mesh_names[key], pos=_vec(offset), quat=_vec(orientation)
                     )
                 else:
                     raise ValueError(f"Unsupported physical shape: {obj.kind}")

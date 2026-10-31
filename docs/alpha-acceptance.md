@@ -26,3 +26,9 @@ Native acceptance remains pending. Do not trigger workflows through routine
 pushes while this instruction is in effect. Paid model requests are reserved for
 bounded full acceptance runs, not individual development probes. No new paid
 compute, merge or publication is authorized.
+
+Prepared assets and mesh assemblies now support all four quarter-turn placements
+without rewriting source files. Focused checks cover original microwave parts,
+hinge/cavity frames, mocked library generation and typed edits, portable worlds,
+off-center native XML geometry and browser transforms. These are analytical and
+serialization checks; rotated native contact/render acceptance remains open.

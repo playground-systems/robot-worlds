@@ -34,6 +34,13 @@ material factors keep separate materials. Changing worlds aborts pending loads
 and releases the scene-owned resources. The viewer still starts at most four
 object loads at once; this does not yet batch OBJ draw calls or supply LODs.
 
+Mesh placement supports `mesh_quarter_turns` (0–3) around Z without rewriting
+source files. `size` describes the full extents after that turn. Prepared assets
+and assembly instances set this field while rotating their physical parts and
+joint/cavity frames together. Browser and native XML apply the same source
+centering, scale and rotation; analytical checks cover off-center source meshes
+and composed body poses. Native contact/render validation remains pending.
+
 The browser uses the PBR map channels. MJCF export retains material layers and
 coefficients, with shared texture/material definitions. The current runtime uses
 MuJoCo's classic renderer; it approximates highlights and does not reproduce all

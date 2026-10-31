@@ -101,9 +101,12 @@ export class SceneAssets {
           : asset.metadata ? 'Bundled OBJ appearance metadata with estimated defaults' : estimated.basis };
     });
     // Instance transforms never mutate the shared, normalized source geometry.
-    group.scale.set(...object.size); group.position.set(...object.position);
+    const turns = object.mesh_quarter_turns || 0;
+    group.scale.set(...(turns % 2 ? [object.size[1], object.size[0], object.size[2]] : object.size));
+    group.position.set(...object.position);
     if (object.quaternion) group.quaternion.set(object.quaternion[1], object.quaternion[2], object.quaternion[3], object.quaternion[0]);
     else if (object.yaw) group.rotation.z = object.yaw;
+    if (turns) group.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), turns*Math.PI/2));
     return markSharedResources(group);
   }
 

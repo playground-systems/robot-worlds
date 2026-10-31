@@ -45,6 +45,7 @@ class ObjectValues(Model):
     parent_id: Identifier | None = None
     joint: JointSpec | None = None
     mesh_path: str | None = None
+    mesh_quarter_turns: Literal[0, 1, 2, 3] | None = None
     texture_path: str | None = None
     normal_texture_path: str | None = None
     orm_texture_path: str | None = None
@@ -77,7 +78,7 @@ class TranslateAssembly(Model):
 class UpdateObject(Model):
     op: Literal["update_object"]
     id: Identifier
-    fields: list[Literal["label", "kind", "position", "size", "color", "mass", "movable", "friction", "parent_id", "joint", "mesh_path", "revolved", "texture_path", "normal_texture_path", "orm_texture_path", "emissive_texture_path", "surface", "source_notice", "source_metadata", "collision", "visible", "opacity"]] = Field(min_length=1, max_length=23)
+    fields: list[Literal["label", "kind", "position", "size", "color", "mass", "movable", "friction", "parent_id", "joint", "mesh_path", "mesh_quarter_turns", "revolved", "texture_path", "normal_texture_path", "orm_texture_path", "emissive_texture_path", "surface", "source_notice", "source_metadata", "collision", "visible", "opacity"]] = Field(min_length=1, max_length=24)
     values: ObjectValues
 
 
@@ -148,7 +149,7 @@ Use persistent IDs exactly. Return only bounded operations in the supplied schem
 Prefer add_prepared_asset for compatible catalog objects. Supply one asset reference;
 the importer adds its original geometry, joints, textures and cavity regions. Do not
 also add those components/regions manually. Asset.position is bottom-center in the
-zero-joint pose; original size and orientation stay unchanged. Catalog IDs substitute
+zero-joint pose; optional quarter_turns rotates all parts, joints and cavities together about Z, preserving source scale. Catalog IDs substitute
 {prefix} with asset.id. General object positions still denote geometry centers.
 This operation does not change the task/rubric. Scope applies to EVERY expanded
 object and region ID, not merely the asset prefix. Catalog reuse is not a fresh
@@ -418,7 +419,7 @@ def _protect_task_bindings(before: WorldSpec, after: WorldSpec):
             continue  # Missing references are independently rejected by validation.
         if new is None:
             raise ValueError(f"{oid}: task-bound object presence is protected; allow_task_changes is required")
-        for field in ("label", "color", "kind", "size", "mesh_path", "parent_id", "revolved", "texture_path", "normal_texture_path", "orm_texture_path", "emissive_texture_path", "surface", "source_notice", "source_metadata", "collision", "visible", "opacity"):
+        for field in ("label", "color", "kind", "size", "mesh_path", "mesh_quarter_turns", "parent_id", "revolved", "texture_path", "normal_texture_path", "orm_texture_path", "emissive_texture_path", "surface", "source_notice", "source_metadata", "collision", "visible", "opacity"):
             if getattr(old, field) != getattr(new, field):
                 raise ValueError(f"{oid}: task-bound object {field} is protected; allow_task_changes is required")
         if oid in anchors:

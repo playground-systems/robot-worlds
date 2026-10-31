@@ -319,11 +319,15 @@ asset = sourced.asset
 ```
 
 The model can use `prepared_assets` in its generation response with `asset_id`,
-`id`, `position`, `mass` and optional `joint_initials`. Referenced geometry and
+`id`, `position`, `mass`, optional `quarter_turns` and `joint_initials`. Referenced geometry and
 cavity regions are materialized before preview/validation; they must not also
 appear in `objects`/`regions`. Catalog IDs use `{prefix}` for the instance ID.
-Original dimensions and orientation are preserved. Unsupported rotations/scales,
-missing mass, invalid joints and ID collisions must be resolved explicitly.
+Original scale is preserved. `quarter_turns=1` rotates the complete asset 90°
+counterclockwise around its bottom-center, viewed from above; 0, 2 and 3 give
+0°, 180° and 270°. Collision/visual parts, hinge anchors/axes and cavity bounds
+turn together. Source mesh bytes, textures and mass stay unchanged. Arbitrary
+angles/scaling, missing mass, invalid joints and ID collisions remain unsupported
+or must be resolved explicitly.
 This compact representation is generation input only: saved worlds contain the
 expanded objects and copied files, and load/export never resolves the catalog.
 Surrounding layouts remain model-authored. Mocked generation exercises this path;

@@ -15,6 +15,27 @@ _verified_parts = OrderedDict()
 _verification_lock = Lock()
 
 
+def mesh_placement(size, lower, upper, quarter_turns=0):
+    """Fit unchanged source bytes to declared axis-aligned extents after rotation.
+
+    Returns native mesh scale, geom translation and scalar-first quaternion.
+    Body frames stay axis-aligned at zero joint pose, matching declared sizes
+    used by collision checks and rubric bounds.
+    """
+    if quarter_turns not in (0, 1, 2, 3):
+        raise ValueError("Mesh placement requires zero to three quarter turns")
+    size, lower, upper = np.asarray(size), np.asarray(lower), np.asarray(upper)
+    if np.any(upper-lower < 1e-8):
+        raise ValueError("Mesh must have three nonzero dimensions")
+    source_size = size[[1, 0, 2]] if quarter_turns % 2 else size
+    scale = source_size/(upper-lower)
+    center = (lower+upper)*scale/2
+    x, y, z = -center
+    offset = ((x, y, z), (-y, x, z), (-x, -y, z), (y, -x, z))[quarter_turns]
+    angle = quarter_turns*math.pi/2
+    return scale, offset, (math.cos(angle/2), 0, 0, math.sin(angle/2))
+
+
 def validate_texture(path: str | Path) -> None:
     path = Path(path)
     if path.suffix.lower() != ".png" or not path.is_file():

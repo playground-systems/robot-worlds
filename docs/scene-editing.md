@@ -52,7 +52,8 @@ mesh and collider:
 
 Here `position` is the asset's bottom-center, suitable for a support whose top is
 at 0.6 m. The source geometry, texture, collision pieces and provenance are retained;
-mass is an explicit estimate. Original size and orientation are preserved. This
+mass is an explicit estimate. Optional `quarter_turns` (0–3) rotates the whole
+asset, including joints and cavities, in 90° steps about Z while preserving scale. This
 uses the previously sourced local asset, without another download or conversion.
 General online asset discovery remains separate from the edit path.
 

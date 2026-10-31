@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 from pydantic import Field
@@ -16,6 +17,7 @@ from .asset_library import resolve_asset_library
 from .asset_resolution import SourceAssetRequest
 from .asset_sourcing import AssetCandidate, AssetSearch, source_asset
 from .generated_assets import CreatedAssetGroup
+from .large_scene import _rotate
 from .models import Identifier, Model, Number, Positive, Vec3, WorldSpec
 
 PreparedAssetId = Identifier
@@ -32,6 +34,7 @@ class PreparedAssetInstance(Model):
     id: Identifier = Field(description="Instance prefix. Materialized IDs are listed in the prepared asset catalog.")
     asset_id: PreparedAssetId = Field(description="An exact ID from the supplied prepared asset catalog; never invent an ID.")
     position: Vec3 = Field(description="World position of the asset's full XY bounds center and lowest Z point, metres. Put Z just above the support top.")
+    quarter_turns: Literal[0, 1, 2, 3] = Field(default=0, description="Rotate the whole asset counterclockwise about world Z by this many 90-degree turns, around its bottom-center. Source scale, mass, joint mechanisms and UVs stay unchanged.")
     mass: Positive | None = Field(default=None, description="Set only when the catalog requires an explicit estimated mass; otherwise leave null.")
     joint_initials: list[PreparedJointInitial] = Field(default_factory=list, max_length=16, description="Optional source joint names and initial values in radians/metres. Only catalog joints are accepted, with no duplicate names.")
 
@@ -49,7 +52,8 @@ def _place(asset, instance):
     lower = np.min([np.array(o.position)-np.array(o.size)/2 for o in asset.objects], axis=0)
     upper = np.max([np.array(o.position)+np.array(o.size)/2 for o in asset.objects], axis=0)
     origin = np.array([(lower[0]+upper[0])/2, (lower[1]+upper[1])/2, lower[2]])
-    offset = np.array(instance.position)-origin
+    def point(value):
+        return np.array(_rotate(np.array(value)-origin, instance.quarter_turns))+instance.position
     objects = {o.id: o for o in asset.objects}
     names = [item.name for item in instance.joint_initials]
     if len(names) != len(set(names)):
@@ -60,11 +64,18 @@ def _place(asset, instance):
             raise ValueError(f"Unknown prepared asset joint: {name}")
         objects[asset.joint_ids[name]].joint.initial = initial
     for obj in asset.objects:
-        obj.position = np.array(obj.position)+offset
+        obj.position = point(obj.position)
+        if instance.quarter_turns % 2:
+            obj.size = (obj.size[1], obj.size[0], obj.size[2])
+        if obj.kind == "mesh":
+            obj.mesh_quarter_turns = (obj.mesh_quarter_turns+instance.quarter_turns) % 4
         if obj.joint:
-            obj.joint.anchor = np.array(obj.joint.anchor)+offset
+            obj.joint.anchor = point(obj.joint.anchor)
+            obj.joint.axis = _rotate(obj.joint.axis, instance.quarter_turns)
     for region in asset.regions:
-        region.position = np.array(region.position)+offset
+        region.position = point(region.position)
+        if instance.quarter_turns % 2:
+            region.size = (region.size[1], region.size[0], region.size[2])
     return asset
 
 
@@ -75,15 +86,16 @@ def _library(value):
     return library
 
 
-def load_prepared_asset(asset_id: str, *, prefix: str, position=(0, 0, 0), mass=None, joint_initials=None, asset_library=None):
+def load_prepared_asset(asset_id: str, *, prefix: str, position=(0, 0, 0), quarter_turns=0, mass=None, joint_initials=None, asset_library=None):
     """Return a SourcedAsset using retained online-source evidence and local files.
 
     Placement uses the zero-joint configuration's bottom-center. Original size,
-    UVs and geometry are preserved; arbitrary rotation/scaling is not supported.
+    UVs and geometry are preserved. Quarter turns rotate all parts, joints and
+    cavities together; arbitrary-angle rotation/scaling remains unsupported.
     Unknown assets or import failures never trigger procedural replacement.
     """
     instance = PreparedAssetInstance(id=prefix, asset_id=asset_id, position=position,
-                                     mass=mass, joint_initials=joint_initials or [])
+                                     quarter_turns=quarter_turns, mass=mass, joint_initials=joint_initials or [])
     library = _library(asset_library)
     if library is not None and asset_id in library.asset_ids:
         if mass is not None:
@@ -135,7 +147,7 @@ def _catalog_entry(asset_id, sourced, requirements):
                     "mass_policy": "caller_estimate" if asset_id == "google-porcelain-bowl" else "preserve_import",
                     "source_url": sourced.selected.source_url, "revision": sourced.selected.revision,
                     "license": sourced.selected.license,
-                    "placement": "position is bottom-center of zero-joint bounds; original size/orientation preserved",
+                    "placement": "position is bottom-center of zero-joint bounds; quarter_turns=0/1/2/3 rotates the whole asset 0/90/180/270 degrees counterclockwise about Z; original scale preserved",
                     "requirements": requirements,
                     "body_ids": ids(asset.body_ids), "geom_ids": ids(asset.geom_ids), "joint_ids": ids(asset.joint_ids),
                     "joints": {name: next(o.joint.model_dump(mode="json") for o in asset.objects if o.id == oid)
@@ -154,7 +166,7 @@ def prepared_asset_catalog(asset_library=None):
                                       asset_library=library)
         requirements = ("explicit estimated mass; movable hollow bowl" if asset_id == "google-porcelain-bowl" else
                         "fixed microwave; front faces -Y; passive door; no simulated heating unless a process cycle is defined" if asset_id == "nvidia-microwave079" else
-                        library.description(asset_id) + "; preserve imported masses, size and orientation; mass override unsupported")
+                        library.description(asset_id) + "; preserve imported masses and scale; whole-asset quarter turns supported; mass override unsupported")
         catalog.append(_catalog_entry(asset_id, sourced, requirements))
     if len(json.dumps(catalog)) > 200000:
         raise ValueError("Prepared asset catalog exceeds the 200,000-character planning budget; select fewer assets")
@@ -171,7 +183,8 @@ def append_prepared_asset(payload: dict, instance: PreparedAssetInstance, *, max
     if event_callback:
         event_callback({"type": "asset_loading", "asset_id": instance.asset_id, "message": f"Reusing {instance.asset_id}"})
     sourced = load_prepared_asset(instance.asset_id, prefix=instance.id, position=instance.position,
-                                  mass=instance.mass, joint_initials=instance.joint_initials, asset_library=asset_library)
+                                  quarter_turns=instance.quarter_turns, mass=instance.mass,
+                                  joint_initials=instance.joint_initials, asset_library=asset_library)
     asset = sourced.asset
     ids = {entry.id for entry in [*asset.objects, *asset.regions]}
     if used & ids:

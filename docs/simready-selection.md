@@ -151,6 +151,11 @@ Warm preparation/registration took 0.0146, 0.0275 and 0.0124 s respectively.
 These are local asset-processing measurements, not live generation or native
 physics/rendering evidence. No full catalog or source-scene import was needed.
 
+The saved four-asset library also passes static checks after whole-asset 90°
+and 270° placement: all 158 components, including 12 visual meshes, retain
+aligned collision bounds. These are SDK placement probes, not model-generated
+warehouse layouts or native contact/render acceptance.
+
 Next implementation: preserve or explicitly label the conveyor mechanism and
 perform native/browser validation when permitted. The viewer now shares source geometry/materials/maps
 across repeated fixtures; real warehouse frame rate, GPU memory and LOD remain

@@ -56,14 +56,14 @@ def expand_assemblies(spec: WorldSpec, *, max_objects: int = MAX_EXPANDED_OBJECT
             prefix = instance.id + "_" + "_".join(map(str, index)) + "_"
             origin = tuple(instance.position[i] + index[i]*instance.spacing[i] for i in range(3))
             for part in template.parts:
-                if instance.quarter_turns and part.kind == "mesh":
-                    raise ValueError(f"{instance.id}: rotated mesh assemblies require an explicitly rotated source mesh; use quarter_turns=0")
                 data = part.model_dump(mode="json")
                 data["id"] = prefix + part.id
                 data["label"] = f"{template.label} · {part.label}"
                 data["position"] = _translated(part.position, origin, instance.quarter_turns)
                 if instance.quarter_turns % 2:
                     data["size"] = (part.size[1], part.size[0], part.size[2])
+                if part.kind == "mesh":
+                    data["mesh_quarter_turns"] = (part.mesh_quarter_turns+instance.quarter_turns) % 4
                 if part.parent_id:
                     data["parent_id"] = prefix + part.parent_id
                 if part.joint:

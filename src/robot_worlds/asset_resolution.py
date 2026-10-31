@@ -207,7 +207,7 @@ description does not establish visual or task-level physical correctness.
                 sourced = self._cached(self.root / "resolved" / entry["key"], request,
                                        emit_reused=False, remember=False, prefix="asset")
                 _place(sourced.asset, PreparedAssetInstance(id="asset", asset_id=alias, position=(0, 0, 0)))
-                description = request.description + "; preserve imported masses, size and orientation; mass override unsupported"
+                description = request.description + "; preserve imported masses and scale; whole-asset quarter turns supported; mass override unsupported"
                 record = _catalog_entry(alias, sourced, description)
                 if len(json.dumps([*catalog, record])) > 200_000:
                     raise AssetResolutionError("Cached asset exceeds the remaining catalog planning budget")
