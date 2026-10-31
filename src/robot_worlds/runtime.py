@@ -47,7 +47,7 @@ def runtime_implementation_identity(robot: str, action_contract: list[dict]) -> 
     nonbehavioral edit. Missing resources/version metadata fail closed. These
     hashes identify an implementation; they do not attest to an untampered host.
     """
-    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py", "spectator.py", "sensors.py", "revolved.py"]
+    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py", "spectator.py", "sensors.py", "revolved.py", "mesh_assets.py"]
     dependencies = ["mujoco", "numpy", "pillow", "pydantic"]
     if robot == "g1":
         modules.append("g1_runtime.py")
@@ -380,8 +380,11 @@ class Runtime:
                         axis=_vec(j["axis"]),
                         pos=_vec(np.array(j["anchor"]) - np.array(obj.position)),
                         range=_vec(j["range"]),
+                        limited=str(j.get("limited", True)).lower(),
                         damping=str(j.get("damping", 2)),
-                        frictionloss="0.2",
+                        frictionloss=str(j.get("frictionloss", .2)),
+                        armature=str(j.get("armature", 0)),
+                        stiffness=str(j.get("stiffness", 0)),
                     )
                 elif obj.movable:
                     if parent_id:
@@ -392,13 +395,23 @@ class Runtime:
                 geom = dict(
                     name="geom_" + obj.id,
                     material="rw_" + finish_name(obj),
-                    rgba=_vec([*obj.color, 1]),
-                    mass=str(obj.mass),
+                    rgba=_vec([*obj.color, obj.opacity if obj.visible else 0]),
+                    mass=str(obj.mass if obj.collision else 0),
                     friction=f"{getattr(obj, 'friction', 0.7)} .01 .001",
                     condim="4",
-                    contype="1",
-                    conaffinity="7",
+                    contype="1" if obj.collision else "0",
+                    conaffinity="7" if obj.collision else "0",
                 )
+                if obj.texture_path:
+                    from .mesh_assets import validate_texture
+                    texture_path = Path(obj.texture_path).expanduser()
+                    if not texture_path.is_absolute():
+                        texture_path = self.asset_root / texture_path
+                    validate_texture(texture_path)
+                    name = "texture_" + obj.id
+                    ET.SubElement(root.find("asset"), "texture", name=name, type="2d", file=str(texture_path.resolve()))
+                    ET.SubElement(root.find("asset"), "material", name=name, texture=name, texuniform="false")
+                    geom["material"] = name
                 size = np.asarray(obj.size, dtype=float)
                 if obj.kind == "box":
                     geom.update(type="box", size=_vec(size / 2))

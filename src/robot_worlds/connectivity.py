@@ -96,7 +96,9 @@ def diagnose_connectivity(spec: WorldSpec, *, max_cells: int = MAX_CELLS) -> dic
     blocker_ids = []
     for obj in spec.objects:
         reason = None
-        if not fixed[obj.id]:
+        if not obj.collision:
+            reason = "appearance-only mesh"
+        elif not fixed[obj.id]:
             reason = "movable, articulated, or invalid ancestry"
         elif obj.kind != "box":
             reason = "uncertain non-box collision footprint"

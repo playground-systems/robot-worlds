@@ -24,6 +24,11 @@ REQUIRED_PACKAGE_FILES = (
     "assets/robots/g1/CONTROLLER_LICENSE", "assets/robots/g1/DEX1_LICENSE",
     "assets/robots/g1/DEX1_UPSTREAM_LICENSE", "assets/robots/g1/DEX1_NOTICE",
     "assets/robots/g1/PROVENANCE.md",
+    "asset_import.py", "asset_catalog.py", "asset_sourcing.py", "mesh_assets.py", "static/scene-textures.js",
+    "assets/household/microwave079/model.xml", "assets/household/microwave079/ATTRIBUTION.md",
+    "assets/household/microwave079/source-manifest.json", "assets/household/microwave079/visuals/T_BC001.png",
+    "assets/household/microwave079/visuals/Body001.obj", "assets/household/microwave079/visuals/door.obj",
+    "assets/household/microwave079/visuals/door_Clear.obj", "assets/household/microwave079/visuals/Disc001.obj",
 )
 REQUIRED_SOURCE_FILES = (
     "pyproject.toml", "uv.lock", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md",

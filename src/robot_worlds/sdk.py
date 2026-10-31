@@ -168,29 +168,35 @@ class World:
         assets, sources, asset_errors = {}, {}, []
         mesh_members = {}
         for obj in spec.objects:
-            if obj.mesh_path:
-                source = Path(obj.mesh_path).expanduser()
+            for field in ("mesh_path", "texture_path", "source_notice"):
+                value = getattr(obj, field)
+                if not value:
+                    continue
+                source = Path(value).expanduser()
                 if not source.is_absolute():
                     source = Path(asset_root or ".") / source
                 if not source.is_file():
-                    asset_errors.append(f"{obj.id}: referenced mesh asset is unavailable: {obj.mesh_path}")
+                    asset_errors.append(f"{obj.id}: referenced {field} asset is unavailable: {value}")
                     continue
                 source = source.resolve()
                 fingerprint = file_digest(source)
                 member = f"assets/{fingerprint}{source.suffix.lower()}"
                 assets[member], sources[member] = fingerprint, source
                 mesh_members[str(source)] = member
-                obj.mesh_path = member
+                setattr(obj, field, member)
         # Keep declarative mesh sources aligned with materialized paths so a
         # saved assembly can be revalidated or refined without stale originals.
         for template in spec.assembly_templates:
             for part in template.parts:
-                if part.mesh_path:
-                    original = Path(part.mesh_path).expanduser()
+                for field in ("mesh_path", "texture_path", "source_notice"):
+                    value = getattr(part, field)
+                    if not value:
+                        continue
+                    original = Path(value).expanduser()
                     if not original.is_absolute():
                         original = Path(asset_root or ".") / original
                     if str(original.resolve()) in mesh_members:
-                        part.mesh_path = mesh_members[str(original.resolve())]
+                        setattr(part, field, mesh_members[str(original.resolve())])
         payload = spec.model_dump(mode="json")
         robot_assets = _robot_assets(spec.robot)
         stage = Path(tempfile.mkdtemp(prefix=".world-", dir=root))

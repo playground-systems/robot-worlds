@@ -33,6 +33,10 @@ class JointSpec(Model):
     anchor: Vec3
     initial: Number = 0
     damping: Nonnegative = 2
+    limited: bool = True
+    frictionloss: Nonnegative = 0.2
+    armature: Nonnegative = 0
+    stiffness: Nonnegative = 0
 
     @model_validator(mode="after")
     def check_joint(self):
@@ -67,6 +71,11 @@ class SceneObject(Model):
     parent_id: Identifier | None = None
     joint: JointSpec | None = None
     mesh_path: str | None = None
+    texture_path: str | None = None
+    source_notice: str | None = None
+    collision: bool = True
+    visible: bool = True
+    opacity: Color = 1
     revolved: RevolvedShape | None = None
 
     @model_validator(mode="after")
@@ -77,6 +86,12 @@ class SceneObject(Model):
             raise ValueError("mesh requires mesh_path (local asset, never executable code)")
         if self.kind != "mesh" and self.mesh_path is not None:
             raise ValueError("mesh_path is only valid for mesh geometry")
+        if self.texture_path is not None and self.kind != "mesh":
+            raise ValueError("texture_path requires mesh geometry with source UV coordinates")
+        if not self.collision and (self.kind != "mesh" or not self.parent_id or self.movable or self.joint):
+            raise ValueError("Appearance-only meshes must be fixed children of a physical object")
+        if not self.collision and not self.visible:
+            raise ValueError("Appearance-only geometry must be visible")
         if self.kind == "sphere" and max(self.size) - min(self.size) > 1e-6:
             raise ValueError("sphere requires equal XYZ extents")
         if self.kind == "cylinder" and abs(self.size[0] - self.size[1]) > 1e-6:

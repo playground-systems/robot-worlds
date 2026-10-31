@@ -41,6 +41,8 @@ class GenerationCancelled(GenerationError):
 
 
 def _intersects(a, b, epsilon=1e-5):
+    if not getattr(a, "collision", True) or not getattr(b, "collision", True):
+        return False
     # Initial shapes have no arbitrary orientation. Articulated swept volumes and
     # mesh contacts require the runtime's real compile/reset checks.
     if a.kind == "revolved" or b.kind == "revolved":
@@ -87,6 +89,20 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
         errors.append("objects, regions and processes need globally unique IDs; robot is reserved")
     objects = {o.id: o for o in spec.objects}
     regions = {r.id: r for r in spec.regions}
+    # Source assets commonly use intersecting convex parts on one welded body.
+    # They have no relative motion/contact pair; cavity checks still inspect each
+    # collider, and distinct moving bodies must pass overlap/native checks.
+    welded_roots = {}
+    for obj in spec.objects:
+        current, chain = obj, set()
+        while current.id not in welded_roots and current.id not in chain:
+            chain.add(current.id)
+            if current.joint or current.movable or current.parent_id not in objects:
+                break
+            current = objects[current.parent_id]
+        root_id = welded_roots.get(current.id, current.id)
+        for oid in chain:
+            welded_roots[oid] = root_id
     for region in spec.regions:
         if region.interior_of is None:
             continue
@@ -101,7 +117,7 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
             errors.append(f"{region.id}: cavity lies outside its container envelope")
         for oid in members:
             part = objects[oid]
-            if part.kind != "box":
+            if part.kind != "box" or not part.collision:
                 continue  # Curved/mesh interiors need native geometry checks.
             penetration = [min(region.position[i] + region.size[i]/2, part.position[i] + part.size[i]/2) -
                            max(region.position[i] - region.size[i]/2, part.position[i] - part.size[i]/2) for i in range(3)]
@@ -129,8 +145,26 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
                 path = Path(asset_root) / path
             if path.suffix.lower() not in {".obj", ".stl", ".msh"} or not path.is_file():
                 errors.append(f"{obj.id}: missing/unsupported local mesh asset {obj.mesh_path}")
+        if obj.texture_path:
+            from .mesh_assets import validate_texture
+            path = Path(obj.texture_path).expanduser()
+            if not path.is_absolute() and asset_root is not None:
+                path = Path(asset_root) / path
+            try:
+                validate_texture(path)
+            except (ValueError, OSError) as exc:
+                errors.append(f"{obj.id}: invalid texture: {exc}")
+        if obj.source_notice:
+            path = Path(obj.source_notice).expanduser()
+            if not path.is_absolute() and asset_root is not None:
+                path = Path(asset_root) / path
+            if not path.is_file() or path.suffix.lower() not in {".md", ".txt"} or path.stat().st_size > 1024 * 1024:
+                errors.append(f"{obj.id}: source notice must be an existing text file of at most 1 MiB")
+        if not obj.visible:
+            if not any(objects[oid].visible for oid in rigid_members(objects, welded_roots[obj.id])):
+                errors.append(f"{obj.id}: hidden collision geometry needs a visible member of its rigid assembly")
         # Conservative initial robot envelope, not a reachability certificate.
-        if obj.position[2]-obj.size[2]/2 < 1.6 and obj.position[2]+obj.size[2]/2 > 0:
+        if obj.collision and obj.position[2]-obj.size[2]/2 < 1.6 and obj.position[2]+obj.size[2]/2 > 0:
             dx = max(0, abs(x-obj.position[0])-obj.size[0]/2)
             dy = max(0, abs(y-obj.position[1])-obj.size[1]/2)
             if math.hypot(dx, dy) < .4-1e-5:
@@ -138,6 +172,8 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
     overlaps = 0
     fixed = {obj.id: _world_welded(obj, objects) for obj in spec.objects}
     for a, b in candidate_pairs(spec.objects):
+        if welded_roots[a.id] == welded_roots[b.id]:
+            continue
         if (validation_profile == "fixed_reference" and fixed[a.id] and fixed[b.id]
                 and _intersects(a, b)):
             if skipped_fixed_pairs is not None:

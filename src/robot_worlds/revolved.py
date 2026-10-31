@@ -66,6 +66,8 @@ def triangulate(profile):
 
 
 def collision_count(obj):
+    if not getattr(obj, "collision", True):
+        return 0
     if obj.kind != "revolved":
         return 1
     return obj.revolved.segments * len(triangulate(obj.revolved.profile))

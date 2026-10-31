@@ -97,9 +97,39 @@ rejection records. The returned `SourcedAsset` retains that evidence and the sel
 source; save it alongside the resulting asset.
 
 **Integration status:** this SDK coordinator is not yet called automatically by
-`generate()` or the workbench. Textured asset ingestion and articulated imports are
-still under implementation. The [selected bowl and microwave](household-assets.md)
-already have pinned originals; the current procedural preview is not their import.
+`generate()` or the workbench. The [selected bowl and microwave](household-assets.md)
+have pinned originals. A restricted MJCF importer now supports the microwave's
+primitive colliders, textured OBJ appearances and hinged body hierarchy. The bowl
+still needs concave collision conversion before native import.
+
+```python
+from importlib.resources import files
+from robot_worlds import import_mjcf_asset
+
+source = files("robot_worlds") / "assets/household/microwave079/model.xml"
+asset = import_mjcf_asset(source, prefix="microwave", position=(2, 0, 0.8))
+# Add asset.objects and asset.regions to your WorldSpec before World.from_spec().
+# Ground rubric references using asset.joint_ids, body_ids and geom_ids.
+door_id = asset.joint_ids["microjoint"]
+support_id = asset.geom_ids["tray"]
+```
+
+This importer accepts local radian MJCF with axis-aligned primitive colliders,
+OBJ visual meshes and PNG textures. It retains source body hierarchy and supported
+hinge/slide parameters, while rejecting rotated colliders, collision meshes and
+unsupported physical features. Source appliance motors and global simulation
+settings are excluded. Unspecified masses and material response remain estimates;
+torsional/rolling friction use runtime defaults. Conversion is not proof of robot
+task success. Retain `asset.disclosures` as world assumptions and `asset.source_files`
+as source hash evidence.
+
+Visual meshes have `collision=False` and must be fixed children of physical parts.
+Physical pieces may have `visible=False` when their welded assembly has a visible
+member. This keeps an original concave surface from becoming a solid collision
+hull, while keeping collision pieces out of the rendered image. `texture_path`
+uses source OBJ UVs; `source_notice` retains attribution. World freezing hashes and
+copies meshes, PNGs and notices, so ZIP exports remain self-contained. Texture files
+are bounded to 16 MiB and 16 megapixels.
 
 ## Hollow objects and appliance validation
 

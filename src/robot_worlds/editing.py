@@ -42,6 +42,11 @@ class ObjectValues(Model):
     parent_id: Identifier | None = None
     joint: JointSpec | None = None
     mesh_path: str | None = None
+    texture_path: str | None = None
+    source_notice: str | None = None
+    collision: bool | None = None
+    visible: bool | None = None
+    opacity: Number | None = None
     revolved: RevolvedShape | None = None
 
 
@@ -53,7 +58,7 @@ class AddObject(Model):
 class UpdateObject(Model):
     op: Literal["update_object"]
     id: Identifier
-    fields: list[Literal["label", "kind", "position", "size", "color", "mass", "movable", "friction", "parent_id", "joint", "mesh_path", "revolved"]] = Field(min_length=1, max_length=13)
+    fields: list[Literal["label", "kind", "position", "size", "color", "mass", "movable", "friction", "parent_id", "joint", "mesh_path", "revolved", "texture_path", "source_notice", "collision", "visible", "opacity"]] = Field(min_length=1, max_length=18)
     values: ObjectValues
 
 
@@ -276,7 +281,7 @@ def enforce_protections(before: WorldSpec, after: WorldSpec, *,
             if obj.id not in previous:
                 continue
             old = previous[obj.id]
-            for key in ("mass", "friction", "movable", "parent_id"):
+            for key in ("mass", "friction", "movable", "parent_id", "collision"):
                 if getattr(old, key) != getattr(obj, key):
                     raise ValueError(f"{obj.id}: {key} is protected; allow_physics_changes is required")
             old_joint = old.joint.model_dump(exclude={"initial"}) if old.joint else None
@@ -334,7 +339,7 @@ def _protect_task_bindings(before: WorldSpec, after: WorldSpec):
             continue  # Missing references are independently rejected by validation.
         if new is None:
             raise ValueError(f"{oid}: task-bound object presence is protected; allow_task_changes is required")
-        for field in ("label", "color", "kind", "size", "mesh_path", "parent_id", "revolved"):
+        for field in ("label", "color", "kind", "size", "mesh_path", "parent_id", "revolved", "texture_path", "source_notice", "collision", "visible", "opacity"):
             if getattr(old, field) != getattr(new, field):
                 raise ValueError(f"{oid}: task-bound object {field} is protected; allow_task_changes is required")
         if oid in anchors:

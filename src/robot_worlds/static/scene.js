@@ -5,6 +5,7 @@ import { disposeMaterials, disposeTree } from './scene-resources.js';
 import { isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js';
 import { APPEARANCE_NOTICE, estimatedAppearance, studioEnvironmentPixels } from './scene-appearance.js';
 import { geometryKey, revolvedGeometry } from './scene-shapes.js';
+import { loadBundledTexture } from './scene-textures.js';
 
 /** Layout inspection only. The native PNG is the physical robot representation. */
 export class WorldViewer {
@@ -124,11 +125,12 @@ export class WorldViewer {
     grid.rotation.x = Math.PI / 2; grid.position.z = 0.001; grid.material.transparent = true; grid.material.opacity = .16; this.group.add(grid);
     const buckets = new Map();
     for (const object of spec.objects || []) {
+      if (object.visible === false) continue;
       const kind = object.kind || 'box';
       const shell = isInspectionShell(object, spec.bounds); if (shell) this.shellCount++;
       if (kind === 'mesh' && assetBase && /\.obj$/i.test(object.mesh_path || '')) { this.pendingLoads.push([object, assetBase, generation]); continue; }
       const appearance = estimatedAppearance(object);
-      const key = `${geometryKey(object)}:${shell ? 'shell' : 'solid'}:${appearance.id}`;
+      const key = `${geometryKey(object)}:${shell ? 'shell' : 'solid'}:${appearance.id}:${object.opacity ?? 1}`;
       if (!buckets.has(key)) buckets.set(key, { kind, shell, appearance, objects: [] });
       buckets.get(key).objects.push(object);
     }
@@ -146,7 +148,8 @@ export class WorldViewer {
       else geometry = new THREE.BoxGeometry(1, 1, 1);
       geometries.set(shapeKey, geometry);
       }
-      const material = new THREE.MeshStandardMaterial({ roughness: appearance.roughness, metalness: appearance.metalness, envMapIntensity: .65, transparent: kind === 'mesh', opacity: kind === 'mesh' ? .48 : 1 });
+      const opacity = kind === 'mesh' ? .48 : (objects[0].opacity ?? 1);
+      const material = new THREE.MeshStandardMaterial({ roughness: appearance.roughness, metalness: appearance.metalness, envMapIntensity: .65, transparent: opacity < 1, opacity });
       const batch = new THREE.InstancedMesh(geometry, material, objects.length);
       batch.castShadow = true; batch.receiveShadow = true; batch.userData.objects = objects; batch.userData.appearance = appearance;
       if (shell) this.shellNodes.push(batch);
@@ -191,6 +194,7 @@ export class WorldViewer {
 
   async loadOBJ(object, assetBase, generation) {
     const controller = new AbortController(); this.loads.add(controller);
+    let group, texture, attached = false;
     try {
       if (!/^assets\/[a-zA-Z0-9_.-]+$/.test(object.mesh_path)) throw new Error('Unbundled mesh path');
       const response = await fetch(assetBase + object.mesh_path, { signal: controller.signal });
@@ -198,30 +202,38 @@ export class WorldViewer {
       const source = await response.text();
       if (source.length > 24 * 1024 * 1024) throw new Error('Mesh exceeds viewer budget');
       if (this.disposed || this.loadGeneration !== generation) return;
-      const group = new OBJLoader().parse(source), box = new THREE.Box3().setFromObject(group), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+      if (object.texture_path) texture = await loadBundledTexture(THREE, assetBase, object.texture_path, controller.signal);
+      if (this.disposed || this.loadGeneration !== generation) return;
+      group = new OBJLoader().parse(source);
+      const box = new THREE.Box3().setFromObject(group), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
       let appearance = {};
       const metadata = source.match(/^# robot_worlds_material (.{1,2048})$/m);
       if (metadata) { try { appearance = JSON.parse(metadata[1]); } catch {} }
       const bounded = (key, fallback) => Number.isFinite(appearance[key]) ? Math.max(0, Math.min(1, appearance[key])) : fallback;
       const estimated = estimatedAppearance(object);
-      const material = new THREE.MeshStandardMaterial({ color: new THREE.Color().setRGB(...object.color), envMapIntensity: .65, metalness: bounded('metalness', estimated.metalness), roughness: bounded('roughness', estimated.roughness), transparent: bounded('opacity', 1) < 1, opacity: bounded('opacity', 1) });
+      const opacity = object.opacity ?? bounded('opacity', 1);
+      const material = new THREE.MeshStandardMaterial({ map: texture || null, color: new THREE.Color().setRGB(...object.color), envMapIntensity: .65, metalness: bounded('metalness', estimated.metalness), roughness: bounded('roughness', estimated.roughness), transparent: opacity < 1, opacity });
       if (Array.isArray(appearance.emissive) && appearance.emissive.length === 3 && appearance.emissive.every(Number.isFinite)) material.emissive.setRGB(...appearance.emissive.map(x => Math.max(0, Math.min(10, x))));
       group.traverse(node => {
         if (!node.isMesh) return;
         node.geometry.translate(-center.x, -center.y, -center.z);
         node.geometry.scale(...object.size.map((extent, axis) => extent / Math.max(size.getComponent(axis), 1e-9)));
-        disposeMaterials(node.material); node.material = material; node.castShadow = true; node.receiveShadow = true; node.userData.object = object; node.userData.appearance = { ...estimated, basis: metadata ? 'Bundled OBJ appearance metadata with estimated defaults' : estimated.basis }; this.objects.push(node);
+        disposeMaterials(node.material); node.material = material; node.castShadow = true; node.receiveShadow = true; node.userData.object = object; node.userData.appearance = { ...estimated, basis: texture ? 'Original bundled texture; other material properties are estimates' : metadata ? 'Bundled OBJ appearance metadata with estimated defaults' : estimated.basis }; this.objects.push(node);
       });
       group.position.set(...object.position);
       if (object.quaternion) group.quaternion.set(object.quaternion[1], object.quaternion[2], object.quaternion[3], object.quaternion[0]);
       else if (object.yaw) group.rotation.z = object.yaw;
-      this.group.add(group);
+      this.group.add(group); attached = true;
     } catch (error) {
       if (controller.signal.aborted || this.disposed || this.loadGeneration !== generation) return;
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(...object.size), new THREE.MeshBasicMaterial({ color: 0xcc8c67, wireframe: true }));
       mesh.position.set(...object.position); mesh.userData.object = object; this.group.add(mesh); this.objects.push(mesh);
       this.label(`${object.label || object.id}: mesh unavailable`, new THREE.Vector3(...object.position));
     } finally {
+      if (!attached) {
+        if (group) disposeTree(group);
+        else texture?.dispose();
+      }
       this.loads.delete(controller); this.pumpLoads();
       if (!this.disposed) this.renderer.shadowMap.needsUpdate = true;
       if (this.loadGeneration === generation) this.invalidate();

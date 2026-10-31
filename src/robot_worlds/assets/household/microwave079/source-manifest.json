@@ -1,0 +1,40 @@
+{
+  "id": "nvidia-microwave079",
+  "source_url": "https://huggingface.co/datasets/nvidia/PhysicalAI-Robotics-Manipulation-Objects-Kitchen-MJCF/resolve/420a04af939c34873e6839a586b70844baf28aab/fixtures_lightwheel/microwaves.zip",
+  "revision": "420a04af939c34873e6839a586b70844baf28aab",
+  "license": "CC-BY-4.0",
+  "archive_bytes": 35952253,
+  "archive_sha256": "17e8f0bebbc59a7289e2ee2789d230e527b055e38a1155dd2361defdac34d74b",
+  "files": [
+    {
+      "path": "model.xml",
+      "bytes": 6494,
+      "sha256": "8499897a9d6768c985cfa9894175b73165fb86d6755112dead5f73a72fffdca9"
+    },
+    {
+      "path": "visuals/door_Clear.obj",
+      "bytes": 1594,
+      "sha256": "4b5500fe54f765acbf333a269519a566bf5099135170f0ea6e28c5fa077c0a06"
+    },
+    {
+      "path": "visuals/T_BC001.png",
+      "bytes": 401279,
+      "sha256": "993fc08ac9b8632a9e85d3bf12914956cff2846e99fe4442180fce42082a1874"
+    },
+    {
+      "path": "visuals/door.obj",
+      "bytes": 383853,
+      "sha256": "9920d8cae2d4c71f0eb598ac3b8095a34a3b1f447b08fde4b0049f8d6209a4e6"
+    },
+    {
+      "path": "visuals/Disc001.obj",
+      "bytes": 26727,
+      "sha256": "e5c873282e60d5ea2cbc4f946d90b6d0c63a97e0d292ce893dba4f8169357516"
+    },
+    {
+      "path": "visuals/Body001.obj",
+      "bytes": 278833,
+      "sha256": "e955634b050797503181112936d3687c0b814220b4b3d3efd2ec6116ba9ab2c5"
+    }
+  ]
+}
