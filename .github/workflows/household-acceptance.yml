@@ -1,0 +1,67 @@
+name: household-acceptance
+# Opt-in only: normal commits, PR updates and label removals do not run this job.
+# The label event supports testing this draft before workflows reach main.
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: household-acceptance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  household:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-household-acceptance'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ''
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Install locked test environment
+        run: |
+          python -m pip install uv==0.11.28
+          uv sync --frozen --dev
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libegl1 xvfb xauth
+      - name: Record checkout identity
+        shell: bash
+        run: |
+          mkdir -p household-evidence
+          git rev-parse HEAD > household-evidence/commit.txt
+          uv --version > household-evidence/uv-version.txt
+          uv run --frozen python -c 'import sys; from importlib.metadata import version; print(sys.version); print("mujoco=" + version("mujoco")); print("robot-worlds=" + version("robot-worlds"))' > household-evidence/runtime.txt
+      - name: Run only household SDK, original physics and relevant regressions
+        shell: bash
+        run: |
+          xvfb-run -a uv run --frozen pytest -q -ra \
+            tests/test_household_sdk_flow.py \
+            tests/test_sourced_household_physics.py \
+            tests/test_household_grading.py \
+            tests/test_arm_orientation.py \
+            --basetemp "$RUNNER_TEMP/household-acceptance" \
+            --junitxml=household-evidence/junit.xml
+      - name: Audit required native checks without accepting skips
+        if: always()
+        run: python tools/check_household_evidence.py household-evidence/junit.xml --output household-evidence/acceptance.json
+      - name: Retain current-run evidence
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: household-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            household-evidence/
+            ${{ runner.temp }}/household-acceptance/**/result.json
+            ${{ runner.temp }}/household-acceptance/**/trace.json
+            ${{ runner.temp }}/household-acceptance/**/manifest.json
+            ${{ runner.temp }}/household-acceptance/**/report.html
+            ${{ runner.temp }}/household-acceptance/**/frames/*.png

@@ -7,6 +7,8 @@ permissions:
   contents: read
 jobs:
   test:
+    # A one-off household acceptance request must not start the full suite.
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'run-household-acceptance') }}
     strategy:
       fail-fast: false
       matrix:

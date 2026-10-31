@@ -73,3 +73,42 @@ with synthetic child-piece contact and root-level holding. Decoy and articulated
 child contacts cannot substitute for the rigid workpiece. This fixes the existing
 optional process abstraction; it adds no heating requirement to the bowl task and
 does not constitute physical placement evidence.
+
+## Proposed one-off hosted household check — not run
+
+`.github/workflows/household-acceptance.yml` selects 33 tests from four files:
+`test_household_sdk_flow.py`, `test_sourced_household_physics.py`,
+`test_household_grading.py` and `test_arm_orientation.py`. It uses one Ubuntu
+runner, a 15-minute job limit, single-threaded numeric libraries, mocked models
+and an empty model API key. It performs no package build, catalog conversion,
+live model request or publication. Reports, traces, JUnit and runtime/checkout
+identity are retained for seven days. This is a subset check, not full release
+acceptance or successful bowl manipulation.
+
+The workflow has only explicit label/manual triggers. Normal commits, PR updates
+and label removal do not trigger it. The label `run-household-acceptance` also
+suppresses the existing full-suite, packaging and conversion jobs while present.
+GitHub documents label activity types in its [workflow trigger reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request).
+
+**Keep CI off until the user authorizes this run.** This proposal is needed because
+the goal forbids heavy native work on the Mac and new paid compute, while the
+later user instruction disabled CI. Preparing this workflow is not authorization
+to trigger it.
+
+For this unmerged draft, use the label event after authorization rather than
+assuming a new manual-dispatch workflow is already registered on `main`:
+
+1. Apply the dedicated label while the current head still has `[skip ci]`.
+2. Push one empty commit without a skip marker. The existing jobs stay suppressed
+   by the label; the household workflow does not listen for commit updates.
+3. Remove and reapply that label once to request the single household job.
+4. Record the resulting run ID and remove the label. Keep subsequent commits
+   marked `[skip ci]`; any additional native attempt requires a concrete diagnosed
+   change and authorization covering another run.
+
+`tools/check_household_evidence.py` audits nine required native cases and rejects
+missing, skipped, duplicate or failing evidence. It always reports full release
+acceptance as false because this subset cannot establish successful manipulation,
+live generation, warehouse screenshots or clean installation. Twelve lightweight
+auditor checks pass. Collection found all 33 selected tests without executing
+the native cases. Workflow YAML parses; actual hosted execution is unverified.
