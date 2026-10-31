@@ -105,6 +105,9 @@ def test_catalog_grounded_references_and_metadata():
     bowl, oven = prepared_asset_catalog()
     assert bowl["components"] == 159
     assert oven["components"] == 20
+    assert bowl["movable"] and not oven["movable"]
+    assert bowl["mass_policy"] == "caller_estimate" and bowl["physical_mass_kg"] is None
+    assert oven["mass_policy"] == "preserve_import" and oven["physical_mass_kg"] > 0
     assert bowl["size"] == pytest.approx([.208234, .209341, .068883])
     assert oven["regions"][0]["id"] == "{prefix}_interior0"
     assert all(item["source_url"].startswith("https://") and item["revision"] and item["license"] for item in (bowl, oven))

@@ -138,6 +138,10 @@ class AssetLibrary:
     def description(self, asset_id):
         return self._entries[asset_id]["description"]
 
+    def copy(self):
+        """Copy registration metadata; source files are still verified on load/save."""
+        return copy.deepcopy(self)
+
     def add(self, asset_id: str, sourced: SourcedAsset, *, description: str):
         asset_id = TypeAdapter(Identifier).validate_python(asset_id)
         if asset_id in self._entries or len(self._entries) >= 32:

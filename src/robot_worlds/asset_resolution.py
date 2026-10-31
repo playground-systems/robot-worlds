@@ -6,18 +6,23 @@ imports and unresolved requirements never authorize procedural replacement.
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import asdict, replace
 from pathlib import Path
 
 import numpy as np
 from pydantic import Field, model_validator
 
-from .artifacts import digest, file_digest, write_json
+from .artifacts import digest, file_digest, public_error, write_json
 from .asset_catalog import search_online_assets
 from .asset_download import download_fuel_asset
 from .asset_library import AssetLibrary
 from .asset_sourcing import source_asset
-from .collision_preparation import CollisionPreparationCancelled
+from .collision_preparation import (
+    CollisionPreparationCancelled,
+    CollisionPreparationError,
+    _cache_lock,
+)
 from .models import Identifier, Model, Positive, Vec3
 from .sdf_import import import_fuel_mesh_asset
 
@@ -49,6 +54,10 @@ class SourceAssetRequest(Model):
 class _Selection(Model):
     candidate_id: str | None = Field(description="Exact supplied candidate ID, or null when none matches the requested identity/appearance.")
     reason: str = Field(min_length=1, max_length=2000)
+
+
+def _request_key(request):
+    return digest({"resolver_version": 1, "request": request.model_dump(mode="json")})
 
 
 def _compatible(asset, request):
@@ -84,24 +93,121 @@ description does not establish visual or task-level physical correctness.
         if self.cancelled and self.cancelled():
             raise CollisionPreparationCancelled("Asset resolution cancelled")
 
-    def _cached(self, destination, request, *, emit_reused=True):
+    def _read_index(self):
+        path = self.root / "resolved-index.json"
+        if not path.exists() and not path.is_symlink():
+            return []
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > 128 * 1024:
+            raise AssetResolutionError("Recent source index must be a local JSON file of at most 128 KiB")
+        data = json.loads(path.read_text())
+        if not isinstance(data, dict):
+            raise AssetResolutionError("Invalid recent source index")
+        identity = data.pop("id", None)
+        if identity != digest(data) or set(data) != {"schema_version", "entries"} or data["schema_version"] != 1:
+            raise AssetResolutionError("Recent source index integrity check failed")
+        entries = data["entries"]
+        if not isinstance(entries, list) or len(entries) > 32:
+            raise AssetResolutionError("Recent source index exceeds its 32-entry budget")
+        seen = set()
+        for entry in entries:
+            if not isinstance(entry, dict) or set(entry) != {"key", "request"}:
+                raise AssetResolutionError("Invalid recent source record")
+            request = SourceAssetRequest.model_validate(entry["request"])
+            if entry["key"] != _request_key(request) or entry["key"] in seen:
+                raise AssetResolutionError("Recent source record identity does not match")
+            seen.add(entry["key"])
+        return entries
+
+    def _remember(self, request):
+        """Index only published libraries; index failure cannot invalidate one."""
+        try:
+            lock = self.root / ".index-lock"
+            lock.mkdir(parents=True, exist_ok=True)
+            with _cache_lock(lock, time.monotonic()+5, self.cancelled, lambda _: None):
+                entries = self._read_index()
+                entry = {"key": _request_key(request), "request": request.model_dump(mode="json")}
+                if entries and entries[0] == entry:
+                    return
+                entries = [entry, *(item for item in entries if item["key"] != entry["key"])][:32]
+                while True:
+                    payload = {"schema_version": 1, "entries": entries}
+                    saved = {**payload, "id": digest(payload)}
+                    if len(json.dumps(saved, indent=2).encode())+1 <= 128 * 1024:
+                        break
+                    entries.pop()
+                write_json(self.root / "resolved-index.json", saved)
+        except CollisionPreparationCancelled:
+            raise
+        except (ValueError, OSError, AssetResolutionError, CollisionPreparationError) as exc:
+            self.emit({"type": "asset_cache_index_unavailable", "error": public_error(exc),
+                       "message": "Source is prepared; its recent-asset index could not be updated"})
+
+    def _cached(self, destination, request, *, emit_reused=True, remember=True, prefix="source"):
         library = AssetLibrary.open(destination)
         if library.asset_ids != (request.asset_id,):
             raise AssetResolutionError("Resolved asset cache contains unexpected catalog IDs")
-        sourced = library.load(request.asset_id, prefix="source")
+        sourced = library.load(request.asset_id, prefix=prefix)
         if sourced.search.evidence.get("resolution_request") != request.model_dump(mode="json"):
             raise AssetResolutionError("Resolved asset cache request does not match")
         _compatible(sourced.asset, request)
         self._check()
+        if remember:
+            self._remember(request)
         if emit_reused:
             self.emit({"type": "asset_resolution_reused", "asset_id": request.asset_id,
                        "message": f"Reused prepared source for {request.asset_id}"})
         return sourced
 
+    def cached_catalog(self, library, catalog):
+        """Add up to eight recent verified imports without network/model work.
+
+        Installed assets keep their IDs and precedence. Cache entries get stable
+        content-derived aliases so identical requested names cannot shadow one
+        another. Damaged or over-budget entries are reported and left untouched.
+        """
+        from .prepared_assets import PreparedAssetInstance, _catalog_entry, _place
+        self._check()
+        try:
+            entries = self._read_index()
+        except (ValueError, OSError, AssetResolutionError) as exc:
+            self.emit({"type": "asset_cache_index_unavailable", "error": public_error(exc),
+                       "message": "Recent source index is unavailable; using the installed catalog"})
+            return library, catalog
+        result = library.copy() if library is not None else AssetLibrary()
+        catalog = list(catalog)
+        added = 0
+        for entry in entries[:8]:
+            self._check()
+            # Optional cached entries must not consume the eight slots available
+            # to explicit source requests during this generation.
+            if added >= 8 or len(result.asset_ids) >= 24:
+                break
+            alias = "cached_" + entry["key"]
+            if alias in result.asset_ids:
+                continue
+            try:
+                request = SourceAssetRequest.model_validate(entry["request"])
+                sourced = self._cached(self.root / "resolved" / entry["key"], request,
+                                       emit_reused=False, remember=False, prefix="asset")
+                _place(sourced.asset, PreparedAssetInstance(id="asset", asset_id=alias, position=(0, 0, 0)))
+                description = request.description + "; preserve imported masses, size and orientation; mass override unsupported"
+                record = _catalog_entry(alias, sourced, description)
+                if len(json.dumps([*catalog, record])) > 200_000:
+                    raise AssetResolutionError("Cached asset exceeds the remaining catalog planning budget")
+                result.add(alias, sourced, description=request.description)
+                catalog.append(record)
+                added += 1
+            except (ValueError, OSError, KeyError, TypeError, AssetResolutionError) as exc:
+                self.emit({"type": "asset_cache_unavailable", "asset_id": alias, "error": public_error(exc),
+                           "message": "A recent source could not join the catalog; its cached files were left unchanged"})
+        self.emit({"type": "asset_cache_catalog", "assets": added,
+                   "message": f"Added {added} prepared sources from previous generations"})
+        return result, catalog
+
     def __call__(self, request: SourceAssetRequest):
         request = SourceAssetRequest.model_validate(request)
         self._check()
-        destination = self.root / "resolved" / digest({"resolver_version": 1, "request": request.model_dump(mode="json")})
+        destination = self.root / "resolved" / _request_key(request)
         if destination.exists() or destination.is_symlink():
             return self._cached(destination, request)
         self.emit({"type": "asset_search_started", "asset_id": request.asset_id, "query": request.query,
@@ -197,10 +303,7 @@ def extend_asset_library(library, requests, resolver, installed_ids):
         raise AssetResolutionError("Source requests need unique new IDs; installed assets cannot be replaced")
     if len(ids) + len(library.asset_ids if library is not None else ()) > 32:
         raise AssetResolutionError("Source requests exceed the 32-asset library budget")
-    result = AssetLibrary()
-    if library is not None:
-        for asset_id in library.asset_ids:
-            result.add(asset_id, library.load(asset_id, prefix="source"), description=library.description(asset_id))
+    result = library.copy() if library is not None else AssetLibrary()
     for request in requests:
         sourced = resolver(request)
         _compatible(sourced.asset, request)

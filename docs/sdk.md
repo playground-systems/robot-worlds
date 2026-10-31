@@ -122,6 +122,11 @@ replans placement. No preview is published from the unresolved asset draft.
 - Source files, collision preparation and resolved libraries are cached under
   `<output-parent>/asset-cache`. Repeating an identical request reuses verified files
   without another search, selection call or conversion.
+- Later generations also see up to eight recent resolved sources in their initial
+  catalog, with stable `cached_…` IDs. A different prompt can reuse them in its first
+  scene response, without repeating acquisition or selection. The catalog includes
+  mobility, dimensions, physical mass and whether mass must be preserved or supplied
+  as an estimate. Installed library IDs keep precedence.
 - Installed assets need no extra model request. A new lookup adds one selection
   call per asset and another scene-planning call per resolution round.
 - Search, selection, download, preparation and reuse appear in progress events.
@@ -137,7 +142,17 @@ Catalog-based selection is not independent visual verification, and ordinary
 scene/native validation still applies. Live model asset selection has not yet been
 validated; automated tests use synthetic network/model responses.
 
-Use `generate(..., online_assets=False)` for installed assets only. Advanced callers
+The recent-source index retains up to 32 requests within 128 KiB; generation checks
+at most the newest eight entries and respects the existing 32-asset/256 MiB library
+and 200,000-character catalog budgets. Optional cache entries leave eight library
+slots available for new requests. This bounds startup work as the disk cache
+grows. Unavailable or over-budget entries are reported and omitted from discovery;
+their files are left untouched. Direct lookup of a damaged cache still fails.
+Index updates use a process lock and atomic writes. An index failure cannot invalidate
+a prepared source, and older unindexed imports enter it when reused by exact request.
+
+Use `generate(..., online_assets=False)` for installed and cached sources without
+fresh online acquisition. Advanced callers
 can supply `asset_resolver=callable` returning a provenance-backed `SourcedAsset` for
 a `SourceAssetRequest`; required dimensions/mobility/features are checked again
 before registration. The built-in `FuelAssetResolver(cache_dir, client=...)` is also

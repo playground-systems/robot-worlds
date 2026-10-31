@@ -209,4 +209,6 @@ test('online asset stages show discovery and cache reuse separately from world v
   assert.equal(run("eventLabel({type:'asset_search_started',message:'Searching Fuel for painted object'})"), 'Searching Fuel for painted object');
   assert.equal(run("eventLabel({type:'asset_resolution_reused',message:'Reused prepared source for scan'})"), 'Reused prepared source for scan');
   assert.equal(run("eventLabel({type:'generation_phase_started',phase:'source_assets',attempt:1})"), 'Find and prepare source assets · attempt 1 · started');
+  assert.equal(run("eventLabel({type:'asset_cache_catalog',message:'Added 1 prepared sources from previous generations'})"), 'Added 1 prepared sources from previous generations');
+  assert.equal(run("eventLabel({type:'asset_cache_unavailable',message:'Recent source unavailable; files unchanged'})"), 'Recent source unavailable; files unchanged');
 });

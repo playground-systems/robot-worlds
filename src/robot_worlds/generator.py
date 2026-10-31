@@ -285,7 +285,9 @@ def _generation_phase(emit, phase: str, attempt: int):
 def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", client=None, max_repairs=2, on_candidate: Callable | None = None, event_callback: Callable | None = None, validator: Callable | None = None, asset_root=None,
                   cancelled: Callable | None = None, client_options: dict | None = None,
                   scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0, asset_library=None,
-                  online_asset_cache=None, asset_resolver=None) -> WorldSpec:
+                  online_asset_cache=None, asset_resolver=None, online_assets=True) -> WorldSpec:
+    if not isinstance(online_assets, bool) or (not online_assets and asset_resolver is not None):
+        raise ValueError("online_assets must be boolean; a resolver cannot be supplied when disabled")
     if scene_profile not in {"standard", "large"}:
         raise ValueError("scene_profile must be standard or large")
     if not isinstance(max_objects, int) or isinstance(max_objects, bool) or not 1 <= max_objects <= MAX_EXPANDED_OBJECTS:
@@ -313,13 +315,24 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
         materialize_prepared_assets,
         prepared_asset_catalog,
     )
+    cache_resolver = None
+    if online_asset_cache is not None:
+        from .asset_resolution import FuelAssetResolver
+        cache_resolver = FuelAssetResolver(online_asset_cache, client=client, on_event=event_callback, cancelled=cancelled)
+        if asset_resolver is None and online_assets:
+            asset_resolver = cache_resolver
     with _generation_phase(event_callback, "catalog", 0):
         from .asset_library import resolve_asset_library
         asset_library = resolve_asset_library(asset_library)
-        catalog = json.dumps(prepared_asset_catalog(asset_library), separators=(",", ":"))
-    if asset_resolver is None and online_asset_cache is not None:
-        from .asset_resolution import FuelAssetResolver
-        asset_resolver = FuelAssetResolver(online_asset_cache, client=client, on_event=event_callback, cancelled=cancelled)
+        catalog_entries = prepared_asset_catalog(asset_library)
+        if cache_resolver is not None:
+            from .collision_preparation import CollisionPreparationCancelled
+            try:
+                asset_library, catalog_entries = cache_resolver.cached_catalog(asset_library, catalog_entries)
+            except CollisionPreparationCancelled as exc:
+                raise GenerationCancelled("World generation cancelled while loading cached sources", attempts=0,
+                                          errors=["Generation cancelled before model request"]) from exc
+        catalog = json.dumps(catalog_entries, separators=(",", ":"))
     asset_instructions = "\nPrefer prepared_assets when the supplied catalog matches the requested object. These are previously sourced online originals, already downloaded and converted. Emit one reference with asset_id, instance id, bottom-center position and required mass instead of recreating its geometry or inventing local file paths. Use catalog body/geom/joint/region IDs with {prefix} replaced by the instance id in rubric and process references. Referenced objects and cavity regions are added automatically; do not duplicate them in objects/regions. Catalog coordinates are relative to the instance bottom-center at position [0,0,0]. Preserve original size/orientation; record incompatible requirements as unvalidated rather than silently shrinking, rotating or substituting geometry. The catalog is an asset library, not a fixed scene or task. Keep generating arbitrary surrounding layouts and requested tasks."
     asset_instructions += "\nBefore creating an object asset absent from the installed catalog, request it through asset_requests. Layout floor and wall primitives remain freely generated; other new object assets require discovery. A request pauses scene materialization: keep its current scene fields minimal because they are only a draft until the actual source geometry arrives. Do not invent source dimensions, joint IDs or collision parts. After resolution, use the new grounded catalog, place every requested asset through prepared_assets and clear asset_requests. Never replace a failed lookup/import with procedural geometry. Search is limited to Fuel's supported single-link scanned OBJ sources; openable mechanisms and declared cavities need compatible installed assets or further source preparation. Use existing catalog matches first to avoid unnecessary network/model work. At most two resolution rounds and eight new assets are allowed."
     asset_instructions += "\nOnline asset resolution is " + ("available." if asset_resolver is not None else "disabled; missing assets remain unresolved.")

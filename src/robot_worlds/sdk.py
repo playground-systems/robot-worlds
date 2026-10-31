@@ -722,7 +722,7 @@ def generate(prompt: str, *, output: str | Path = "worlds", model: str = "gpt-6-
                       max_repairs=max_repairs, asset_root=asset_root, on_candidate=candidate,
                       validator=validate_physics, event_callback=event, cancelled=cancelled, client_options=client_options,
                       scene_profile=scene_profile, max_objects=max_objects, min_objects=min_objects, asset_library=asset_library,
-                      online_asset_cache=output.parent / "asset-cache" if online_assets else None, asset_resolver=asset_resolver)
+                      online_asset_cache=output.parent / "asset-cache", asset_resolver=asset_resolver, online_assets=online_assets)
     except GenerationError as exc:
         was_cancelled = isinstance(exc, GenerationCancelled)
         record.update(status="cancelled" if was_cancelled else "incomplete", errors=exc.errors, attempts=exc.attempts, history=exc.history)

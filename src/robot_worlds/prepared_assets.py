@@ -118,6 +118,30 @@ def load_prepared_asset(asset_id: str, *, prefix: str, position=(0, 0, 0), mass=
     return source_asset(asset_id, search=lambda _: report, import_asset=import_local, create_asset=no_creation)
 
 
+def _catalog_entry(asset_id, sourced, requirements):
+    """Describe a verified asset placed at zero with the standard asset prefix."""
+    asset = sourced.asset
+    lower = np.min([np.array(o.position)-np.array(o.size)/2 for o in asset.objects], axis=0)
+    upper = np.max([np.array(o.position)+np.array(o.size)/2 for o in asset.objects], axis=0)
+    def ids(mapping):
+        return {key: value.replace("asset_", "{prefix}_", 1) for key, value in mapping.items()}
+    return {"asset_id": asset_id, "size": (upper-lower).tolist(), "components": len(asset.objects),
+                    "movable": any(obj.movable for obj in asset.objects),
+                    "physical_mass_kg": (None if asset_id == "google-porcelain-bowl" else
+                                         sum(obj.mass for obj in asset.objects if obj.collision)),
+                    "mass_policy": "caller_estimate" if asset_id == "google-porcelain-bowl" else "preserve_import",
+                    "source_url": sourced.selected.source_url, "revision": sourced.selected.revision,
+                    "license": sourced.selected.license,
+                    "placement": "position is bottom-center of zero-joint bounds; original size/orientation preserved",
+                    "requirements": requirements,
+                    "body_ids": ids(asset.body_ids), "geom_ids": ids(asset.geom_ids), "joint_ids": ids(asset.joint_ids),
+                    "joints": {name: next(o.joint.model_dump(mode="json") for o in asset.objects if o.id == oid)
+                               for name, oid in asset.joint_ids.items()},
+                    "regions": [{**r.model_dump(mode="json"), "id": r.id.replace("asset_", "{prefix}_", 1),
+                                 "interior_of": r.interior_of.replace("asset_", "{prefix}_", 1) if r.interior_of else None}
+                                for r in asset.regions]}
+
+
 def prepared_asset_catalog(asset_library=None):
     """Compact grounded geometry/ID contract for model planning and SDK callers."""
     catalog = []
@@ -125,25 +149,10 @@ def prepared_asset_catalog(asset_library=None):
     for asset_id in [*_FOLDERS, *(library.asset_ids if library is not None else ())]:
         sourced = load_prepared_asset(asset_id, prefix="asset", mass=.6 if asset_id == "google-porcelain-bowl" else None,
                                       asset_library=library)
-        asset = sourced.asset
-        lower = np.min([np.array(o.position)-np.array(o.size)/2 for o in asset.objects], axis=0)
-        upper = np.max([np.array(o.position)+np.array(o.size)/2 for o in asset.objects], axis=0)
-        def ids(mapping):
-            return {key: value.replace("asset_", "{prefix}_", 1) for key, value in mapping.items()}
         requirements = ("explicit estimated mass; movable hollow bowl" if asset_id == "google-porcelain-bowl" else
                         "fixed microwave; front faces -Y; passive door; no simulated heating unless a process cycle is defined" if asset_id == "nvidia-microwave079" else
                         library.description(asset_id) + "; preserve imported masses, size and orientation; mass override unsupported")
-        catalog.append({"asset_id": asset_id, "size": (upper-lower).tolist(), "components": len(asset.objects),
-                        "source_url": sourced.selected.source_url, "revision": sourced.selected.revision,
-                        "license": sourced.selected.license,
-                        "placement": "position is bottom-center of zero-joint bounds; original size/orientation preserved",
-                        "requirements": requirements,
-                        "body_ids": ids(asset.body_ids), "geom_ids": ids(asset.geom_ids), "joint_ids": ids(asset.joint_ids),
-                        "joints": {name: next(o.joint.model_dump(mode="json") for o in asset.objects if o.id == oid)
-                                   for name, oid in asset.joint_ids.items()},
-                        "regions": [{**r.model_dump(mode="json"), "id": r.id.replace("asset_", "{prefix}_", 1),
-                                     "interior_of": r.interior_of.replace("asset_", "{prefix}_", 1) if r.interior_of else None}
-                                    for r in asset.regions]})
+        catalog.append(_catalog_entry(asset_id, sourced, requirements))
     if len(json.dumps(catalog)) > 200000:
         raise ValueError("Prepared asset catalog exceeds the 200,000-character planning budget; select fewer assets")
     return catalog
