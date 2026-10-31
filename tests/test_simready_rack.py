@@ -11,7 +11,7 @@ from test_gltf_geometry import write
 from test_mesh_assets import cube
 
 from robot_worlds import AssetLibrary, World, load, load_prepared_asset
-from robot_worlds import simready_rack as adapter
+from robot_worlds import simready_structures as adapter
 from robot_worlds.asset_sourcing import AssetCandidate, AssetSearch
 from robot_worlds.generator import validate_spec
 from robot_worlds.gltf_geometry import GLBGeometry
@@ -28,9 +28,11 @@ def rack_boxes():
     return boxes
 
 
-def fixture(tmp_path, monkeypatch, *, solid=False, joint=False):
+def fixture(tmp_path, monkeypatch, *, solid=False, joint=False, boxes=None, open_top=False):
     points, triangles = cube()
-    boxes = rack_boxes()
+    if open_top:
+        triangles = np.delete(triangles, [2, 3], axis=0)
+    boxes = rack_boxes() if boxes is None else boxes
     if solid:
         boxes.append((np.array([-1.8, -.8, .5]), np.array([1.8, .8, 3.])))
     vertices, faces = [], []
@@ -52,7 +54,9 @@ def fixture(tmp_path, monkeypatch, *, solid=False, joint=False):
         "nodes": [{"mesh": 0, "extensions": {"KHR_physics_rigid_bodies": {"motion": {"mass": 123.}}}}],
         "meshes": [{"primitives": [{"attributes": {"POSITION": 0}, "indices": 1}]}],
         "extensions": {"KHR_physics_rigid_bodies": {"physicsMaterials": [{"dynamicFriction": .3}]}}}
-    if joint:
+    if joint == "index-zero":
+        doc["nodes"][0]["extensions"]["KHR_physics_rigid_bodies"]["joint"] = 0
+    elif joint:
         doc["nodes"][0]["extras"] = {"joints": [{"type": "revolute"}]}
     source = tmp_path / "fixture.glb"
     write(source, doc, data)
@@ -92,7 +96,7 @@ def test_import_preserves_source_mass_friction_placement_and_cavity_bounds(tmp_p
     assert len(asset.regions) == 3
     assert min(obj.position[2]-obj.size[2]/2 for obj in asset.objects) == pytest.approx(.01)
     assert all(region.interior_of == "rack_body" for region in asset.regions)
-    assert any("conservative" in text for text in asset.disclosures)
+    assert any("conservative" in text.lower() for text in asset.disclosures)
     recipe_path = next(obj.source_metadata for obj in asset.objects if obj.collision)
     recipe = json.loads(Path(recipe_path).read_text())
     assert recipe["source_total_mass_kg"] == 123
@@ -104,7 +108,7 @@ def test_filled_openings_or_articulated_sources_do_not_become_static_rack(tmp_pa
     fixture(tmp_path, monkeypatch, solid=failure == "solid", joint=failure == "joint")
     with pytest.raises(ValueError, match="fills|required|Articulated"):
         adapter.import_simready_rack(tmp_path / "cache")
-    assert not (tmp_path / "cache/rack-physics").exists()
+    assert not (tmp_path / "cache/structure-physics").exists()
 
 
 def test_registered_rack_places_in_multiple_layouts_and_survives_cache_removal(tmp_path, monkeypatch):

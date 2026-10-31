@@ -395,6 +395,28 @@ collision approximation. Shelf openings pass geometric checks; native contact,
 robot reach and rendered appearance remain unverified. See
 [source evidence and limitations](simready-selection.md).
 
+The same pipeline supports a pallet, sealed carton and fixed safety barrier:
+
+```python
+from robot_worlds import AssetLibrary, import_simready_structure
+
+library = AssetLibrary()
+for asset_id, description in {
+    "rack_large_empty_a02": "Fixed rack with three open shelves",
+    "pallet_a01": "Movable wooden pallet with open fork channels",
+    "box_corrugated_brown_b20": "Movable sealed rigid carton; no flap opening or deformation",
+    "barrier_fence_metal_a02": "Fixed safety barrier with open rail gaps",
+}.items():
+    sourced = import_simready_structure(asset_id, "asset-cache", timeout=60)
+    library.add(asset_id, sourced, description=description + "; native validation pending")
+library.save("warehouse-library")  # Choose a new destination.
+```
+
+Only these reviewed rigid profiles are supported. The conveyor's articulation
+requires a separate importer; it is rejected rather than silently frozen.
+Fork/rail clearances are retained as preparation metadata, not task regions.
+Native scene validation still runs when generation uses this library.
+
 For a local MJCF outside the prepared catalog:
 
 ```python

@@ -36,8 +36,8 @@ print(source.glb_path, source.notice_path, source.metadata_path)
 
 This acquires source data only; do not pass its GLB into `WorldSpec.mesh_path`.
 The runtime currently consumes OBJ/STL/MSH geometry. The source candidates are
-not prepared assets by themselves. The reviewed rack now has an explicit adapter
-that can be registered in a generation library; the other four remain source-only.
+not prepared assets by themselves. Reviewed rigid adapters now cover the rack,
+pallet, sealed carton and barrier. The conveyor remains source-only.
 
 One measured rack acquisition took 1.1139 seconds, with a 0.0024-second verified
 offline repeat for 870,796 bytes. These are source-download/cache timings on the
@@ -125,9 +125,34 @@ actual cached rack passed static scene checks and library registration in
 remain pending. The adapter records these limits in the asset and exported
 collision provenance; registration does not certify task solvability.
 
-Next implementation: adapt the remaining fixtures,
-preserve or explicitly label physical mechanisms, and perform native/browser
-validation when permitted. The viewer now shares source geometry/materials/maps
+`import_simready_structure` extends the same pipeline to three more sources:
+
+| Source | Physical adaptation | Retained source mass / dynamic friction |
+| --- | --- | --- |
+| `pallet_a01` | Movable rigid assembly; 19 board/block envelopes preserve four fork channels | 50.731724 kg / 0.5 |
+| `box_corrugated_brown_b20` | Movable sealed carton; one enclosing box, original seven visual parts and material maps | 1.151625 kg / 0.7 |
+| `barrier_fence_metal_a02` | Fixed fixture; six source-derived foot/post/rail envelopes preserve two rail openings | 45.41036 kg / 0.4 |
+
+These source masses/frictions are estimates, not measurements. Proxy volume
+determines mass distribution; source inertia, center of mass and restitution
+are not retained. The carton has no openable flaps or deformation. Its six faces
+are sampled geometrically to reject an open source; this is not a general
+watertightness test. Every barrier triangle must fit a structural envelope.
+Pallet/rail clearances stay in the provenance record, rather than becoming
+world-fixed task regions attached to movable assets.
+
+Eight additional synthetic checks cover these profiles, open/fill rejection,
+zero-index articulation, source preservation, registration and portable placement.
+The actual source preparations and registrations took 0.2843 s (pallet),
+0.8538 s (carton) and 0.1910 s (barrier), using already acquired source bytes.
+A combined four-asset library contains 158 physical/visual components and about
+23.8 MB of referenced data; a static layout check passed after save/reopen.
+Warm preparation/registration took 0.0146, 0.0275 and 0.0124 s respectively.
+These are local asset-processing measurements, not live generation or native
+physics/rendering evidence. No full catalog or source-scene import was needed.
+
+Next implementation: preserve or explicitly label the conveyor mechanism and
+perform native/browser validation when permitted. The viewer now shares source geometry/materials/maps
 across repeated fixtures; real warehouse frame rate, GPU memory and LOD remain
 unmeasured.
 The browser and policy camera must depict the same physical scene. No full
