@@ -67,7 +67,7 @@ still controls balance; contacts and payloads can prevent the requested travel.
 These are controller v2 contracts and invalidate earlier runtime validation for
 new evaluations. Saved recordings are unchanged.
 
-`query_depth(pixel=[u,v])` samples the full-resolution depth camera and returns a visible surface point in the robot base frame. Pixels start at the image's top-left. It does not identify an object, return its center, or see behind an occluder. `move_arm` accepts the same base frame: X forward, Y left, Z up. G1's origin is its pelvis; TIAGo's is its base link. A measured surface point may need an approach/grasp offset chosen by your policy.
+`query_depth(pixel=[u,v])` samples the full-resolution depth camera and returns a visible surface point in the robot base frame. Pixels start at the image's top-left. It does not identify an object, return its center, or see behind an occluder. `move_arm` accepts the same base frame: X forward, Y left, Z up. G1's origin is its pelvis; TIAGo's is its base link. A measured surface point may need an approach/grasp offset chosen by your policy. The `forward` (+X) and `down` (-Z) approach presets use this same base frame, including its rotation; `keep` preserves the hand orientation at the start of the action. Arm feedback includes measured `error_m` and `orientation_error_rad`. `reached` requires both position and orientation tolerances; it does not certify grasp or task success.
 
 ```python
 # Actions returned by a policy, not a complete controller:

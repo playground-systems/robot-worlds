@@ -57,3 +57,11 @@ Thirty-one focused catalog/library checks passed, including mocked generation
 with a quarter-turned shelf target. Actual bowl/microwave/rack/conveyor metadata
 occupies 39,511 characters, below the existing 200,000-character planning cap.
 This does not establish a live generated scene or physical shelf placement.
+
+Arm approach presets now use the same complete base-link rotation as depth and
+position targets. Previously TIAGo used fixed world directions, and G1 only
+partially accounted for base rotation. Measured arm feedback checks orientation
+as well as position before reporting `reached`. Focused synthetic checks cover
+both hands, rotated/tilted bases, feedback and the public action boundary; no
+robot rollout was executed. This runtime change requires fresh validation of
+release-candidate worlds; historical recordings remain untouched.

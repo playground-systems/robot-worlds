@@ -279,15 +279,14 @@ class G1Runtime(Runtime):
 
     def _orientation_target(self, hand, approach, orientation):
         if approach == "down":
-            return np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]])
-        if approach == "forward":
-            yaw = self._yaw()
-            return np.array(
-                [[math.cos(yaw), -math.sin(yaw), 0], [math.sin(yaw), math.cos(yaw), 0], [0, 0, 1]]
-            )
-        if approach != "keep":
+            orientation = np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]])
+        elif approach == "forward":
+            orientation = np.eye(3)
+        elif approach == "keep":
+            return orientation
+        else:
             raise ValueError("approach must be down, forward, or keep")
-        return orientation
+        return self._base_transform()[1] @ orientation
 
     def _move_arm(self, hand, target, approach="keep"):
         # Replan against actual base motion from balance; all correction steps
@@ -296,7 +295,7 @@ class G1Runtime(Runtime):
         for _ in range(3):
             if (
                 result["status"] not in ("reached", "blocked_or_unreached")
-                or result.get("error_m", 0) < 0.012
+                or (result.get("error_m", 0) < 0.012 and result.get("orientation_error_rad", 0) < 0.08)
             ):
                 break
             result = super()._move_arm(hand, target, approach)

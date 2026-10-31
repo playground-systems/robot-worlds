@@ -97,7 +97,7 @@ TOOLS = [
     ),
     _tool(
         "move_arm",
-        "Move a gripper grasp center toward robot-base XYZ metres (X forward, Y left, Z up; origin at the base, pelvis for G1) through joint servos. Local IK can fail or encounter obstacles; inspect actual reached position. Optional approach chooses down, forward, or keep (default). Maximum reach is limited by the robot.",
+        "Move a gripper grasp center toward robot-base XYZ metres (X forward, Y left, Z up; origin at the base, pelvis for G1) through joint servos. Local IK can fail or encounter obstacles; inspect actual reached position. Optional approach chooses base-frame down (-Z), base-frame forward (+X), or keep the current hand orientation (default). Maximum reach is limited by the robot.",
         {
             "hand": HAND,
             "position": {"type": "array", "items": NUMBER, "minItems": 3, "maxItems": 3},
@@ -907,9 +907,13 @@ class Runtime:
             z = np.array([1.0, 0.0, 0.0]) * (1 if hand == "right" else -1)
             x = np.array([0.0, 1.0, 0.0])
             orientation = np.column_stack([x, np.cross(z, x), z])
-        elif approach != "keep":
+        elif approach == "keep":
+            return orientation
+        else:
             raise ValueError("approach must be down, forward, or keep")
-        return orientation
+        # Targets and camera depth use the full base-link rotation. Approach
+        # directions must use that same frame, including after driving/turning.
+        return self._base_transform()[1] @ orientation
 
     def _move_arm(self, hand, target, approach="keep"):
         if hand not in self._arm_joints or target.shape != (3,) or not np.isfinite(target).all():
@@ -989,11 +993,21 @@ class Runtime:
             self._command_arm(hand, initial + (goal - initial) * ((i + 1) / steps))
             self._step(0.02)
         self._step(0.4)
-        actual_error = float(np.linalg.norm(target - self.data.site_xpos[site]))
+        return self._arm_feedback(hand, target, start_orientation)
+
+    def _arm_feedback(self, hand, target, orientation):
+        """Report measured hand pose error, not merely the scratch IK solution."""
+        site = self._sites[hand]
+        position = self.data.site_xpos[site]
+        actual_rotation = self.data.site_xmat[site].reshape(3, 3)
+        position_error = float(np.linalg.norm(target-position))
+        cosine = (np.trace(orientation.T @ actual_rotation)-1)/2
+        orientation_error = math.acos(float(np.clip(cosine, -1, 1)))
         return {
-            "status": "reached" if actual_error < 0.05 else "blocked_or_unreached",
-            "error_m": actual_error,
-            "actual_position": self.data.site_xpos[site].tolist(),
+            "status": "reached" if position_error < 0.05 and orientation_error < 0.2 else "blocked_or_unreached",
+            "error_m": position_error,
+            "orientation_error_rad": orientation_error,
+            "actual_position": position.tolist(),
         }
 
     def _get_renderer(self, *, overview=False):
