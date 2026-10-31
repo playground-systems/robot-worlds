@@ -631,7 +631,7 @@ def test_generation_record_retains_total_and_stage_times_without_changing_world_
 
 
 def test_unexpected_asset_failure_saves_terminal_timing_record(tmp_path, monkeypatch):
-    def unavailable():
+    def unavailable(*args):
         raise OSError("private local setup detail")
     monkeypatch.setattr("robot_worlds.prepared_assets.prepared_asset_catalog", unavailable)
     with pytest.raises(OSError, match="private local setup detail"):

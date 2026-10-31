@@ -239,7 +239,7 @@ def scene_diff(before: WorldSpec, after: WorldSpec) -> tuple[list[dict], dict]:
 
 def apply_patch(spec: WorldSpec, patch: ScenePatch | dict, *, scope: list[str] | None = None,
                 allow_task_changes=False, allow_physics_changes=False,
-                max_objects=MAX_EXPANDED_OBJECTS, event_callback=None) -> WorldSpec:
+                max_objects=MAX_EXPANDED_OBJECTS, event_callback=None, asset_library=None) -> WorldSpec:
     """Apply an all-or-nothing patch and enforce protection from actual changes."""
     before = materialize(spec)
     payload = before.model_dump(mode="json")
@@ -251,7 +251,7 @@ def apply_patch(spec: WorldSpec, patch: ScenePatch | dict, *, scope: list[str] |
         op = operation.model_dump(mode="json")
         name = op["op"]
         if name == "add_prepared_asset":
-            append_prepared_asset(payload, operation.asset, max_objects=max_objects, event_callback=event_callback)
+            append_prepared_asset(payload, operation.asset, max_objects=max_objects, event_callback=event_callback, asset_library=asset_library)
         elif name == "translate_assembly":
             _translate_assembly(payload, op["id"], op["offset"])
         elif name.startswith(("add_", "update_", "remove_")):
@@ -505,7 +505,7 @@ def edit_world(world, prompt: str | None, *, kind="refine", scope=None,
                model="gpt-6-astra", reasoning="medium", client=None, max_repairs=2,
                client_options=None, runtime_factory=None, on_event=None, cancelled=None,
                scene_profile="standard", max_objects=MAX_EXPANDED_OBJECTS, min_objects=0,
-               asset_root=None):
+               asset_root=None, asset_library=None):
     from .sdk import World, load
 
     if kind not in {"refine", "repair"}:
@@ -563,7 +563,9 @@ def edit_world(world, prompt: str | None, *, kind="refine", scope=None,
 
     event({"type": "edit_started", "kind": kind, "parent_world_id": original.id})
     event({"type": "model_budget", "budget": audit_value(getattr(client, "budget", {}))})
-    catalog = prepared_asset_catalog()
+    from .asset_library import resolve_asset_library
+    asset_library = resolve_asset_library(asset_library)
+    catalog = prepared_asset_catalog(asset_library)
     for attempt in range(max_repairs + 1):
         check_cancelled()
         try:
@@ -582,7 +584,7 @@ def edit_world(world, prompt: str | None, *, kind="refine", scope=None,
             event({"type": "model_usage", "usage": audit_value(getattr(client, "usage", {}))})
             patch = ScenePatch.model_validate(raw)
             candidate = apply_patch(current, patch, scope=scope, allow_task_changes=task_permission,
-                                    allow_physics_changes=physics_permission, max_objects=max_objects, event_callback=event)
+                                    allow_physics_changes=physics_permission, max_objects=max_objects, event_callback=event, asset_library=asset_library)
             enforce_protections(before, candidate,
                                 allow_task_changes=allow_task_changes,
                                 allow_physics_changes=allow_physics_changes,

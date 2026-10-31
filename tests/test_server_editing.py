@@ -89,3 +89,26 @@ def test_repair_has_a_safe_default_request(api):
     assert "preserving" in payload["prompt"]
     assert payload["scope"] is None
     assert not payload["allow_task_changes"] and not payload["allow_physics_changes"]
+
+
+@pytest.mark.parametrize("kind", ["generate", "refine", "repair"])
+def test_workers_use_owner_installed_library_but_requests_cannot_select_paths(api, monkeypatch, kind):
+    from test_asset_library import fixture_library
+
+    client, queue, root = api
+    saved_library = fixture_library(root).save(root / "asset-library")
+    child = SimpleNamespace(id=CHILD_ID, manifest={"validation": {"status": "ready"}})
+    method = Mock(return_value=child)
+    if kind == "generate":
+        endpoint = "/api/generate"
+        monkeypatch.setattr("robot_worlds.sdk.generate", method)
+    else:
+        endpoint = f"/api/worlds/{WORLD_ID}/{kind}"
+        monkeypatch.setattr("robot_worlds.sdk.load", lambda _: SimpleNamespace(**{kind: method}))
+    assert client.post(endpoint, json={"prompt": "Use inspection station", "asset_library": "/private"}).status_code == 422
+    assert queue.jobs == []
+    response = client.post(endpoint, json={"prompt": "Use inspection station"})
+    assert response.status_code == 202
+    _job_worker(*queue.jobs[0][2])
+    assert method.call_args.kwargs["asset_library"] == str(saved_library)
+    assert read_json(root / "jobs" / response.json()["id"] / "job.json")["status"] == "completed"

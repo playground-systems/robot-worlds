@@ -120,6 +120,11 @@ def _job_worker(root_string: str, job_id: str, kind: str, payload: dict) -> None
         return (job_path.parent / "cancel").exists()
 
     try:
+        # Owner-installed libraries are discovered by workers. HTTP requests
+        # cannot select arbitrary filesystem paths or inject importer callbacks.
+        library = root / "asset-library"
+        if kind in {"generate", "refine", "repair"} and library.exists():
+            payload["asset_library"] = str(library)
         if cancelled():
             job["status"] = "cancelled"
         elif kind == "generate":

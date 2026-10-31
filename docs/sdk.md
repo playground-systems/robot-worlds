@@ -162,7 +162,7 @@ rejection records. The returned `SourcedAsset` retains that evidence and the sel
 source; save it alongside the resulting asset.
 
 **Integration status:** `generate()` and the workbench now expose a prepared-asset
-catalog to the model. Compact references load the [selected bowl and microwave](household-assets.md)
+catalog to the model, including optional registered imports. Compact references load the [selected bowl and microwave](household-assets.md)
 through this coordinator using retained source evidence, without another network
 lookup or conversion. General online discovery/download/conversion is not yet
 automatic. A restricted MJCF importer supports the microwave's
@@ -196,6 +196,47 @@ Surrounding layouts remain model-authored. Mocked generation exercises this path
 live model selection and autonomous appliance manipulation are not yet demonstrated.
 Refinement and repair use the same catalog through the typed
 [`add_prepared_asset` edit operation](scene-editing.md#add-an-existing-source-asset).
+
+### Register a reusable source asset
+
+`AssetLibrary` makes supported imports available to generation and scoped edits
+without changing the built-in catalog. For example, register an existing sourced
+import under a name used by your application:
+
+```python
+from robot_worlds import AssetLibrary, generate, load_prepared_asset
+
+sourced = load_prepared_asset("nvidia-microwave079", prefix="template")
+library = AssetLibrary().add(
+    "lab-appliance", sourced,
+    description="Original articulated microwave with a usable cavity and passive door.",
+)
+library.save("my-asset-library")  # New directory; existing libraries are not overwritten.
+world = generate("Put a white bowl inside the lab appliance", asset_library="my-asset-library")
+```
+
+The example uses the bundled appliance so it runs without downloading a new
+source. For another object, register the `SourcedAsset` returned by your
+`source_asset` pipeline after a supported MJCF or convex-mesh import. Registration
+requires selected-source, pinned-revision, license and search evidence. It preserves
+imported masses, dimensions, geometry, joints, cavities and notices. Per-instance
+placement and valid joint initial values are supported; mass overrides are not.
+
+Use the same `asset_library=` argument with `world.refine()`, `world.repair()`,
+`load_prepared_asset()` or `prepared_asset_catalog()`. Libraries contain referenced
+source files, their checksums, the imported geometry and retained search evidence.
+Source bytes are checked again before reuse; changed imports must be registered
+as a new version. Keep the downloaded source archive/cache for the original
+package beyond the referenced files. Saved worlds contain their own copied files
+and load/export independently of the library. Registration is not a physics or
+task-solvability certificate: normal scene, native and rubric checks still apply.
+
+For the self-hosted workbench/API, save a library to `<data-dir>/asset-library`.
+New generation/refine/repair workers discover it automatically; requests cannot
+supply arbitrary server filesystem paths. Built-in IDs cannot be replaced. The
+current limits are 32 registered assets, 1,000 components per asset, 32 MiB per
+source file and 256 MiB of referenced files per library. Automatic online
+selection and general SDF import remain separate, unfinished work.
 
 For a local MJCF outside the prepared catalog:
 

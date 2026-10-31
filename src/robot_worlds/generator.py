@@ -284,7 +284,7 @@ def _generation_phase(emit, phase: str, attempt: int):
 
 def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", client=None, max_repairs=2, on_candidate: Callable | None = None, event_callback: Callable | None = None, validator: Callable | None = None, asset_root=None,
                   cancelled: Callable | None = None, client_options: dict | None = None,
-                  scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0) -> WorldSpec:
+                  scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0, asset_library=None) -> WorldSpec:
     if scene_profile not in {"standard", "large"}:
         raise ValueError("scene_profile must be standard or large")
     if not isinstance(max_objects, int) or isinstance(max_objects, bool) or not 1 <= max_objects <= MAX_EXPANDED_OBJECTS:
@@ -313,7 +313,9 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
         prepared_asset_catalog,
     )
     with _generation_phase(event_callback, "catalog", 0):
-        catalog = json.dumps(prepared_asset_catalog(), separators=(",", ":"))
+        from .asset_library import resolve_asset_library
+        asset_library = resolve_asset_library(asset_library)
+        catalog = json.dumps(prepared_asset_catalog(asset_library), separators=(",", ":"))
     asset_instructions = "\nPrefer prepared_assets when the supplied catalog matches the requested object. These are previously sourced online originals, already downloaded and converted. Emit one reference with asset_id, instance id, bottom-center position and required mass instead of recreating its geometry or inventing local file paths. Use catalog body/geom/joint/region IDs with {prefix} replaced by the instance id in rubric and process references. Referenced objects and cavity regions are added automatically; do not duplicate them in objects/regions. Catalog coordinates are relative to the instance bottom-center at position [0,0,0]. Preserve original size/orientation; record incompatible requirements as unvalidated rather than silently shrinking, rotating or substituting geometry. The catalog is an asset library, not a fixed scene or task. Keep generating arbitrary surrounding layouts and requested tasks."
     history, candidate, previous = [], None, None
     errors = []
@@ -346,7 +348,7 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
                 spec = WorldSpec.model_validate(plan.model_dump(mode="json", exclude={"prepared_assets"}))
                 assembly_errors = []
                 try:
-                    spec = materialize_prepared_assets(plan, max_objects=max_objects, event_callback=event_callback)
+                    spec = materialize_prepared_assets(plan, max_objects=max_objects, event_callback=event_callback, asset_library=asset_library)
                     spec = expand_assemblies(spec, max_objects=max_objects)
                 except (ValueError, ValidationError) as exc:
                     assembly_errors = [str(exc)]

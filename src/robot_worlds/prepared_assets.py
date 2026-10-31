@@ -7,16 +7,16 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Literal
 
 import numpy as np
 from pydantic import Field
 
 from .asset_import import import_convex_mesh_asset, import_mjcf_asset
+from .asset_library import resolve_asset_library
 from .asset_sourcing import AssetCandidate, AssetSearch, source_asset
 from .models import Identifier, Model, Number, Positive, Vec3, WorldSpec
 
-PreparedAssetId = Literal["google-porcelain-bowl", "nvidia-microwave079"]
+PreparedAssetId = Identifier
 _ROOT = Path(__file__).parent / "assets/household"
 _FOLDERS = {"google-porcelain-bowl": "porcelain_bowl", "nvidia-microwave079": "microwave079"}
 
@@ -28,9 +28,9 @@ class PreparedJointInitial(Model):
 
 class PreparedAssetInstance(Model):
     id: Identifier = Field(description="Instance prefix. Materialized IDs are listed in the prepared asset catalog.")
-    asset_id: PreparedAssetId
+    asset_id: PreparedAssetId = Field(description="An exact ID from the supplied prepared asset catalog; never invent an ID.")
     position: Vec3 = Field(description="World position of the asset's full XY bounds center and lowest Z point, metres. Put Z just above the support top.")
-    mass: Positive | None = Field(default=None, description="Required estimated total mass for the movable bowl. Leave null for the fixed microwave.")
+    mass: Positive | None = Field(default=None, description="Set only when the catalog requires an explicit estimated mass; otherwise leave null.")
     joint_initials: list[PreparedJointInitial] = Field(default_factory=list, max_length=16, description="Optional source joint names and initial values in radians/metres. Only catalog joints are accepted, with no duplicate names.")
 
 
@@ -39,7 +39,37 @@ class GenerationSpec(WorldSpec):
                                                        description="Reuse pinned source assets instead of emitting their component geometry. Surrounding layout remains freely generated.")
 
 
-def load_prepared_asset(asset_id: str, *, prefix: str, position=(0, 0, 0), mass=None, joint_initials=None):
+def _place(asset, instance):
+    lower = np.min([np.array(o.position)-np.array(o.size)/2 for o in asset.objects], axis=0)
+    upper = np.max([np.array(o.position)+np.array(o.size)/2 for o in asset.objects], axis=0)
+    origin = np.array([(lower[0]+upper[0])/2, (lower[1]+upper[1])/2, lower[2]])
+    offset = np.array(instance.position)-origin
+    objects = {o.id: o for o in asset.objects}
+    names = [item.name for item in instance.joint_initials]
+    if len(names) != len(set(names)):
+        raise ValueError("Prepared asset joint overrides must have unique names")
+    for item in instance.joint_initials:
+        name, initial = item.name, item.initial
+        if name not in asset.joint_ids:
+            raise ValueError(f"Unknown prepared asset joint: {name}")
+        objects[asset.joint_ids[name]].joint.initial = initial
+    for obj in asset.objects:
+        obj.position = np.array(obj.position)+offset
+        if obj.joint:
+            obj.joint.anchor = np.array(obj.joint.anchor)+offset
+    for region in asset.regions:
+        region.position = np.array(region.position)+offset
+    return asset
+
+
+def _library(value):
+    library = resolve_asset_library(value)
+    if library is not None and set(library.asset_ids) & set(_FOLDERS):
+        raise ValueError("Registered library IDs cannot replace built-in source assets")
+    return library
+
+
+def load_prepared_asset(asset_id: str, *, prefix: str, position=(0, 0, 0), mass=None, joint_initials=None, asset_library=None):
     """Return a SourcedAsset using retained online-source evidence and local files.
 
     Placement uses the zero-joint configuration's bottom-center. Original size,
@@ -48,6 +78,15 @@ def load_prepared_asset(asset_id: str, *, prefix: str, position=(0, 0, 0), mass=
     """
     instance = PreparedAssetInstance(id=prefix, asset_id=asset_id, position=position,
                                      mass=mass, joint_initials=joint_initials or [])
+    library = _library(asset_library)
+    if library is not None and asset_id in library.asset_ids:
+        if mass is not None:
+            raise ValueError("Registered assets preserve source/import mass; per-instance mass override is unsupported")
+        sourced = library.load(asset_id, prefix=prefix)
+        _place(sourced.asset, instance)
+        return sourced
+    if asset_id not in _FOLDERS:
+        raise ValueError(f"Unknown prepared asset: {asset_id}")
     root = _ROOT / _FOLDERS[instance.asset_id]
     metadata = json.loads((root / "source-manifest.json").read_text())
     candidate = AssetCandidate(id=metadata["id"], source_url=metadata["source_url"],
@@ -68,26 +107,7 @@ def load_prepared_asset(asset_id: str, *, prefix: str, position=(0, 0, 0), mass=
             if instance.mass is not None:
                 raise ValueError("Fixed microwave uses source density estimates; mass override is unsupported")
             asset = import_mjcf_asset(root / "model.xml", prefix=prefix)
-        lower = np.min([np.array(o.position)-np.array(o.size)/2 for o in asset.objects], axis=0)
-        upper = np.max([np.array(o.position)+np.array(o.size)/2 for o in asset.objects], axis=0)
-        origin = np.array([(lower[0]+upper[0])/2, (lower[1]+upper[1])/2, lower[2]])
-        offset = np.array(instance.position)-origin
-        objects = {o.id: o for o in asset.objects}
-        names = [item.name for item in instance.joint_initials]
-        if len(names) != len(set(names)):
-            raise ValueError("Prepared asset joint overrides must have unique names")
-        for item in instance.joint_initials:
-            name, initial = item.name, item.initial
-            if name not in asset.joint_ids:
-                raise ValueError(f"Unknown prepared asset joint: {name}")
-            objects[asset.joint_ids[name]].joint.initial = initial
-        for obj in asset.objects:
-            obj.position = np.array(obj.position)+offset
-            if obj.joint:
-                obj.joint.anchor = np.array(obj.joint.anchor)+offset
-        for region in asset.regions:
-            region.position = np.array(region.position)+offset
-        return asset
+        return _place(asset, instance)
 
     def no_creation(*_args):
         raise ValueError("Prepared asset could not be resolved; creation is not a fallback")
@@ -95,31 +115,38 @@ def load_prepared_asset(asset_id: str, *, prefix: str, position=(0, 0, 0), mass=
     return source_asset(asset_id, search=lambda _: report, import_asset=import_local, create_asset=no_creation)
 
 
-def prepared_asset_catalog():
+def prepared_asset_catalog(asset_library=None):
     """Compact grounded geometry/ID contract for model planning and SDK callers."""
     catalog = []
-    for asset_id in _FOLDERS:
-        sourced = load_prepared_asset(asset_id, prefix="asset", mass=.6 if asset_id == "google-porcelain-bowl" else None)
+    library = _library(asset_library)
+    for asset_id in [*_FOLDERS, *(library.asset_ids if library is not None else ())]:
+        sourced = load_prepared_asset(asset_id, prefix="asset", mass=.6 if asset_id == "google-porcelain-bowl" else None,
+                                      asset_library=library)
         asset = sourced.asset
         lower = np.min([np.array(o.position)-np.array(o.size)/2 for o in asset.objects], axis=0)
         upper = np.max([np.array(o.position)+np.array(o.size)/2 for o in asset.objects], axis=0)
         def ids(mapping):
             return {key: value.replace("asset_", "{prefix}_", 1) for key, value in mapping.items()}
+        requirements = ("explicit estimated mass; movable hollow bowl" if asset_id == "google-porcelain-bowl" else
+                        "fixed microwave; front faces -Y; passive door; no simulated heating unless a process cycle is defined" if asset_id == "nvidia-microwave079" else
+                        library.description(asset_id) + "; preserve imported masses, size and orientation; mass override unsupported")
         catalog.append({"asset_id": asset_id, "size": (upper-lower).tolist(), "components": len(asset.objects),
                         "source_url": sourced.selected.source_url, "revision": sourced.selected.revision,
                         "license": sourced.selected.license,
                         "placement": "position is bottom-center of zero-joint bounds; original size/orientation preserved",
-                        "requirements": "explicit estimated mass; movable hollow bowl" if asset_id == "google-porcelain-bowl" else "fixed microwave; front faces -Y; passive door; no simulated heating unless a process cycle is defined",
+                        "requirements": requirements,
                         "body_ids": ids(asset.body_ids), "geom_ids": ids(asset.geom_ids), "joint_ids": ids(asset.joint_ids),
                         "joints": {name: next(o.joint.model_dump(mode="json") for o in asset.objects if o.id == oid)
                                    for name, oid in asset.joint_ids.items()},
                         "regions": [{**r.model_dump(mode="json"), "id": r.id.replace("asset_", "{prefix}_", 1),
                                      "interior_of": r.interior_of.replace("asset_", "{prefix}_", 1) if r.interior_of else None}
                                     for r in asset.regions]})
+    if len(json.dumps(catalog)) > 200000:
+        raise ValueError("Prepared asset catalog exceeds the 200,000-character planning budget; select fewer assets")
     return catalog
 
 
-def append_prepared_asset(payload: dict, instance: PreparedAssetInstance, *, max_objects: int, event_callback=None):
+def append_prepared_asset(payload: dict, instance: PreparedAssetInstance, *, max_objects: int, event_callback=None, asset_library=None):
     """Append checked source components to a caller-owned candidate payload.
 
     Generation and typed edits share collision/budget/provenance rules. Callers
@@ -129,7 +156,7 @@ def append_prepared_asset(payload: dict, instance: PreparedAssetInstance, *, max
     if event_callback:
         event_callback({"type": "asset_loading", "asset_id": instance.asset_id, "message": f"Reusing {instance.asset_id}"})
     sourced = load_prepared_asset(instance.asset_id, prefix=instance.id, position=instance.position,
-                                  mass=instance.mass, joint_initials=instance.joint_initials)
+                                  mass=instance.mass, joint_initials=instance.joint_initials, asset_library=asset_library)
     asset = sourced.asset
     ids = {entry.id for entry in [*asset.objects, *asset.regions]}
     if used & ids:
@@ -152,12 +179,12 @@ def append_prepared_asset(payload: dict, instance: PreparedAssetInstance, *, max
                         "message": f"Reused {instance.asset_id}; original geometry and texture retained"})
 
 
-def materialize_prepared_assets(plan: GenerationSpec, *, max_objects: int, event_callback=None):
+def materialize_prepared_assets(plan: GenerationSpec, *, max_objects: int, event_callback=None, asset_library=None):
     """Expand references atomically before geometry validation or preview saving."""
     payload = plan.model_dump(mode="json", exclude={"prepared_assets"})
     prefixes = [instance.id for instance in plan.prepared_assets]
     if len(prefixes) != len(set(prefixes)):
         raise ValueError("Prepared asset instance prefixes must be unique")
     for instance in plan.prepared_assets:
-        append_prepared_asset(payload, instance, max_objects=max_objects, event_callback=event_callback)
+        append_prepared_asset(payload, instance, max_objects=max_objects, event_callback=event_callback, asset_library=asset_library)
     return WorldSpec.model_validate(payload)
