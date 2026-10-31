@@ -29,6 +29,11 @@ REQUIRED_PACKAGE_FILES = (
     "assets/household/microwave079/source-manifest.json", "assets/household/microwave079/visuals/T_BC001.png",
     "assets/household/microwave079/visuals/Body001.obj", "assets/household/microwave079/visuals/door.obj",
     "assets/household/microwave079/visuals/door_Clear.obj", "assets/household/microwave079/visuals/Disc001.obj",
+    "assets/household/porcelain_bowl/ATTRIBUTION.md", "assets/household/porcelain_bowl/source-manifest.json",
+    "assets/household/porcelain_bowl/meshes/model.obj", "assets/household/porcelain_bowl/meshes/model.mtl",
+    "assets/household/porcelain_bowl/materials/textures/texture.png",
+    "assets/household/porcelain_bowl/metadata.pbtxt", "assets/household/porcelain_bowl/model.config",
+    "assets/household/porcelain_bowl/collision/manifest.json",
 )
 REQUIRED_SOURCE_FILES = (
     "pyproject.toml", "uv.lock", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md",
@@ -124,6 +129,19 @@ def inspect_distributions(directory: str | Path) -> dict:
         raise DistributionError("Wheel package inventory differs from the source archive")
     if any(wheel_package[name] != data for name, data in source_package.items()):
         raise DistributionError("Wheel package contents differ from the source archive")
+    for collection in ("microwave079", "porcelain_bowl"):
+        base = f"robot_worlds/assets/household/{collection}/"
+        original = json.loads(wheel[base+"source-manifest.json"])
+        for record in original["files"]:
+            if hashlib.sha256(wheel.get(base+record["path"], b"")).hexdigest() != record["sha256"]:
+                raise DistributionError(f"Original household source file missing or changed: {collection}/{record['path']}")
+    base = "robot_worlds/assets/household/porcelain_bowl/"
+    conversion = json.loads(wheel[base+"collision/manifest.json"])
+    if conversion["source_sha256"] != hashlib.sha256(wheel[base+"meshes/model.obj"]).hexdigest():
+        raise DistributionError("Bowl collision conversion does not match the packaged source")
+    for record in conversion["parts"]:
+        if hashlib.sha256(wheel.get(base+"collision/"+record["file"], b"")).hexdigest() != record["sha256"]:
+            raise DistributionError("Bowl collision piece is missing or changed")
     license_data = wheel["robot_worlds/assets/robots/g1/CONTROLLER_LICENSE"]
     if hashlib.sha256(license_data).hexdigest() != CONTROLLER_LICENSE_SHA256:
         raise DistributionError("G1 controller license differs from the pinned upstream LICENCE; review provenance before changing this check")

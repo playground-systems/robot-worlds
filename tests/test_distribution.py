@@ -2,6 +2,7 @@
 import hashlib
 import importlib.util
 import io
+import json
 import tarfile
 import zipfile
 from pathlib import Path
@@ -14,11 +15,24 @@ checker = importlib.util.module_from_spec(module_spec)
 module_spec.loader.exec_module(checker)
 
 
-def archives(tmp_path, monkeypatch, *, wheel_change=None, source_extra=None):
+def archives(tmp_path, monkeypatch, *, wheel_change=None, source_extra=None, package_change=None):
     metadata = b"Metadata-Version: 2.4\nName: robot-worlds\nVersion: 0.1.0a1\n"
     files = {name: b"source document" for name in checker.REQUIRED_SOURCE_FILES}
     files["PKG-INFO"] = metadata
     package = {name: b"package resource" for name in checker.REQUIRED_PACKAGE_FILES}
+    for collection, mesh in (("microwave079", "visuals/Body001.obj"), ("porcelain_bowl", "meshes/model.obj")):
+        base = f"assets/household/{collection}/"
+        package[base+"source-manifest.json"] = json.dumps({"files": [
+            {"path": mesh, "sha256": hashlib.sha256(package[base+mesh]).hexdigest()}
+        ]}).encode()
+    base = "assets/household/porcelain_bowl/"
+    package[base+"collision/part-000.obj"] = b"converted collision piece"
+    package[base+"collision/manifest.json"] = json.dumps({
+        "source_sha256": hashlib.sha256(package[base+"meshes/model.obj"]).hexdigest(),
+        "parts": [{"file": "part-000.obj", "sha256": hashlib.sha256(package[base+"collision/part-000.obj"]).hexdigest()}],
+    }).encode()
+    if package_change:
+        package_change(package)
     package["assets/robots/g1/CONTROLLER_LICENSE"] = b"pinned upstream license"
     monkeypatch.setattr(checker, "CONTROLLER_LICENSE_SHA256", hashlib.sha256(b"pinned upstream license").hexdigest())
     files.update({"src/robot_worlds/" + name: data for name, data in package.items()})
@@ -72,4 +86,16 @@ def test_changed_controller_license_requires_explicit_provenance_review(tmp_path
     archives(tmp_path, monkeypatch)
     monkeypatch.setattr(checker, "CONTROLLER_LICENSE_SHA256", "0" * 64)
     with pytest.raises(checker.DistributionError, match="pinned upstream LICENCE"):
+        checker.inspect_distributions(tmp_path)
+
+
+@pytest.mark.parametrize("member,reason", [
+    ("meshes/model.obj", "Original household source"),
+    ("collision/part-000.obj", "collision piece"),
+])
+def test_changed_source_or_collision_bytes_fail_even_when_both_archives_agree(tmp_path, monkeypatch, member, reason):
+    archives(tmp_path, monkeypatch, package_change=lambda files: files.update({
+        "assets/household/porcelain_bowl/"+member: b"modified geometry",
+    }))
+    with pytest.raises(checker.DistributionError, match=reason):
         checker.inspect_distributions(tmp_path)

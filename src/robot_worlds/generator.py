@@ -160,6 +160,17 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
                 path = Path(asset_root) / path
             if not path.is_file() or path.suffix.lower() not in {".md", ".txt"} or path.stat().st_size > 1024 * 1024:
                 errors.append(f"{obj.id}: source notice must be an existing text file of at most 1 MiB")
+        if obj.source_metadata:
+            path = Path(obj.source_metadata).expanduser()
+            if not path.is_absolute() and asset_root is not None:
+                path = Path(asset_root) / path
+            if not path.is_file() or path.suffix.lower() != ".json" or path.stat().st_size > 2 * 1024 * 1024:
+                errors.append(f"{obj.id}: source metadata must be an existing JSON file of at most 2 MiB")
+            else:
+                try:
+                    json.loads(path.read_text())
+                except (ValueError, OSError) as exc:
+                    errors.append(f"{obj.id}: invalid source metadata: {exc}")
         if not obj.visible:
             if not any(objects[oid].visible for oid in rigid_members(objects, welded_roots[obj.id])):
                 errors.append(f"{obj.id}: hidden collision geometry needs a visible member of its rigid assembly")

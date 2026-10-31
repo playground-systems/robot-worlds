@@ -168,7 +168,7 @@ class World:
         assets, sources, asset_errors = {}, {}, []
         mesh_members = {}
         for obj in spec.objects:
-            for field in ("mesh_path", "texture_path", "source_notice"):
+            for field in ("mesh_path", "texture_path", "source_notice", "source_metadata"):
                 value = getattr(obj, field)
                 if not value:
                     continue
@@ -188,7 +188,7 @@ class World:
         # saved assembly can be revalidated or refined without stale originals.
         for template in spec.assembly_templates:
             for part in template.parts:
-                for field in ("mesh_path", "texture_path", "source_notice"):
+                for field in ("mesh_path", "texture_path", "source_notice", "source_metadata"):
                     value = getattr(part, field)
                     if not value:
                         continue

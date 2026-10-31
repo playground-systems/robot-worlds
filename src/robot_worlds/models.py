@@ -73,6 +73,7 @@ class SceneObject(Model):
     mesh_path: str | None = None
     texture_path: str | None = None
     source_notice: str | None = None
+    source_metadata: str | None = None
     collision: bool = True
     visible: bool = True
     opacity: Color = 1

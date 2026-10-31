@@ -211,6 +211,8 @@ def import_mjcf_asset(path: str | Path, *, prefix: str, position=(0, 0, 0), sour
         raise ValueError("Source contains no supported physical asset")
     for obj in result.objects:
         obj.source_notice = str(notice)
+        if (root_dir / "source-manifest.json").is_file():
+            obj.source_metadata = str(root_dir / "source-manifest.json")
     return result
 
 
@@ -291,14 +293,14 @@ def import_convex_mesh_asset(mesh_path: str | Path, collision_manifest: str | Pa
         oid = root_id if index == 0 else f"{prefix}_collision{index}"
         result.objects.append(SceneObject(
             id=oid, label="Imported convex collision component", kind="mesh", mesh_path=str(path),
-            source_notice=str(notice), position=offset+(lower+upper)/2, size=upper-lower,
+            source_notice=str(notice), source_metadata=str(collision_manifest), position=offset+(lower+upper)/2, size=upper-lower,
             mass=mass*volume/total_volume, friction=friction,
             movable=movable if index == 0 else False, parent_id=None if index == 0 else root_id,
             visible=False,
         ))
     result.objects.append(SceneObject(
         id=prefix+"_visual", label="Original source appearance", kind="mesh", mesh_path=str(mesh_path),
-        texture_path=str(texture_path) if texture_path else None, source_notice=str(notice),
+        texture_path=str(texture_path) if texture_path else None, source_notice=str(notice), source_metadata=str(collision_manifest),
         position=offset+(visual_lower+visual_upper)/2, size=visual_upper-visual_lower,
         color=(1, 1, 1), parent_id=root_id, collision=False,
     ))
