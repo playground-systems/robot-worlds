@@ -25,6 +25,14 @@ class LiveMirror:
 
     def event(self, event):
         event = dict(event)
+        if event.get("type") == "generation_started":
+            self.job["phase"] = "generation"
+        elif event.get("type") == "candidate":
+            event["type"] = "preview"
+        elif event.get("type") == "run_started":
+            self.job["phase"] = "execution"
+        elif event.get("type") == "run_finished":
+            self.job["phase"] = "finalizing"
         run = event.get("run_id")
         if run is not None:
             if not re.fullmatch(r"[a-f0-9]{32}", run):

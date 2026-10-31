@@ -65,6 +65,9 @@ test('live camera updates pause WebGL, show actual time, and keep provisional mi
   assert.match(nodes.get('live-progress-label').textContent, /1 \/ 2 checks observed · provisional/);
   run("showLiveEvent({type:'task_progress',criteria:[{description:'Carry part',satisfied:false},{description:'Deliver part',satisfied:false}]});");
   assert.equal(nodes.get('live-progress-bar').value, 0); // Final-state regression is visible.
+  run("showLiveEvent({type:'run_finished',summary:{successes:0}});");
+  assert.equal(nodes.get('live-phase').textContent, 'Saving result');
+  assert.doesNotMatch(nodes.get('live-action').textContent, /success|passed/);
 });
 
 test('native frame inspection never starts WebGL; layout does, then native frame pauses it', () => {

@@ -70,18 +70,24 @@ def main():
         if value["type"] == "live_frame":
             frame = root / "runs" / value["run_id"] / value["path"]
             print("RW_FRAME " + json.dumps({**value, "image_base64": base64.b64encode(frame.read_bytes()).decode()}), flush=True)
-        elif value["type"] in {"run_started", "policy_started", "action_started", "task_progress", "step", "validation", "world_created", "episode_completed"}:
-            print("RW_EVENT " + json.dumps({k: v for k, v in value.items() if k != "spec"}), flush=True)
+        elif value["type"] in {"generation_started", "candidate", "generation_incomplete", "generation_cancelled",
+                               "run_started", "policy_started", "action_started", "task_progress", "step",
+                               "validation", "world_created", "run_finished"}:
+            print("RW_EVENT " + json.dumps(value), flush=True)
 
     if args.world:
         world = load(args.world)
         if args.revalidate:
             world = World.from_spec(world.spec, root / "worlds", asset_root=world.path, parent_id=world.id)
     else:
+        generation_client = RelayClient("generation")
         world = generate(Path(args.prompt).read_text(), output=root / "worlds",
-                         client=RelayClient("generation"), max_repairs=3,
+                         client=generation_client, max_repairs=3,
+                         cancelled=lambda: generation_client.call("cancelled"),
                          min_objects=args.min_objects, max_objects=args.max_objects,
                          scene_profile="large" if args.max_objects > 120 else "standard", on_event=event)
+        if generation_client.call("cancelled"):
+            return 0
     write_json(root / "world-selection.json", {"world_id": world.id, "path": str(world.path), "validation": world.manifest["validation"]})
     print("RW_WORLD " + json.dumps({"path": str(world.path), "status": world.manifest["validation"]["status"]}), flush=True)
     if world.manifest["validation"]["status"] != "ready":

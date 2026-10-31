@@ -458,7 +458,10 @@ function showLiveFrame(frame) {
   for (const id of ['physical-tab', 'layout-tab', 'fit-view', 'focus-object', 'top-view', 'cutaway-view']) $(id).disabled = true;
 }
 function showLiveEvent(event) {
-  if (event.type === 'policy_started') {
+  if (event.type === 'run_finished') {
+    $('live-phase').textContent = 'Saving result';
+    $('live-action').textContent = 'Execution finished · preparing the recorded report';
+  } else if (event.type === 'policy_started') {
     $('live-phase').textContent = 'Thinking';
     $('live-action').textContent = `Choosing action ${event.step + 1} from camera and robot observations`;
   } else if (event.type === 'action_started') {
@@ -486,6 +489,9 @@ async function pollJob(id) {
   if (state.jobId !== id) return;
   try {
     const job = await api(`/api/jobs/${encodeURIComponent(id)}`); $('job-state').textContent = job.status;
+    if (job.phase === 'generation') $('job-title').textContent = 'Generating world';
+    else if (job.phase === 'execution') $('job-title').textContent = 'Running robot';
+    else if (job.phase === 'finalizing') $('job-title').textContent = 'Saving result';
     if (job.live_frame) showLiveFrame(job.live_frame);
     for (const event of job.events || []) {
       const signature = JSON.stringify(event); if (state.eventSeen.has(signature)) continue; state.eventSeen.add(signature);

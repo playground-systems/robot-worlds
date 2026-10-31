@@ -1,4 +1,4 @@
-# Autonomous factory mission: first complete episode
+# Autonomous factory missions: assisted-perception baseline
 
 On October 30, 2026, Astra controlled TIAGo++ through a three-station manipulation mission. The robot retrieved a red workpiece, carried it to inspection, released it for processing, regrasped it, carried it to dispatch and left it supported and released. All ten required rubric checks passed. This is one development episode, not a benchmark success rate.
 
@@ -31,4 +31,8 @@ The workbench streamed native spectator frames and provisional checks, then open
 
 The complete run, failed predecessor, source snapshot and video are retained in the ignored development artifacts, with a verified backup. They are not bundled onboarding scenes or scripted controllers. Trace SHA-256: `77b11f71040d235523ef3593089d6198603382aad2d6afa26c4cec7ccee67aba`.
 
-Still required: a fresh prompt-to-world-to-policy run without an authored repair, more layouts/seeds, richer generated facilities, and broader controller robustness. The existing ten-scenario generation trial is separate evidence and contains no policy evaluations.
+## Fresh generated hall
+
+Run `2405eb324dd341448cdfe5f97099642f` completed a newly generated 24 × 16 m hall with 120 physical components. Generation repaired its first candidate automatically; no authored world edit or injected policy action was needed. Astra took 32 decisions and 157.58 simulated seconds. All 11 required checks passed, and the original hash-verified trace reproduced the saved grading exactly (3,158 samples; SHA-256 `7244c3ba2e873a7c97757de6c16f335165814dc0b3522d247ec329004bb9274e`). The final red part is inspected, unheld and supported by the dispatch bench. Episode wall time was 683.01 seconds, including 315.87 seconds of inference; reported Codex usage was 1,182,770 tokens. The live workbench streamed execution and opened the recorded report with 599 spectator frames.
+
+Both successful runs used simulator-assisted object labels and surface positions, plus station/approach coordinates in the task. They establish an **assisted-perception baseline**, not real-sensor autonomous operation. The revised acceptance requirement excludes those aids: policies must use onboard sensor measurements, robot-relative controls and ordinary task instructions. A complete mission under that restricted interface, more layouts/seeds and broader controller robustness remain unproven. The ten-scenario generation trial is separate evidence and contains no policy evaluations.

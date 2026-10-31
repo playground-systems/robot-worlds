@@ -54,3 +54,16 @@ def test_cancelled_mirror_remains_cancelled_when_worker_finishes(tmp_path):
     assert mirror.cancelled
     mirror.finish("completed")
     assert read_json(mirror.path)["status"] == "cancelled"
+
+
+def test_generation_candidate_and_execution_phase_survive_the_remote_handoff(tmp_path):
+    mirror = LiveMirror(tmp_path)
+    mirror.event({"type": "generation_started"})
+    assert read_json(mirror.path)["phase"] == "generation"
+    candidate = {"name": "New hall", "objects": [], "rubric": []}
+    mirror.event({"type": "candidate", "spec": candidate})
+    saved = read_json(mirror.path)
+    assert saved["events"][-1] == {"type": "preview", "spec": candidate}
+    assert "world_id" not in saved  # A preview is not a validated local world.
+    mirror.event({"type": "run_started", "run_id": "b"*32})
+    assert read_json(mirror.path)["phase"] == "execution"
