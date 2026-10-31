@@ -8,8 +8,8 @@ from robot_worlds import generate, LLMAgent
 world = generate(
     "Build a kitchen work area for TIAGo++. Put a white bowl on the counter. "
     "The task is to put the bowl inside the microwave and leave it resting there. "
-    "Build a hollow microwave cavity with a hinged door and accessible handle, "
-    "and a hollow bowl with attached walls. Keep the door swing and robot approach clear. "
+    "Reuse the installed sourced microwave and porcelain bowl with their original geometry. "
+    "Keep the microwave door swing, usable cavity and robot approach clear. "
     "Use detailed physical components, not solid bounding boxes. "
     "Grade the entire bowl being inside, supported and released for one second. "
     "Do not add heating or door closure to the task.",
@@ -109,6 +109,40 @@ time to a ready world and stage durations; it does not measure live model latenc
 or autonomous manipulation. Run native benchmarks on a capable host.
 
 ## Search before creating assets
+
+`generate()` and browser generation can request missing assets before final scene
+planning. The model first uses the installed catalog. For a missing object it emits
+an `asset_requests` entry with a focused query, appearance/role description, estimated
+mass, mobility and dimension limits. The resolver searches Fuel, asks the same
+budgeted model client to select from actual results, downloads a pinned source and
+imports it. Generation then receives the real component IDs and dimensions and
+replans placement. No preview is published from the unresolved asset draft.
+
+- At most eight new assets in two resolution rounds; physics-repair limits are separate.
+- Source files, collision preparation and resolved libraries are cached under
+  `<output-parent>/asset-cache`. Repeating an identical request reuses verified files
+  without another search, selection call or conversion.
+- Installed assets need no extra model request. A new lookup adds one selection
+  call per asset and another scene-planning call per resolution round.
+- Search, selection, download, preparation and reuse appear in progress events.
+  Exported metadata retains the query, catalog results, source revision/license
+  and selection rationale.
+- Missing results, unsupported source features, unmet dimensions/mobility and
+  failed imports stop resolution. They never authorize procedural replacement.
+
+The automatic adapter currently supports single-link SDF/OBJ scans. Newly found
+articulated appliances and verified cavity declarations need further preparation;
+use the installed microwave/bowl or an owner-installed compatible source library.
+Catalog-based selection is not independent visual verification, and ordinary
+scene/native validation still applies. Live model asset selection has not yet been
+validated; automated tests use synthetic network/model responses.
+
+Use `generate(..., online_assets=False)` for installed assets only. Advanced callers
+can supply `asset_resolver=callable` returning a provenance-backed `SourcedAsset` for
+a `SourceAssetRequest`; required dimensions/mobility/features are checked again
+before registration. The built-in `FuelAssetResolver(cache_dir, client=...)` is also
+available directly. Native preparation of new concave sources requires the optional
+`preparation` extra; cached sources and already-convex meshes do not.
 
 Search for an existing object before authoring a new asset. The SDK exposes a bounded,
 online Fuel catalog lookup:

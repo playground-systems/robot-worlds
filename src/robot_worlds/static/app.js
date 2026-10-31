@@ -473,13 +473,15 @@ function renderChanges(root) {
 
 function eventLabel(event) {
   if (event.type === 'generation_phase_started' || event.type === 'generation_phase_finished') {
-    const phases = { catalog: 'Prepare asset library', model: 'Design scene', assets: 'Assemble geometry', preview: 'Save preview', static_validation: 'Check layout and rubric', physical_validation: 'Check simulation and save world' };
+    const phases = { catalog: 'Prepare asset library', source_assets: 'Find and prepare source assets', model: 'Design scene', assets: 'Assemble geometry', preview: 'Save preview', static_validation: 'Check layout and rubric', physical_validation: 'Check simulation and save world' };
     const phase = phases[event.phase] || 'Prepare scene';
     const attempt = Number.isInteger(event.attempt) && event.attempt > 0 ? ` · attempt ${event.attempt}` : '';
     if (event.type === 'generation_phase_started') return `${phase}${attempt} · started`;
     const seconds = Number.isFinite(event.duration_seconds) && event.duration_seconds >= 0 ? ` · ${event.duration_seconds.toFixed(1)} s` : '';
     return `${phase}${attempt}${seconds} · ${event.status === 'failed' ? 'interrupted' : 'finished'}`;
   }
+  if (['asset_search_started', 'asset_search_finished', 'asset_source_selected', 'asset_download_started', 'asset_preparation_started', 'asset_preparation_waiting', 'asset_preparation_reused', 'asset_preparation_finished', 'asset_resolution_reused', 'asset_resolution_finished'].includes(event.type)) return event.message || 'Prepare source asset';
+  if (event.type === 'asset_requests') return `Find ${(event.requests || []).length} source assets`;
   if (event.type === 'asset_loading') return event.message || 'Loading prepared asset';
   if (event.type === 'asset_loaded') return event.message || 'Prepared asset ready';
   if (event.type === 'policy_started') return `Choosing action ${event.step + 1}`;

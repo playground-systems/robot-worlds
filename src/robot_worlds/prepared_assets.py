@@ -13,6 +13,7 @@ from pydantic import Field
 
 from .asset_import import import_convex_mesh_asset, import_mjcf_asset
 from .asset_library import resolve_asset_library
+from .asset_resolution import SourceAssetRequest
 from .asset_sourcing import AssetCandidate, AssetSearch, source_asset
 from .models import Identifier, Model, Number, Positive, Vec3, WorldSpec
 
@@ -35,6 +36,8 @@ class PreparedAssetInstance(Model):
 
 
 class GenerationSpec(WorldSpec):
+    asset_requests: list[SourceAssetRequest] = Field(default_factory=list, max_length=8,
+        description="Request missing online assets before final scene planning. Resolved dimensions/IDs arrive in the next catalog; leave empty when using installed assets.")
     prepared_assets: list[PreparedAssetInstance] = Field(default_factory=list, max_length=100,
                                                        description="Reuse pinned source assets instead of emitting their component geometry. Surrounding layout remains freely generated.")
 
@@ -181,7 +184,9 @@ def append_prepared_asset(payload: dict, instance: PreparedAssetInstance, *, max
 
 def materialize_prepared_assets(plan: GenerationSpec, *, max_objects: int, event_callback=None, asset_library=None):
     """Expand references atomically before geometry validation or preview saving."""
-    payload = plan.model_dump(mode="json", exclude={"prepared_assets"})
+    if plan.asset_requests:
+        raise ValueError("Resolve online asset requests before materializing a scene")
+    payload = plan.model_dump(mode="json", exclude={"prepared_assets", "asset_requests"})
     prefixes = [instance.id for instance in plan.prepared_assets]
     if len(prefixes) != len(set(prefixes)):
         raise ValueError("Prepared asset instance prefixes must be unique")

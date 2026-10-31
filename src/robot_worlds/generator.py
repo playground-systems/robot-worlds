@@ -284,7 +284,8 @@ def _generation_phase(emit, phase: str, attempt: int):
 
 def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", client=None, max_repairs=2, on_candidate: Callable | None = None, event_callback: Callable | None = None, validator: Callable | None = None, asset_root=None,
                   cancelled: Callable | None = None, client_options: dict | None = None,
-                  scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0, asset_library=None) -> WorldSpec:
+                  scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0, asset_library=None,
+                  online_asset_cache=None, asset_resolver=None) -> WorldSpec:
     if scene_profile not in {"standard", "large"}:
         raise ValueError("scene_profile must be standard or large")
     if not isinstance(max_objects, int) or isinstance(max_objects, bool) or not 1 <= max_objects <= MAX_EXPANDED_OBJECTS:
@@ -316,10 +317,16 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
         from .asset_library import resolve_asset_library
         asset_library = resolve_asset_library(asset_library)
         catalog = json.dumps(prepared_asset_catalog(asset_library), separators=(",", ":"))
+    if asset_resolver is None and online_asset_cache is not None:
+        from .asset_resolution import FuelAssetResolver
+        asset_resolver = FuelAssetResolver(online_asset_cache, client=client, on_event=event_callback, cancelled=cancelled)
     asset_instructions = "\nPrefer prepared_assets when the supplied catalog matches the requested object. These are previously sourced online originals, already downloaded and converted. Emit one reference with asset_id, instance id, bottom-center position and required mass instead of recreating its geometry or inventing local file paths. Use catalog body/geom/joint/region IDs with {prefix} replaced by the instance id in rubric and process references. Referenced objects and cavity regions are added automatically; do not duplicate them in objects/regions. Catalog coordinates are relative to the instance bottom-center at position [0,0,0]. Preserve original size/orientation; record incompatible requirements as unvalidated rather than silently shrinking, rotating or substituting geometry. The catalog is an asset library, not a fixed scene or task. Keep generating arbitrary surrounding layouts and requested tasks."
+    asset_instructions += "\nBefore creating an object asset absent from the installed catalog, request it through asset_requests. Layout floors/walls and supporting structural assemblies remain freely generated. A request pauses scene materialization: keep its current scene fields minimal because they are only a draft until the actual source geometry arrives. Do not invent source dimensions, joint IDs or collision parts. After resolution, use the new grounded catalog, place every requested asset through prepared_assets and clear asset_requests. Never replace a failed lookup/import with procedural geometry. Search is limited to Fuel's supported single-link scanned OBJ sources; openable mechanisms and declared cavities need compatible installed assets or further source preparation. Use existing catalog matches first to avoid unnecessary network/model work. At most two resolution rounds and eight new assets are allowed."
+    asset_instructions += "\nOnline asset resolution is " + ("available." if asset_resolver is not None else "disabled; missing assets remain unresolved.")
     history, candidate, previous = [], None, None
+    source_rounds, resolved_ids, attempt = 0, set(), 0
     errors = []
-    for attempt in range(max_repairs+1):
+    while attempt <= max_repairs:
         if cancelled and cancelled():
             raise GenerationCancelled("World generation cancelled", candidate=candidate, attempts=attempt,
                                       history=history, errors=["Generation cancelled before next model request"])
@@ -345,13 +352,45 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
         try:
             with _generation_phase(event_callback, "assets", attempt + 1):
                 plan = GenerationSpec.model_validate(raw)
-                spec = WorldSpec.model_validate(plan.model_dump(mode="json", exclude={"prepared_assets"}))
+                if plan.asset_requests:
+                    from .asset_resolution import AssetResolutionError, extend_asset_library
+                    from .collision_preparation import CollisionPreparationCancelled
+                    try:
+                        if asset_resolver is None:
+                            raise AssetResolutionError("Online asset resolution is disabled; install a source library or enable it")
+                        if source_rounds >= 2 or len(resolved_ids) + len(plan.asset_requests) > 8:
+                            raise AssetResolutionError("Online asset resolution exceeded two rounds/eight assets; no world was substituted")
+                        if event_callback:
+                            event_callback({"type": "asset_requests", "requests": [r.model_dump(mode="json") for r in plan.asset_requests]})
+                        with _generation_phase(event_callback, "source_assets", attempt + 1):
+                            asset_library = extend_asset_library(asset_library, plan.asset_requests, asset_resolver,
+                                                                 [item["asset_id"] for item in json.loads(catalog)])
+                            catalog = json.dumps(prepared_asset_catalog(asset_library), separators=(",", ":"))
+                        resolved_ids.update(r.asset_id for r in plan.asset_requests)
+                        source_rounds += 1
+                        errors = ["Requested source assets are now in the catalog. Plan with their actual dimensions/IDs, use all requested assets, and clear asset_requests."]
+                        continue
+                    except CollisionPreparationCancelled as exc:
+                        raise GenerationCancelled("Asset resolution cancelled", candidate=candidate, attempts=attempt+1,
+                                                  history=history, errors=["Asset resolution cancelled"]) from exc
+                    except Exception as exc:
+                        from .artifacts import public_error
+                        raise GenerationError("Source asset resolution failed; no procedural fallback", candidate=candidate,
+                                              attempts=attempt+1, history=history, errors=[public_error(exc)["message"]]) from exc
+                    finally:
+                        if event_callback:
+                            from .llm import audit_value
+                            event_callback({"type": "model_usage", "usage": audit_value(getattr(client, "usage", {}))})
+                spec = WorldSpec.model_validate(plan.model_dump(mode="json", exclude={"prepared_assets", "asset_requests"}))
                 assembly_errors = []
+                missing = resolved_ids - {item.asset_id for item in plan.prepared_assets}
+                if missing:
+                    assembly_errors.append("Requested source assets were dropped: " + ", ".join(sorted(missing)))
                 try:
                     spec = materialize_prepared_assets(plan, max_objects=max_objects, event_callback=event_callback, asset_library=asset_library)
                     spec = expand_assemblies(spec, max_objects=max_objects)
                 except (ValueError, ValidationError) as exc:
-                    assembly_errors = [str(exc)]
+                    assembly_errors.append(str(exc))
             spec.source_prompt = prompt
             if PHYSICAL_DEFAULTS not in spec.assumptions:
                 spec.assumptions.append(PHYSICAL_DEFAULTS)
@@ -382,4 +421,5 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
             event_callback({"type": "validation", **history[-1]})
         if not errors:
             return candidate
+        attempt += 1
     raise GenerationError("World generation exhausted its repair budget", candidate=candidate, attempts=max_repairs+1, history=history, errors=errors)

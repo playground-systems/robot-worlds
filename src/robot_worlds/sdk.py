@@ -679,8 +679,11 @@ def generate(prompt: str, *, output: str | Path = "worlds", model: str = "gpt-6-
              asset_root: str | Path | None = None, parent_id: str | None = None,
              on_event: Callable | None = None, runtime_factory: Callable | None = None,
              cancelled: Callable | None = None, client_options: dict | None = None,
-             scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0, asset_library=None) -> World:
+             scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0, asset_library=None,
+             online_assets: bool = True, asset_resolver=None) -> World:
     from robot_worlds.generator import GenerationCancelled, GenerationError, generate_spec
+    if not isinstance(online_assets, bool) or (not online_assets and asset_resolver is not None):
+        raise ValueError("online_assets must be boolean; a resolver cannot be supplied when disabled")
     started = time.perf_counter()
     emit = on_event or (lambda event: None)
     output = Path(output).resolve()
@@ -717,7 +720,9 @@ def generate(prompt: str, *, output: str | Path = "worlds", model: str = "gpt-6-
     try:
         generate_spec(prompt, model=model, reasoning=reasoning, client=client,
                       max_repairs=max_repairs, asset_root=asset_root, on_candidate=candidate,
-                      validator=validate_physics, event_callback=event, cancelled=cancelled, client_options=client_options, scene_profile=scene_profile, max_objects=max_objects, min_objects=min_objects, asset_library=asset_library)
+                      validator=validate_physics, event_callback=event, cancelled=cancelled, client_options=client_options,
+                      scene_profile=scene_profile, max_objects=max_objects, min_objects=min_objects, asset_library=asset_library,
+                      online_asset_cache=output.parent / "asset-cache" if online_assets else None, asset_resolver=asset_resolver)
     except GenerationError as exc:
         was_cancelled = isinstance(exc, GenerationCancelled)
         record.update(status="cancelled" if was_cancelled else "incomplete", errors=exc.errors, attempts=exc.attempts, history=exc.history)

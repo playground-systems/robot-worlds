@@ -202,3 +202,11 @@ test('generation phases distinguish measured elapsed time from successful valida
   assert.equal(run("eventLabel({type:'generation_phase_finished',phase:'model',attempt:1,duration_seconds:8,status:'failed',error_type:'RuntimeError'})"), 'Design scene · attempt 1 · 8.0 s · interrupted');
   assert.doesNotMatch(run("eventLabel({type:'generation_phase_finished',phase:'preview',attempt:1,duration_seconds:NaN})"), /NaN|passed|ready|success/);
 });
+
+test('online asset stages show discovery and cache reuse separately from world validation', () => {
+  const {run} = fixture();
+  assert.equal(run("eventLabel({type:'asset_requests',requests:[{},{}]})"), 'Find 2 source assets');
+  assert.equal(run("eventLabel({type:'asset_search_started',message:'Searching Fuel for painted object'})"), 'Searching Fuel for painted object');
+  assert.equal(run("eventLabel({type:'asset_resolution_reused',message:'Reused prepared source for scan'})"), 'Reused prepared source for scan');
+  assert.equal(run("eventLabel({type:'generation_phase_started',phase:'source_assets',attempt:1})"), 'Find and prepare source assets · attempt 1 · started');
+});
