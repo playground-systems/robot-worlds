@@ -594,8 +594,23 @@ class ResponsesClient:
             self._sync_cost()
             status = getattr(error, "status_code", None)
             detail = f", HTTP {status}" if isinstance(status, int) else ""
+            # Keep useful recovery guidance without copying provider messages,
+            # request headers or arbitrary response fields into public artifacts.
+            hints = {
+                "credit_balance_exhausted": "Restore credits or configure a funded API account.",
+                "insufficient_quota": "Restore credits or increase the API account quota.",
+                "invalid_api_key": "Check the configured API key and restart the server.",
+                "rate_limit_exceeded": "Retry after the provider rate-limit window.",
+                "model_not_found": "Check the model identifier and account access.",
+            }
+            code = getattr(error, "code", None)
+            body = getattr(error, "body", None)
+            if not isinstance(code, str) and isinstance(body, dict):
+                nested = body.get("error", body)
+                code = nested.get("code") if isinstance(nested, dict) else None
+            hint = f" [{code}] {hints[code]}" if isinstance(code, str) and code in hints else ""
             raise LLMError(
-                f"OpenAI Responses request failed ({type(error).__name__}{detail})"
+                f"OpenAI Responses request failed ({type(error).__name__}{detail}){hint}"
             ) from None
         usage = _field(response, "usage", {}) or {}
         amounts = {

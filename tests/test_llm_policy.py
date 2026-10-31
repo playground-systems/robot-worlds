@@ -274,6 +274,23 @@ def test_provider_error_does_not_copy_sensitive_error_body():
     assert "secret provider" not in str(error.value)
 
 
+@pytest.mark.parametrize("code,hint", [
+    ("credit_balance_exhausted", "Restore credits"),
+    ("invalid_api_key", "Check the configured API key"),
+    ("rate_limit_exceeded", "Retry after"),
+])
+def test_provider_error_exposes_only_allowlisted_actionable_code(code, hint):
+    error = RuntimeError("Authorization: secret provider response")
+    error.status_code = 429
+    error.body = {"error": {"code": code, "message": "secret provider response"}}
+    client, _ = transport(error)
+    with pytest.raises(LLMError) as caught:
+        client.choose_action("Use sensors.", {}, TOOLS, [])
+    assert hint in str(caught.value)
+    assert code in str(caught.value)
+    assert "secret provider" not in str(caught.value)
+
+
 def test_spend_budget_rejects_unfunded_input_without_generation():
     client, fake = transport(response(calls=[function_call()]), max_cost_usd=0.001)
     with pytest.raises(LLMBudgetExceeded, match="counted input"):

@@ -18,10 +18,12 @@ not replace current native, live-model or application evidence.
 
 ## Execution constraints
 
-The user requested no further CI on October 31, then authorized exactly one
-focused household job. That job completed successfully; the exception is consumed.
-Commits use `[skip ci]`; further CI requires authorization. Heavy native
-work must stay off the Mac. No new paid compute, merge or publication is authorized.
+On October 31 the user resumed all remaining release work and authorized the
+execution needed to complete it, superseding the earlier one-job CI restriction
+and compute blocker. Use focused CI and bounded live runs; keep heavy work hosted
+where practical and local diagnostics serial, headless and low priority. Commits
+use `[skip ci]` unless intentionally triggering a necessary acceptance job.
+No merge or publication is planned until the candidate is actually accepted.
 Paid model requests are reserved for bounded full acceptance runs, not development
 probes. Historical worlds and recordings are not rewritten. Runtime changes require
 fresh candidate validation; older green CI does not validate the current code.
@@ -92,8 +94,9 @@ and pre-placed support; they cannot prove successful manipulation or full releas
 readiness. The evidence auditor rejects skipped/missing/duplicate/failing cases;
 its 12 lightweight checks pass. All 33 selected tests executed successfully.
 
-**Keep further CI off.** The one approved run is complete. The goal still forbids
-heavy Mac runs and new paid compute; this exception does not authorize another job.
+The original one-off run is complete. The later authorization above now permits
+further focused execution for the remaining gates; do not repeat unchanged tests
+or confuse this earlier result with later revisions.
 
 Normal commits, PR updates and label removals do not trigger this workflow. The
 `run-household-acceptance` label suppresses the existing full-suite, packaging and

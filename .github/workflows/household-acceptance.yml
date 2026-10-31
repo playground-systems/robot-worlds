@@ -46,11 +46,34 @@ jobs:
             tests/test_sourced_household_physics.py \
             tests/test_household_grading.py \
             tests/test_arm_orientation.py \
+            tests/test_llm_policy.py \
             --basetemp "$RUNNER_TEMP/household-acceptance" \
             --junitxml=household-evidence/junit.xml
       - name: Audit required native checks without accepting skips
         if: always()
         run: python tools/check_household_evidence.py household-evidence/junit.xml --output household-evidence/acceptance.json
+      - name: Build and verify release archives
+        run: |
+          uv build
+          python tools/check_distribution.py dist > household-evidence/distribution.json
+      - name: Install both archives outside the checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/robot-worlds-clean"
+          for artifact in "$GITHUB_WORKSPACE"/dist/*.whl "$GITHUB_WORKSPACE"/dist/*.tar.gz; do
+            if [[ "$artifact" == *.whl ]]; then kind=wheel; else kind=sdist; fi
+            environment="$RUNNER_TEMP/robot-worlds-$kind"
+            uv venv --python 3.13 "$environment"
+            uv pip install --python "$environment/bin/python" "$artifact"
+            uv pip check --python "$environment/bin/python"
+            (
+              cd "$RUNNER_TEMP/robot-worlds-clean"
+              "$environment/bin/python" -I -c 'import os, pathlib, robot_worlds; location=pathlib.Path(robot_worlds.__file__).resolve(); assert not location.is_relative_to(pathlib.Path(os.environ["GITHUB_WORKSPACE"]).resolve()), location; print(location)'
+              "$environment/bin/robot-worlds" doctor --json > "$GITHUB_WORKSPACE/household-evidence/doctor-$kind.json"
+              "$environment/bin/robot-worlds" --help > "$GITHUB_WORKSPACE/household-evidence/help-$kind.txt"
+            )
+          done
       - name: Retain current-run evidence
         if: always()
         uses: actions/upload-artifact@v7.0.2
@@ -60,6 +83,7 @@ jobs:
           if-no-files-found: warn
           path: |
             household-evidence/
+            dist/*
             ${{ runner.temp }}/household-acceptance/**/result.json
             ${{ runner.temp }}/household-acceptance/**/trace.json
             ${{ runner.temp }}/household-acceptance/**/manifest.json
