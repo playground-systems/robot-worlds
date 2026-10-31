@@ -1,5 +1,5 @@
 {
-  "status": "metadata_review_only_not_imported_or_physically_validated",
+  "status": "source_bytes_verified_not_imported_or_physically_validated",
   "checked_on": "2026-10-31",
   "queries": [
     "site:huggingface.co/datasets/nvidia SimReady warehouse assets",
@@ -84,7 +84,9 @@
         "package_hash": {
           "sha256": "9be0ab880e28fd23026109a78756964d9e808a619977b7e07d98bdf5560281c4"
         }
-      }
+      },
+      "download_sha256": "331d3aa0475183bc9702fbcdd546de60075596f8daeeba12a27dc1149de81b71",
+      "download_bytes": 870796
     },
     {
       "asset_id": "pallet_a01",
@@ -154,7 +156,9 @@
         "package_hash": {
           "sha256": "ab5a0d457f2ef9b8a2d398287267c549b0fb95430de32eb37e261108adeadac5"
         }
-      }
+      },
+      "download_sha256": "477e2de5901da209855aa6196180b33cb8da387b732eb27fca259e24bb14b647",
+      "download_bytes": 248380
     },
     {
       "asset_id": "box_corrugated_brown_b20",
@@ -224,7 +228,9 @@
         "package_hash": {
           "sha256": "39c7a9c11fba2cad4f1a412b336e2825ba1799a095c187be267dc6d1be8c6a1e"
         }
-      }
+      },
+      "download_sha256": "d5d3f416dfb94e714c3f96687aa56c351b23979ef302869df732b7fe59c876c2",
+      "download_bytes": 604864
     },
     {
       "asset_id": "barrier_fence_metal_a02",
@@ -295,7 +301,9 @@
         "package_hash": {
           "sha256": "c0a4b245ae0ed59e42790195b839c330e563350219dac07e2177e5ebb1e8454d"
         }
-      }
+      },
+      "download_sha256": "e310efcf28e02389cf4efee1d38c65f4b159a409b692b7935b2365ece5b0ce22",
+      "download_bytes": 203768
     },
     {
       "asset_id": "conveyor_belt_a05",
@@ -366,7 +374,9 @@
         "package_hash": {
           "sha256": "67d15527910b53d38ff5297fd235c9f67e034d8023f717bf372260b773182ffd"
         }
-      }
+      },
+      "download_sha256": "7f8a47747ec043d7e5893d6a420d3276e371752e87018cbd548f31d66f5c95df",
+      "download_bytes": 2129720
     }
   ]
 }
