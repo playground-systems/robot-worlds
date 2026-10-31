@@ -79,6 +79,11 @@ triangles across three materials in 0.0123 seconds. Its Z-up bounds match the
 publisher's Y-up bounds after axis conversion: approximately 4.000 × 2.067 ×
 3.010 metres. This verifies geometry interpretation, not appearance or collision.
 
+The world schema, portable library and browser now support [explicit PBR material
+maps](source-materials.md); the current classic policy camera has declared
+rendering limitations. This is infrastructure for source conversion, not a
+completed warehouse import.
+
 Next implementation: write the material/visual artifacts into the existing
 source-backed asset library, add separate interaction-aware collisions, and
 perform native validation when permitted. PBR maps, vertex colors and physical

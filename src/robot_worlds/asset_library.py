@@ -18,9 +18,10 @@ from pydantic import TypeAdapter
 from .artifacts import digest
 from .asset_import import ImportedAsset
 from .asset_sourcing import AssetCandidate, AssetSearch, SourcedAsset, source_asset
-from .models import Identifier, Region, SceneObject
+from .models import TEXTURE_FIELDS, Identifier, Region, SceneObject
 
 _FILE_SUFFIXES = {"mesh_path": {".obj", ".stl", ".msh"}, "texture_path": {".png", ".jpg", ".jpeg"},
+                  "normal_texture_path": {".png"}, "orm_texture_path": {".png"}, "emissive_texture_path": {".png"},
                   "source_notice": {".md", ".txt"}, "source_metadata": {".json"}}
 _FILE_FIELDS = tuple(_FILE_SUFFIXES)
 _MAX_FILE = 32 * 1024 * 1024
@@ -168,7 +169,7 @@ class AssetLibrary:
                     fingerprint, size = _fingerprint(path)
                     total += size
                     files[str(path)] = fingerprint
-                if field in {"mesh_path", "texture_path"} and files[str(path)] not in asset.source_files.values():
+                if field in {"mesh_path", *TEXTURE_FIELDS} and files[str(path)] not in asset.source_files.values():
                     raise ValueError("Geometry or texture changed since import; re-import before registration")
                 setattr(obj, field, str(path))
         previous = {filename for entry in self._entries.values() for filename in entry["files"]}

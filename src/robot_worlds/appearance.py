@@ -3,8 +3,52 @@ from __future__ import annotations
 
 import re
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 NOTICE = "Surface finishes, floor pattern and studio lighting are visual estimates, not measured materials."
+PBR_RENDERER_NOTICE = "Source PBR maps are retained for the browser and MJCF export. The current classic MuJoCo policy/replay renderer uses base color and approximate Phong highlights; it does not reproduce normal/ORM maps, alpha masking, full colored emission or all source sampler settings. Material maps do not change contact physics."
+
+
+def add_source_material(root, obj, asset_root, textures, materials):
+    """Retain source PBR layers in MJCF, with explicit classic-renderer fallback."""
+    from .mesh_assets import validate_texture
+    surface = obj.surface
+    if surface is None:
+        raise ValueError("Source material requires explicit surface properties")
+    roles = (("texture_path", "rgba", 4), ("normal_texture_path", "normal", 3),
+             ("orm_texture_path", "orm", 3), ("emissive_texture_path", "emissive", 4))
+    paths = []
+    for field, role, channels in roles:
+        value = getattr(obj, field)
+        if value:
+            path = Path(value).expanduser()
+            if not path.is_absolute():
+                path = Path(asset_root) / path
+            paths.append((path.resolve(), role, channels))
+    key = (surface.model_dump_json(), tuple(paths))
+    if key in materials:
+        return materials[key]
+    asset = root.find("asset")
+    if asset is None:
+        asset = ET.SubElement(root, "asset")
+    layers = []
+    for path, role, channels in paths:
+        texture_key = (path, channels)
+        if texture_key not in textures:
+            validate_texture(path)
+            texture_name = f"source_texture_{len(textures)}"
+            ET.SubElement(asset, "texture", name=texture_name, type="2d", file=str(path), nchannel=str(channels))
+            textures[texture_key] = texture_name
+        layers.append((role, textures[texture_key]))
+    name = f"source_material_{len(materials)}"
+    material = ET.SubElement(asset, "material", name=name, texuniform="false",
+        metallic=str(surface.metallic), roughness=str(surface.roughness),
+        specular=str(.04 + .76*surface.metallic), shininess=str((1-surface.roughness)**2),
+        emission=str(max(surface.emissive)), rgba="1 1 1 1")
+    for role, texture_name in layers:
+        ET.SubElement(material, "layer", role=role, texture=texture_name)
+    materials[key] = name
+    return name
 
 
 def finish_name(obj):

@@ -58,6 +58,23 @@ class RevolvedShape(Model):
         return self
 
 
+TEXTURE_FIELDS = ("texture_path", "normal_texture_path", "orm_texture_path", "emissive_texture_path")
+ASSET_FILE_FIELDS = ("mesh_path", *TEXTURE_FIELDS, "source_notice", "source_metadata")
+
+
+class SurfaceMaterial(Model):
+    """Source visual properties; never inferred contact or dynamic properties."""
+    metallic: Color = 1
+    roughness: Color = 1
+    emissive: tuple[Color, Color, Color] = (0, 0, 0)
+    normal_scale: tuple[Number, Number] = (1, 1)
+    double_sided: bool = False
+    alpha_mode: Literal["OPAQUE", "MASK", "BLEND"] = "OPAQUE"
+    alpha_cutoff: Color = .5
+    wrap_s: Literal["repeat", "clamp", "mirror"] = "repeat"
+    wrap_t: Literal["repeat", "clamp", "mirror"] = "repeat"
+
+
 class SceneObject(Model):
     id: Identifier
     label: str
@@ -72,6 +89,10 @@ class SceneObject(Model):
     joint: JointSpec | None = None
     mesh_path: str | None = None
     texture_path: str | None = None
+    normal_texture_path: str | None = None
+    orm_texture_path: str | None = None
+    emissive_texture_path: str | None = None
+    surface: SurfaceMaterial | None = None
     source_notice: str | None = None
     source_metadata: str | None = None
     collision: bool = True
@@ -87,8 +108,12 @@ class SceneObject(Model):
             raise ValueError("mesh requires mesh_path (local asset, never executable code)")
         if self.kind != "mesh" and self.mesh_path is not None:
             raise ValueError("mesh_path is only valid for mesh geometry")
-        if self.texture_path is not None and self.kind != "mesh":
-            raise ValueError("texture_path requires mesh geometry with source UV coordinates")
+        if any(getattr(self, field) is not None for field in TEXTURE_FIELDS) and self.kind != "mesh":
+            raise ValueError("texture_path and material maps require mesh geometry with source UV coordinates")
+        if (self.surface is not None or any(getattr(self, field) for field in TEXTURE_FIELDS[1:])) and self.kind != "mesh":
+            raise ValueError("Source surface materials currently require mesh geometry")
+        if any(getattr(self, field) for field in TEXTURE_FIELDS[1:]) and self.surface is None:
+            raise ValueError("PBR maps require an explicit source surface material")
         if not self.collision and (self.kind != "mesh" or not self.parent_id or self.movable or self.joint):
             raise ValueError("Appearance-only meshes must be fixed children of a physical object")
         if not self.collision and not self.visible:

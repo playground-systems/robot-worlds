@@ -1,5 +1,6 @@
 /** Load only immutable bundled PNGs; keep decoding and GPU allocations bounded. */
-export async function loadBundledTexture(THREE, assetBase, path, signal) {
+export async function loadBundledTexture(THREE, assetBase, path, signal, colorSpace = 'srgb') {
+  if (!['srgb', 'linear'].includes(colorSpace)) throw new Error('Unsupported texture color space');
   if (!/^assets\/[a-zA-Z0-9_.-]+\.png$/i.test(path)) throw new Error('Unbundled texture path');
   const response = await fetch(assetBase + path, { signal });
   if (!response.ok) throw new Error('Texture unavailable');
@@ -14,7 +15,7 @@ export async function loadBundledTexture(THREE, assetBase, path, signal) {
     bitmap.close(); throw new Error('Texture cancelled or exceeds decoded image budget');
   }
   const texture = new THREE.Texture(bitmap);
-  texture.colorSpace = THREE.SRGBColorSpace; texture.needsUpdate = true;
+  texture.colorSpace = colorSpace === 'srgb' ? THREE.SRGBColorSpace : THREE.NoColorSpace; texture.needsUpdate = true;
   texture.addEventListener('dispose', () => bitmap.close());
   return texture;
 }

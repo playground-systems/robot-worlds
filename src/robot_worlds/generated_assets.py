@@ -14,7 +14,7 @@ from .artifacts import digest, write_json
 from .asset_import import ImportedAsset
 from .asset_resolution import AssetResolutionError, SourceAssetRequest, _compatible
 from .asset_sourcing import AssetSearch, source_asset
-from .models import Identifier, Model
+from .models import ASSET_FILE_FIELDS, Identifier, Model
 
 
 @dataclass(frozen=True)
@@ -53,7 +53,7 @@ def _group_asset(spec, group, request):
         raise ValueError("Created asset needs one physical root and a connected component hierarchy")
     root = roots[0]
     for obj in parts:
-        if obj.kind == "mesh" or any((obj.mesh_path, obj.texture_path, obj.source_notice, obj.source_metadata)):
+        if obj.kind == "mesh" or any(getattr(obj, field) for field in ASSET_FILE_FIELDS):
             raise ValueError("Generated groups use procedural shapes, not invented mesh/texture/source files")
         current, seen = obj, set()
         while current.id != root.id:

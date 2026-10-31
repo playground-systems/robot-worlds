@@ -19,7 +19,7 @@ import mujoco
 import numpy as np
 from PIL import Image
 
-from .appearance import add_appearance, finish_name
+from .appearance import add_appearance, add_source_material, finish_name
 from .artifacts import digest
 from .revolved import MAX_SCENE_COLLIDERS, collision_count, wedges
 from .robot_assets import ROBOT_MANIFESTS, robot_asset_path
@@ -357,6 +357,7 @@ class Runtime:
         # Asset definitions are immutable within this build. Sharing them does
         # not weld bodies or share per-geom mass, contact, color or pose settings.
         texture_names, mesh_names, mesh_bounds = {}, {}, {}
+        source_textures, source_materials = {}, {}
         remaining = list(self.spec.objects)
         while remaining:
             progress = False
@@ -406,7 +407,9 @@ class Runtime:
                     contype="1" if obj.collision else "0",
                     conaffinity="7" if obj.collision else "0",
                 )
-                if obj.texture_path:
+                if obj.surface is not None:
+                    geom["material"] = add_source_material(root, obj, self.asset_root, source_textures, source_materials)
+                elif obj.texture_path:
                     from .mesh_assets import validate_texture
                     texture_path = Path(obj.texture_path).expanduser()
                     if not texture_path.is_absolute():

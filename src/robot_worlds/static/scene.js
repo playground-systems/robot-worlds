@@ -6,6 +6,7 @@ import { isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './
 import { APPEARANCE_NOTICE, estimatedAppearance, studioEnvironmentPixels } from './scene-appearance.js';
 import { geometryKey, revolvedGeometry } from './scene-shapes.js';
 import { loadBundledTexture } from './scene-textures.js';
+import { loadSourceMaps, sourceMaterialOptions } from './scene-materials.js';
 
 /** Layout inspection only. The native PNG is the physical robot representation. */
 export class WorldViewer {
@@ -194,7 +195,7 @@ export class WorldViewer {
 
   async loadOBJ(object, assetBase, generation) {
     const controller = new AbortController(); this.loads.add(controller);
-    let group, texture, attached = false;
+    let group, texture, material, maps = {}, mapsOwnedByGroup = false, attached = false;
     try {
       if (!/^assets\/[a-zA-Z0-9_.-]+$/.test(object.mesh_path)) throw new Error('Unbundled mesh path');
       const response = await fetch(assetBase + object.mesh_path, { signal: controller.signal });
@@ -202,7 +203,14 @@ export class WorldViewer {
       const source = await response.text();
       if (source.length > 24 * 1024 * 1024) throw new Error('Mesh exceeds viewer budget');
       if (this.disposed || this.loadGeneration !== generation) return;
-      if (object.texture_path) texture = await loadBundledTexture(THREE, assetBase, object.texture_path, controller.signal);
+      if (object.surface) {
+        maps = await loadSourceMaps(object, (path, space) => loadBundledTexture(THREE, assetBase, path, controller.signal, space));
+        const wraps = { repeat: THREE.RepeatWrapping, clamp: THREE.ClampToEdgeWrapping, mirror: THREE.MirroredRepeatWrapping };
+        for (const value of new Set(Object.values(maps))) {
+          value.wrapS = wraps[object.surface.wrap_s]; value.wrapT = wraps[object.surface.wrap_t]; value.needsUpdate = true;
+        }
+        texture = maps.map;
+      } else if (object.texture_path) texture = await loadBundledTexture(THREE, assetBase, object.texture_path, controller.signal);
       if (this.disposed || this.loadGeneration !== generation) return;
       group = new OBJLoader().parse(source);
       const box = new THREE.Box3().setFromObject(group), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
@@ -212,14 +220,20 @@ export class WorldViewer {
       const bounded = (key, fallback) => Number.isFinite(appearance[key]) ? Math.max(0, Math.min(1, appearance[key])) : fallback;
       const estimated = estimatedAppearance(object);
       const opacity = object.opacity ?? bounded('opacity', 1);
-      const material = new THREE.MeshStandardMaterial({ map: texture || null, color: new THREE.Color().setRGB(...object.color), envMapIntensity: .65, metalness: bounded('metalness', estimated.metalness), roughness: bounded('roughness', estimated.roughness), transparent: opacity < 1, opacity });
-      if (Array.isArray(appearance.emissive) && appearance.emissive.length === 3 && appearance.emissive.every(Number.isFinite)) material.emissive.setRGB(...appearance.emissive.map(x => Math.max(0, Math.min(10, x))));
+      material = new THREE.MeshStandardMaterial({ map: texture || null, color: new THREE.Color().setRGB(...object.color), envMapIntensity: .65, metalness: bounded('metalness', estimated.metalness), roughness: bounded('roughness', estimated.roughness), transparent: opacity < 1, opacity });
+      if (object.surface) {
+        Object.assign(material, sourceMaterialOptions(object, maps));
+        material.normalScale.set(...object.surface.normal_scale);
+        material.emissive.setRGB(...object.surface.emissive);
+        material.side = object.surface.double_sided ? THREE.DoubleSide : THREE.FrontSide;
+      } else if (Array.isArray(appearance.emissive) && appearance.emissive.length === 3 && appearance.emissive.every(Number.isFinite)) material.emissive.setRGB(...appearance.emissive.map(x => Math.max(0, Math.min(10, x))));
       group.traverse(node => {
         if (!node.isMesh) return;
         node.geometry.translate(-center.x, -center.y, -center.z);
         node.geometry.scale(...object.size.map((extent, axis) => extent / Math.max(size.getComponent(axis), 1e-9)));
-        disposeMaterials(node.material); node.material = material; node.castShadow = true; node.receiveShadow = true; node.userData.object = object; node.userData.appearance = { ...estimated, basis: texture ? 'Original bundled texture; other material properties are estimates' : metadata ? 'Bundled OBJ appearance metadata with estimated defaults' : estimated.basis }; this.objects.push(node);
+        disposeMaterials(node.material); node.material = material; mapsOwnedByGroup = true; node.castShadow = true; node.receiveShadow = true; node.userData.object = object; node.userData.appearance = { ...estimated, ...(object.surface ? { estimated: false, metalness: object.surface.metallic, roughness: object.surface.roughness } : {}), basis: object.surface ? 'Source PBR material; classic policy/replay camera rendering differs' : texture ? 'Original bundled texture; other material properties are estimates' : metadata ? 'Bundled OBJ appearance metadata with estimated defaults' : estimated.basis }; this.objects.push(node);
       });
+      if (!mapsOwnedByGroup) throw new Error('OBJ contains no usable meshes');
       group.position.set(...object.position);
       if (object.quaternion) group.quaternion.set(object.quaternion[1], object.quaternion[2], object.quaternion[3], object.quaternion[0]);
       else if (object.yaw) group.rotation.z = object.yaw;
@@ -232,7 +246,10 @@ export class WorldViewer {
     } finally {
       if (!attached) {
         if (group) disposeTree(group);
-        else texture?.dispose();
+        if (!mapsOwnedByGroup) {
+          for (const value of new Set([texture, ...Object.values(maps)].filter(Boolean))) value.dispose();
+          material?.dispose();
+        }
       }
       this.loads.delete(controller); this.pumpLoads();
       if (!this.disposed) this.renderer.shadowMap.needsUpdate = true;

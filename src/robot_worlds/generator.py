@@ -11,7 +11,7 @@ from typing import Callable
 from pydantic import ValidationError
 
 from .large_scene import MAX_EXPANDED_OBJECTS, candidate_pairs, expand_assemblies
-from .models import WorldSpec
+from .models import TEXTURE_FIELDS, WorldSpec
 from .revolved import MAX_SCENE_COLLIDERS, collision_count, intersects_box
 from .rubric import measure_predicate, rigid_members, validate_rubric
 
@@ -150,9 +150,11 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
                 path = Path(asset_root) / path
             if path.suffix.lower() not in {".obj", ".stl", ".msh"} or not path.is_file():
                 errors.append(f"{obj.id}: missing/unsupported local mesh asset {obj.mesh_path}")
-        if obj.texture_path:
+        for texture_field in TEXTURE_FIELDS:
+            if not getattr(obj, texture_field):
+                continue
             from .mesh_assets import validate_texture
-            path = Path(obj.texture_path).expanduser()
+            path = Path(getattr(obj, texture_field)).expanduser()
             if not path.is_absolute() and asset_root is not None:
                 path = Path(asset_root) / path
             if path not in checked_textures:

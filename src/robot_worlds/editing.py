@@ -25,6 +25,7 @@ from .models import (
     RevolvedShape,
     SceneObject,
     Size3,
+    SurfaceMaterial,
     Vec3,
     WorldSpec,
 )
@@ -45,6 +46,10 @@ class ObjectValues(Model):
     joint: JointSpec | None = None
     mesh_path: str | None = None
     texture_path: str | None = None
+    normal_texture_path: str | None = None
+    orm_texture_path: str | None = None
+    emissive_texture_path: str | None = None
+    surface: SurfaceMaterial | None = None
     source_notice: str | None = None
     source_metadata: str | None = None
     collision: bool | None = None
@@ -72,7 +77,7 @@ class TranslateAssembly(Model):
 class UpdateObject(Model):
     op: Literal["update_object"]
     id: Identifier
-    fields: list[Literal["label", "kind", "position", "size", "color", "mass", "movable", "friction", "parent_id", "joint", "mesh_path", "revolved", "texture_path", "source_notice", "source_metadata", "collision", "visible", "opacity"]] = Field(min_length=1, max_length=19)
+    fields: list[Literal["label", "kind", "position", "size", "color", "mass", "movable", "friction", "parent_id", "joint", "mesh_path", "revolved", "texture_path", "normal_texture_path", "orm_texture_path", "emissive_texture_path", "surface", "source_notice", "source_metadata", "collision", "visible", "opacity"]] = Field(min_length=1, max_length=23)
     values: ObjectValues
 
 
@@ -413,7 +418,7 @@ def _protect_task_bindings(before: WorldSpec, after: WorldSpec):
             continue  # Missing references are independently rejected by validation.
         if new is None:
             raise ValueError(f"{oid}: task-bound object presence is protected; allow_task_changes is required")
-        for field in ("label", "color", "kind", "size", "mesh_path", "parent_id", "revolved", "texture_path", "source_notice", "source_metadata", "collision", "visible", "opacity"):
+        for field in ("label", "color", "kind", "size", "mesh_path", "parent_id", "revolved", "texture_path", "normal_texture_path", "orm_texture_path", "emissive_texture_path", "surface", "source_notice", "source_metadata", "collision", "visible", "opacity"):
             if getattr(old, field) != getattr(new, field):
                 raise ValueError(f"{oid}: task-bound object {field} is protected; allow_task_changes is required")
         if oid in anchors:

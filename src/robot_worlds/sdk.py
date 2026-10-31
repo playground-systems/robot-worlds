@@ -26,7 +26,7 @@ from robot_worlds.artifacts import (
     utc_now,
     write_json,
 )
-from robot_worlds.models import WorldSpec
+from robot_worlds.models import ASSET_FILE_FIELDS, WorldSpec
 
 FINISH_TOOL = {
     "type": "function", "name": "finish",
@@ -163,12 +163,16 @@ class World:
             spec = expand_assemblies(spec)
         except ValueError as exc:
             assembly_errors.append(str(exc))
+        if any(obj.surface is not None for obj in spec.objects):
+            from robot_worlds.appearance import PBR_RENDERER_NOTICE
+            if PBR_RENDERER_NOTICE not in spec.assumptions:
+                spec.assumptions.append(PBR_RENDERER_NOTICE)
         root = Path(output).resolve()
         root.mkdir(parents=True, exist_ok=True)
         assets, sources, asset_errors = {}, {}, []
         mesh_members = {}
         for obj in spec.objects:
-            for field in ("mesh_path", "texture_path", "source_notice", "source_metadata"):
+            for field in ASSET_FILE_FIELDS:
                 value = getattr(obj, field)
                 if not value:
                     continue
@@ -191,7 +195,7 @@ class World:
         # saved assembly can be revalidated or refined without stale originals.
         for template in spec.assembly_templates:
             for part in template.parts:
-                for field in ("mesh_path", "texture_path", "source_notice", "source_metadata"):
+                for field in ASSET_FILE_FIELDS:
                     value = getattr(part, field)
                     if not value:
                         continue
