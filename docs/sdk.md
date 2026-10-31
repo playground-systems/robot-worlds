@@ -101,6 +101,26 @@ elsewhere. Use focused object queries, and query additional catalogs when approp
 Search has page, candidate, response-size and elapsed-time limits; hitting one fails
 the lookup rather than returning a misleading empty result.
 
+Download a selected Fuel candidate into a persistent cache:
+
+```python
+from robot_worlds import download_fuel_asset
+
+# Choose a candidate after inspecting the search results above.
+if search.candidates:
+    downloaded = download_fuel_asset(search.candidates[0], ".robot-worlds/asset-cache")
+    print(downloaded.source_dir, downloaded.cache_hit)
+    print(downloaded.manifest_path)  # Pinned source, license and file checksums.
+```
+
+Repeated calls verify local bytes and skip the network. Downloads publish atomically;
+failed or interrupted downloads cannot become cache hits. Limits are 64 MiB per
+archive, 256 MiB extracted, 32 MiB per file and 2,048 entries. Redirects, external
+referrals and unsafe ZIP paths fail explicitly. Corrupt cache entries also fail;
+remove the affected entry to reacquire it. A download preserves source files but
+does not import SDF, convert physics or establish task compatibility. Use it inside
+your import adapter; retain the search report alongside its manifest.
+
 `source_asset(query, import_asset=..., create_asset=..., search=...)` coordinates an
 asset pipeline. By default it calls the online lookup above. Supply `search` for a
 different provider or offline tests. It tries candidates with your import adapter
