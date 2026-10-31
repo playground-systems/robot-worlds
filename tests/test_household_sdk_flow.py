@@ -64,7 +64,7 @@ class SensorPolicy:
 
 
 @contextmanager
-def policy_server(policy):
+def policy_server(policy, fault=None):
     """Real loopback HTTP transport, with server assertion errors surfaced."""
     errors, requests = [], []
     session = uuid.uuid4().hex
@@ -85,11 +85,18 @@ def policy_server(policy):
                     assert payload["session_id"] == session
                     reply["sequence"] = payload["sequence"]
                     if self.path == "/act":
+                        if payload["sequence"] == 1 and fault in {"timeout", "disconnect"}:
+                            if fault == "timeout":
+                                threading.Event().wait(.3)
+                            self.close_connection = True
+                            return
                         obs = payload["observation"]
                         assert obs["image"]["encoding"] == "base64"
                         obs["image"] = base64.b64decode(obs["image"]["data"], validate=True)
                         obs["tools"] = payload["tools"]
                         reply["action"] = policy.act(obs)
+                        if payload["sequence"] == 1 and fault == "invalid_action":
+                            reply["action"] = {"tool": "teleport", "arguments": {}}
                     elif self.path == "/result":
                         policy.record_result(payload["result"])
                         reply["accepted"] = True
@@ -185,3 +192,42 @@ def test_household_sensor_action_report_and_portable_reload(household_world, tmp
     repeated = restored.evaluate(SensorPolicy(), max_steps=5, max_sim_seconds=15,
                                  output=tmp_path / "reloaded-runs", max_replay_frames=2)
     assert repeated.summary == summary, repeated.result
+
+
+@pytest.mark.parametrize("fault", ["timeout", "disconnect", "invalid_action"])
+def test_household_remote_failure_preserves_evidence_without_task_verdict(household_world, tmp_path, fault):
+    with policy_server(SensorPolicy(), fault=fault) as (url, requests):
+        with RemotePolicy(url, timeout=.1 if fault == "timeout" else 10) as policy:
+            report = household_world.evaluate(policy, max_steps=5, max_sim_seconds=15,
+                                               output=tmp_path / "runs", max_replay_frames=2)
+        # Do not retry an ambiguous stateful /act request or execute the invalid tool.
+        assert [path for path, _ in requests] == ["/reset", "/act", "/result", "/act"]
+    episode = report.result["episodes"][0]
+    assert episode["status"] == "policy_error", episode
+    assert len(episode["steps"]) == 1
+    assert episode["steps"][0]["result"]["status"] == "measured"
+    assert report.summary["valid"] == 0
+    assert report.summary["invalid_or_interrupted"] == 1
+    assert report.summary["success_rate"] is None
+    assert read_json(report.path / "episode-000/trace.json")
+    assert (report.path / "report.html").is_file()
+
+
+def test_household_cancel_between_actions_preserves_partial_report(household_world, tmp_path):
+    cancelled = threading.Event()
+    probe = SensorPolicy()
+
+    def event(value):
+        if value["type"] == "step":
+            cancelled.set()
+
+    report = household_world.evaluate(probe, max_steps=5, max_sim_seconds=15,
+        output=tmp_path / "runs", max_replay_frames=2, on_event=event,
+        cancelled=cancelled.is_set)
+    assert len(probe.results) == 1
+    assert report.result["episodes"][0]["status"] == "cancelled"
+    assert report.summary["valid"] == 0
+    assert report.summary["invalid_or_interrupted"] == 1
+    assert report.summary["success_rate"] is None
+    assert read_json(report.path / "episode-000/trace.json")
+    assert (report.path / "report.html").is_file()

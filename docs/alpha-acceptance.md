@@ -8,10 +8,10 @@ mocked tests.
 
 | Gate | Current evidence | Remaining acceptance work |
 | --- | --- | --- |
-| SDK action loop | `test_household_sdk_flow.py` adds original-asset generation with a mocked model, onboard RGB-D, depth queries, wheel motion, gripper commands, feedback, replay, export/reload and regrading through in-process and real loopback HTTP policies. Native execution pending CI. | Integrated failure/cancellation checks; verify hosted results. |
+| SDK action loop | `test_household_sdk_flow.py` adds original-asset generation with a mocked model, onboard RGB-D, depth queries, wheel motion, gripper commands, feedback, replay, export/reload and regrading through in-process and real loopback HTTP policies. It also covers HTTP timeout/disconnection, malformed actions and cancellation. | Native execution remains unverified; CI cancellation requested at the user's direction. |
 | Physical manipulation and grading | Existing native tests check bowl concavity and pre-placed support inside the original microwave. | Actual grasp, transport, door interaction, insertion and release; task-specific negative cases. The new action-loop test intentionally does not attempt insertion. |
 | Live generation and evaluation | Earlier assisted factory episodes are development evidence, not current sensor-only acceptance. | Complete a bounded paid generation-to-report run with the current sensor contract; preserve actual outcome and spending. |
-| Warehouse assets and appearance | User supplied NVIDIA SimReady warehouse reference screenshots and two source posts. | Verify upstream/optimized collection licenses, integrate a useful reusable subset, generate two layouts and inspect actual screenshots/performance. |
+| Warehouse assets and appearance | Identified NVIDIA upstream and CodePawl optimized GLBs. Pinned five candidate records and upstream per-asset license/packaging hashes in `simready-selection.manifest.json`. | Convert/import and physically validate the subset, generate two layouts and inspect actual screenshots/performance. |
 | Fresh installation and recovery | Existing hosted clean-install jobs and offline diagnostics. | Run documented release-candidate journey and reconcile failures/recovery evidence. |
 | UI and release | Existing workbench, reports, export, attribution and draft PR. | Current browser acceptance, reference comparison, versioned artifacts and reconciled walkthrough. |
 
@@ -20,6 +20,9 @@ unsuccessful bowl placement must remain a valid failed task, while transport or
 policy errors must be classified separately. Privileged trace assertions occur
 only in the test evaluator to verify that the robot physically moved.
 
-Heavy native work runs in hosted CI. Paid model requests are reserved for bounded
-full acceptance runs, not individual development probes. No new paid compute,
-merge or publication is authorized.
+As of October 31, the user requested no further CI runs. Keep verification to
+focused lightweight local checks; do not move heavy native tests onto the Mac.
+Native acceptance remains pending. Do not trigger workflows through routine
+pushes while this instruction is in effect. Paid model requests are reserved for
+bounded full acceptance runs, not individual development probes. No new paid
+compute, merge or publication is authorized.
