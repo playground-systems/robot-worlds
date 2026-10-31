@@ -20,7 +20,7 @@ In the browser, select an object in **World → Layers** or the 3D canvas. Its I
 ## What stays fixed
 
 - An explicit `scope` limits actual changes to those exact IDs. Without a scope, the model chooses which entities to edit; the application preserves every entity omitted from the patch. This does not independently prove that the model understood the user's intent.
-- Task, rubric and process definitions require `allow_task_changes=True`. Existing mass, friction and mechanism definitions require `allow_physics_changes=True`. Both default to false, and repair rejects either permission. Repair also preserves every original object and region ID; deleting a failed object cannot make the repair pass. Protections are checked against the original parent on every retry. A joint's initial pose can change without changing its mechanism.
+- Task, rubric and process definitions require `allow_task_changes=True`. Existing mass, friction and mechanism definitions require `allow_physics_changes=True`. Both default to false, and repair rejects either permission. Repair also preserves every original object and region ID; deleting a failed object cannot make the repair pass. Protections are checked against the original parent on every retry. A joint's initial pose can change without changing its mechanism. Coherent assembly translation preserves body/parent-relative joint anchors; moving a body without its hinge, or remounting a child relative to its parent, requires physics-change permission.
 - Task bindings are protected as well as rubric text. Referenced regions cannot be removed, moved or resized without `allow_task_changes=True`. Bound objects retain their IDs, label, color, shape, dimensions, mesh path and parent relationship. A destination support or process fixture cannot move beside the source to make the task easier. Ancestor poses and joint transforms are protected so moving a parent cannot bypass that rule. These checks also apply to process-loading prerequisites and optional rubric criteria.
 - The robot start is a protected task initial condition. Deliberate changes to the start or destination require an explicit task-changing refinement; repair cannot grant that permission. Physical-property changes still require their separate permission.
 - The robot preset stays fixed. Existing model/controller versions and previous evaluation artifacts are preserved.
@@ -65,6 +65,29 @@ Mocked model tests exercise import through native validation and export, without
 claiming autonomous policy performance or live model selection.
 
 ## Validation and limits
+
+### Move a compound object
+
+Use `translate_assembly` to reposition a whole source asset without spelling out
+every component coordinate:
+
+```json
+{"operations": [{"op": "translate_assembly", "id": "bowl_body", "offset": [0.2, 0, 0]}]}
+```
+
+The operation translates the physical root, all descendants (including jointed
+children), their joint anchors and cavity regions whose `interior_of` belongs to
+the tree. Shapes, mass, friction, source files and joint settings remain unchanged.
+It does not move unrelated supports or unowned destinations. Choose the physical
+root; an appearance-only mesh is rejected. This is an edit to a new world's initial
+configuration, never a robot action or a teleport during evaluation.
+
+In the inspector, **Include whole object** explicitly adds the selected object's
+parent tree and owned regions to the edit scope. Large scopes show eight IDs and
+collapse the remainder without excluding them. Scope still limits every actual
+change, and task-bound destinations cannot move without task-change permission.
+The model can use this operation for a subject placement repair, but the usual
+task-difficulty limitations above still apply.
 
 Each candidate goes through the same reference, geometry, connectivity, rubric and native physics checks as generation. Native reset diagnostics record initial penetration and transient object motion as well as final settling state. The report names measured objects and thresholds so a repair can address the failure without weakening the test.
 

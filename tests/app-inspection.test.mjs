@@ -50,6 +50,34 @@ test('prepared asset progress names reuse without claiming a fresh search or phy
   assert.equal(run("eventLabel({type:'asset_loaded',message:'Reused source; original geometry retained'})"), 'Reused source; original geometry retained');
 });
 
+test('whole-object scope includes physical siblings, jointed descendants and cavity only after a click', () => {
+  const {run, nodes} = fixture();
+  run(`state.world.spec.objects = [
+    {id:'body',label:'Body',kind:'box',position:[1,0,1],size:[1,1,1]},
+    {id:'visual',label:'Microwave',kind:'mesh',collision:false,parent_id:'body',position:[1,0,1],size:[1,1,1]},
+    {id:'door',label:'Door',kind:'box',parent_id:'body',joint:{type:'hinge',axis:[0,0,1]},position:[1,0,1],size:[1,.1,1]},
+    {id:'handle',label:'Handle',kind:'box',parent_id:'door',position:[1,0,1],size:[.1,.1,.1]},
+    {id:'unrelated',label:'Other object',kind:'box',position:[3,0,1],size:[1,1,1]}];
+    state.world.spec.regions = [{id:'cavity',interior_of:'body'}, {id:'destination'}];
+    selectObject(state.world.spec.objects[1]);`);
+  assert.deepEqual(Array.from(run('state.scope')), ['visual']);
+  const whole = nodes.get('inspector-body').children.find(node => node.textContent === 'Include whole object');
+  assert(whole);
+  whole.onclick();
+  assert.deepEqual(Array.from(run('state.scope')).sort(), ['body','cavity','door','handle','visual'].sort());
+  assert.match(nodes.get('notice').textContent, /Physical root: body/);
+});
+
+test('large scopes remain fully included with a collapsed remainder', () => {
+  const {run, nodes} = fixture();
+  run("state.scope=Array.from({length:159},(_,i)=>'piece_'+i);renderScope();");
+  const chips = nodes.get('scope-chips').children;
+  assert.equal(chips.length, 9);
+  assert.equal(chips[8].children[0].textContent, 'Show 151 more included entities');
+  assert.equal(chips[8].children.length, 152);
+  assert.equal(run('state.scope.length'), 159);
+});
+
 test('saved geometry previews do not offer a nonexistent native frame', () => {
   const {run, nodes} = fixture();
   run("state.world.manifest.validation={status:'preview',checks:[{check:'schema',passed:true}]};displaySpec(state.world.spec);");

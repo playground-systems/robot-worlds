@@ -282,7 +282,22 @@ function renderObjectProperties(root, object) {
   if (object.texture_path) row(appearance, 'Surface', 'Bundled source texture');
   if (object.visible === false) row(appearance, 'Display', 'Collision component; appearance supplied by its assembly');
   if (object.kind === 'mesh') root.append(el('p', 'small muted', object.collision === false ? 'Source visual mesh. Physical contact uses the attached collision components; this mesh adds no mass.' : 'Bundled OBJ geometry is displayed when available. Native contact uses its convex hull.'));
-  if (state.worldId) { const edit = el('button', 'button selected-edit', 'Ask agent to change this object'); edit.disabled = !!state.jobId || !state.key; edit.onclick = () => { setEditMode('edit', { preserveDraft: true }); state.scope = [object.id]; renderScope(); }; root.append(edit); }
+  if (state.worldId) {
+    const edit = el('button', 'button selected-edit', 'Ask agent to change this object'); edit.disabled = !!state.jobId || !state.key; edit.onclick = () => { setEditMode('edit', { preserveDraft: true }); state.scope = [object.id]; renderScope(); }; root.append(edit);
+    const assembly = wholeObjectScope(object);
+    if (assembly && assembly.ids.length > 1) {
+      const whole = el('button', 'button selected-edit', 'Include whole object');
+      whole.type = 'button'; whole.disabled = !!state.jobId;
+      whole.title = `Include all ${assembly.ids.length} components and owned regions in the edit scope. Task and physics protections remain active.`;
+      whole.onclick = () => {
+        if (state.jobId) return;
+        if (assembly.ids.length > 1000) { notice('This object exceeds the 1,000-entity edit scope limit. Select a smaller subassembly.'); return; }
+        setEditMode('edit', { preserveDraft: true }); state.scope = [...assembly.ids]; renderScope();
+        notice(`Whole object included: ${assembly.ids.length} entities. Physical root: ${assembly.root}.`);
+      };
+      root.append(whole);
+    }
+  }
   root.append(el('p', 'small muted', 'Read-only properties · edit through a text request.'));
 }
 
@@ -361,10 +376,30 @@ function addScope(id) {
   if (!state.scope.includes(id)) { if (state.scope.length >= 1000) { notice('Limit one edit to at most 1,000 entity IDs.'); return; } state.scope.push(id); }
   $('scope-input').value = ''; renderScope(); notice('');
 }
+function wholeObjectScope(object) {
+  const spec = currentSpec(), objects = new Map((spec?.objects || []).map(item => [item.id, item]));
+  let root = objects.get(object?.id); const visited = new Set();
+  if (!root) return null;
+  while (root.parent_id) {
+    if (visited.has(root.id) || !objects.has(root.parent_id)) return null;
+    visited.add(root.id); root = objects.get(root.parent_id);
+  }
+  const members = new Set([root.id]);
+  let previous = 0;
+  while (previous !== members.size) {
+    previous = members.size;
+    for (const item of objects.values()) if (members.has(item.parent_id)) members.add(item.id);
+  }
+  return { root: root.id, ids: [...members, ...(spec.regions || []).filter(region => members.has(region.interior_of)).map(region => region.id)] };
+}
 function renderScope() {
   $('scope-chips').replaceChildren();
   if (!state.scope.length) $('scope-chips').append(el('span', 'small muted', 'Whole world'));
-  for (const id of state.scope) { const chip = el('span', 'scope-chip', id), remove = el('button', '', '×'); remove.type = 'button'; remove.setAttribute('aria-label', `Remove ${id} from edit scope`); remove.onclick = () => { state.scope = state.scope.filter(value => value !== id); renderScope(); }; chip.append(remove); $('scope-chips').append(chip); }
+  let overflow;
+  for (const [index, id] of state.scope.entries()) {
+    if (index === 8) { overflow = el('details', 'scope-overflow'); overflow.append(el('summary', 'small muted', `Show ${state.scope.length-8} more included entities`)); $('scope-chips').append(overflow); }
+    const chip = el('span', 'scope-chip', id), remove = el('button', '', '×'); remove.type = 'button'; remove.setAttribute('aria-label', `Remove ${id} from edit scope`); remove.onclick = () => { state.scope = state.scope.filter(value => value !== id); renderScope(); }; chip.append(remove); (overflow || $('scope-chips')).append(chip);
+  }
 }
 function parentOf(world) { return world?.manifest?.edit?.parent_world_id || world?.manifest?.parent_id; }
 async function loadLineage(id, world) {

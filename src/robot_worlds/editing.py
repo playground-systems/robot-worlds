@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import uuid
 from pathlib import Path
@@ -60,6 +61,12 @@ class AddObject(Model):
 class AddPreparedAsset(Model):
     op: Literal["add_prepared_asset"]
     asset: PreparedAssetInstance
+
+
+class TranslateAssembly(Model):
+    op: Literal["translate_assembly"]
+    id: Identifier = Field(description="Root object ID. Moves its whole descendant tree, including jointed children and owned cavity regions.")
+    offset: Vec3 = Field(description="World XYZ translation in metres. Every affected entity must be within an explicit scope, if supplied.")
 
 
 class UpdateObject(Model):
@@ -123,7 +130,7 @@ class SetProcesses(Model):
     process_cycles: list[ProcessCycle] = Field(max_length=200)
 
 
-Operation = (AddObject | AddPreparedAsset | UpdateObject | RemoveObject | AddRegion | UpdateRegion | RemoveRegion
+Operation = (AddObject | AddPreparedAsset | TranslateAssembly | UpdateObject | RemoveObject | AddRegion | UpdateRegion | RemoveRegion
              | SetBounds | SetRobotStart | SetTask | SetRubric | SetProcesses)
 
 
@@ -141,6 +148,13 @@ zero-joint pose; original size and orientation stay unchanged. Catalog IDs subst
 This operation does not change the task/rubric. Scope applies to EVERY expanded
 object and region ID, not merely the asset prefix. Catalog reuse is not a fresh
 internet search; never invent a successful source lookup or unsupported asset.
+Use translate_assembly to reposition a whole compound object by a world XYZ offset.
+Choose the physical root, not an appearance-only mesh. It moves all descendant
+objects, their joint anchors and cavity regions whose interior_of belongs to the
+tree. It never moves ancestors, unrelated supports or unowned task destinations.
+All affected IDs must fit an explicit scope. Task destination/ancestor protections
+still apply. A jointed child cannot be remounted relative to its parent without
+allow_physics_changes; use joint.initial to open a door without changing its mount.
 For update_object/update_region, fields explicitly lists the properties to change;
 values for every unlisted property are ignored. Include complete joint data when
 updating a joint, preserving its other properties if only its initial pose changes.
@@ -238,6 +252,8 @@ def apply_patch(spec: WorldSpec, patch: ScenePatch | dict, *, scope: list[str] |
         name = op["op"]
         if name == "add_prepared_asset":
             append_prepared_asset(payload, operation.asset, max_objects=max_objects, event_callback=event_callback)
+        elif name == "translate_assembly":
+            _translate_assembly(payload, op["id"], op["offset"])
         elif name.startswith(("add_", "update_", "remove_")):
             field = "objects" if name.endswith("object") else "regions"
             singular = "object" if field == "objects" else "region"
@@ -275,6 +291,48 @@ def apply_patch(spec: WorldSpec, patch: ScenePatch | dict, *, scope: list[str] |
     return after
 
 
+def _translate_assembly(payload, root_id, offset):
+    objects = {obj["id"]: obj for obj in payload["objects"]}
+    if root_id not in objects:
+        raise ValueError(f"{root_id}: cannot translate an unknown assembly root")
+    if not objects[root_id].get("collision", True):
+        raise ValueError(f"{root_id}: choose the physical assembly root, not an appearance-only mesh")
+    children = {}
+    for obj in objects.values():
+        children.setdefault(obj.get("parent_id"), []).append(obj["id"])
+    members, pending = set(), [root_id]
+    while pending:
+        oid = pending.pop()
+        if oid not in members:
+            members.add(oid)
+            pending.extend(children.get(oid, []))
+    def shifted(vector):
+        return [value+delta for value, delta in zip(vector, offset)]
+    for oid in members:
+        obj = objects[oid]
+        obj["position"] = shifted(obj["position"])
+        if obj.get("joint"):
+            obj["joint"]["anchor"] = shifted(obj["joint"]["anchor"])
+    for region in payload["regions"]:
+        if region.get("interior_of") in members:
+            region["position"] = shifted(region["position"])
+
+
+def _same_joint_mount(old, new, old_objects, new_objects):
+    """MJCF anchors are body-local; a coherent world translation is a pose edit."""
+    if not old.joint or not new.joint:
+        return old.joint is None and new.joint is None
+    if old.joint.model_dump(exclude={"initial", "anchor"}) != new.joint.model_dump(exclude={"initial", "anchor"}):
+        return False
+    frames = [(old.position, new.position)]
+    if old.parent_id:
+        if old.parent_id not in old_objects or new.parent_id not in new_objects:
+            return False
+        frames.append((old_objects[old.parent_id].position, new_objects[new.parent_id].position))
+    return all(math.isclose(old.joint.anchor[i]-a[i], new.joint.anchor[i]-b[i], abs_tol=1e-9, rel_tol=0)
+               for a, b in frames for i in range(3))
+
+
 def enforce_protections(before: WorldSpec, after: WorldSpec, *,
                         allow_task_changes=False, allow_physics_changes=False,
                         preserve_entities=False):
@@ -294,6 +352,7 @@ def enforce_protections(before: WorldSpec, after: WorldSpec, *,
         raise ValueError("Robot preset changes are unsupported")
     if not allow_physics_changes:
         previous = {obj.id: obj for obj in before.objects}
+        current = {obj.id: obj for obj in after.objects}
         for obj in after.objects:
             if obj.id not in previous:
                 continue
@@ -301,10 +360,8 @@ def enforce_protections(before: WorldSpec, after: WorldSpec, *,
             for key in ("mass", "friction", "movable", "parent_id", "collision"):
                 if getattr(old, key) != getattr(obj, key):
                     raise ValueError(f"{obj.id}: {key} is protected; allow_physics_changes is required")
-            old_joint = old.joint.model_dump(exclude={"initial"}) if old.joint else None
-            new_joint = obj.joint.model_dump(exclude={"initial"}) if obj.joint else None
-            if old_joint != new_joint:
-                raise ValueError(f"{obj.id}: joint definition is protected; only joint.initial pose may change")
+            if not _same_joint_mount(old, obj, previous, current):
+                raise ValueError(f"{obj.id}: joint mechanism/mount is protected; preserve body/parent-relative anchors or use allow_physics_changes")
 
 
 def _protect_task_bindings(before: WorldSpec, after: WorldSpec):
