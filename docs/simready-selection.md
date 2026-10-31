@@ -223,3 +223,10 @@ across repeated fixtures; real warehouse frame rate, GPU memory and LOD remain
 unmeasured.
 The browser and policy camera must depict the same physical scene. No full
 catalog download or new asset design is needed for these candidates.
+
+Rack preparation also names the six source shelf panels in `geom_ids`, two per
+shelf. The generation catalog includes their local positions/extents and separates
+named-component geometry from welded-body bounds. An `on_top` criterion can now
+target a particular panel instead of guessing that the rack root is a shelf.
+These mappings are preserved in newly saved libraries; older libraries are not
+rewritten. Source identity, geometry and collision tolerances remain unchanged.

@@ -398,6 +398,21 @@ current limits are 32 registered assets, 1,000 components per asset, 32 MiB per
 source file and 256 MiB of referenced files per library. Automatic online
 selection and broader SDF import remain separate, unfinished work.
 
+`prepared_asset_catalog(library)` supplies `reference_geometry` for named
+body, geometry and joint IDs. Coordinates are relative to the asset bottom-center
+in its zero-joint configuration; apply the instance quarter-turn and translation.
+`position`/`size` describe the named component. `rigid_bounds` include its fixed
+children, excluding separately articulated or movable children. The catalog
+contains no local asset paths and is generation input, not a policy observation.
+
+Rack imports expose `shelf0_support0`, `shelf0_support1` and corresponding names
+for the other two shelves in `geom_ids` (the actual source has two panels per
+shelf). Use these IDs for `on_top`; the rack body root is not a shelf surface.
+The microwave's `tray` reference similarly provides its support height. These
+geometric references help planning but do not prove support contacts, accessibility
+or task success. Older saved libraries retain their existing mappings; prepare
+a new library to obtain newly added source references.
+
 For the five reviewed warehouse sources, the SDK can prepare and save a library
 in one call, with the same caches and checks as `robot-worlds prepare-warehouse`:
 

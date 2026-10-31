@@ -153,3 +153,52 @@ def test_cancel_before_acquisition_and_invalid_position_do_not_write(tmp_path):
     with pytest.raises(ValueError):
         adapter.import_simready_rack(tmp_path / "cache", position=(float("nan"), 0, 0))
     assert not (tmp_path / "cache").exists()
+
+
+def test_rack_shelf_supports_are_addressable_in_planning_catalog(tmp_path, monkeypatch):
+    from robot_worlds import prepared_asset_catalog
+
+    fixture(tmp_path, monkeypatch)
+    sourced = adapter.import_simready_rack(tmp_path / 'cache')
+    assert set(sourced.asset.geom_ids) == {f'shelf{i}_support0' for i in range(3)}
+    library = AssetLibrary().add('rack-source', sourced, description='Synthetic sourced rack')
+    entry = next(e for e in prepared_asset_catalog(library) if e['asset_id'] == 'rack-source')
+    for index, region in enumerate(entry['regions']):
+        support = entry['reference_geometry'][entry['geom_ids'][f'shelf{index}_support0']]
+        top = support['position'][2]+support['size'][2]/2
+        assert top == pytest.approx(region['position'][2]-region['size'][2]/2+.005)
+        assert support['collision'] and not support['movable']
+        assert support['size'][0] > region['size'][0]
+
+
+def test_mocked_generation_uses_catalog_shelf_targets_after_rotation(tmp_path, monkeypatch):
+    from test_generator import Client
+
+    from robot_worlds import prepared_asset_catalog
+    from robot_worlds.generator import generate_spec
+
+    fixture(tmp_path, monkeypatch)
+    library = AssetLibrary().add('rack-source', adapter.import_simready_rack(tmp_path / 'cache'),
+                                 description='Synthetic sourced rack')
+    entry = next(e for e in prepared_asset_catalog(library) if e['asset_id'] == 'rack-source')
+    source_id = entry['geom_ids']['shelf0_support0']
+    region_id = entry['regions'][0]['id']
+    raw = dict(name='Rotated rack task', description='Mocked planner, source support references',
+               task='Put the part on the lowest shelf and release it.', bounds=[12, 12, 4],
+               objects=[dict(id='part', label='Test part', kind='box', movable=True,
+                             position=[-2, 0, .1], size=[.2, .2, .2])],
+               prepared_assets=[dict(id='shelves', asset_id='rack-source', position=[2, 2, 0], quarter_turns=1)],
+               rubric=[dict(id='inside', description='Entire part in shelf volume', predicate='in_region',
+                            object_id='part', target_id=region_id.replace('{prefix}', 'shelves')),
+                       dict(id='support', description='Part supported on shelf', predicate='on_top',
+                            object_id='part', target_id=source_id.replace('{prefix}', 'shelves')),
+                       dict(id='release', description='Part released', predicate='released', object_id='part', intent='maintain')])
+    client = Client([raw])
+    spec = generate_spec(raw['task'], client=client, asset_library=library)
+    assert validate_spec(spec) == []
+    assert 'reference_geometry' in client.prompts[0]
+    target = next(o for o in spec.objects if o.id == spec.rubric[1].target_id)
+    local = entry['reference_geometry'][source_id]
+    assert target.position == pytest.approx((2-local['position'][1], 2+local['position'][0], local['position'][2]))
+    assert target.size == pytest.approx((local['size'][1], local['size'][0], local['size'][2]))
+    assert target.id != next(v for v in entry['body_ids'].values()).replace('{prefix}', 'shelves')

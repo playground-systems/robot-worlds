@@ -146,6 +146,22 @@ def _catalog_entry(asset_id, sourced, requirements):
     upper = np.max([np.array(o.position)+np.array(o.size)/2 for o in asset.objects], axis=0)
     def ids(mapping):
         return {key: value.replace("asset_", "{prefix}_", 1) for key, value in mapping.items()}
+    from .rubric import rigid_members
+
+    objects = {obj.id: obj for obj in asset.objects}
+    references = set(asset.body_ids.values()) | set(asset.geom_ids.values()) | set(asset.joint_ids.values())
+    geometry = {}
+    for identifier in sorted(references):
+        obj = objects[identifier]
+        members = [objects[name] for name in rigid_members(objects, identifier)]
+        low = np.min([np.array(member.position)-np.array(member.size)/2 for member in members], axis=0)
+        high = np.max([np.array(member.position)+np.array(member.size)/2 for member in members], axis=0)
+        geometry[identifier.replace("asset_", "{prefix}_", 1)] = {
+            "kind": obj.kind, "position": list(obj.position), "size": list(obj.size),
+            "movable": obj.movable, "collision": obj.collision,
+            "parent_id": obj.parent_id.replace("asset_", "{prefix}_", 1) if obj.parent_id else None,
+            "rigid_bounds": {"min": low.tolist(), "max": high.tolist()},
+        }
     return {"asset_id": asset_id, "size": (upper-lower).tolist(), "components": len(asset.objects),
                     "movable": any(obj.movable for obj in asset.objects),
                     "physical_mass_kg": (None if asset_id == "google-porcelain-bowl" else
@@ -156,6 +172,8 @@ def _catalog_entry(asset_id, sourced, requirements):
                     "placement": "position is bottom-center of zero-joint bounds; quarter_turns=0/1/2/3 rotates the whole asset 0/90/180/270 degrees counterclockwise about Z; original scale preserved",
                     "repetition": "repeat=[nx,ny,nz] with world-space spacing; for multiple copies substitute {prefix}=id_ix_iy_iz (zero-based), otherwise {prefix}=id. All copied components count against the object budget.",
                     "requirements": requirements,
+                    "reference_geometry": geometry,
+                    "geometry_frame": "Metres relative to the asset bottom-center at zero joint angles, before placement/quarter-turn. position/size describe the named component; rigid_bounds include welded children but stop at articulated/movable children. Bounding geometry is not proof of contact, support, access or task solvability.",
                     "body_ids": ids(asset.body_ids), "geom_ids": ids(asset.geom_ids), "joint_ids": ids(asset.joint_ids),
                     "joints": {name: next(o.joint.model_dump(mode="json") for o in asset.objects if o.id == oid)
                                for name, oid in asset.joint_ids.items()},

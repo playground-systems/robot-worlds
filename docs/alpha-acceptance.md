@@ -50,3 +50,10 @@ bounds. They verify object identity, full-rim containment, sampled release/suppo
 duration and missing-measurement handling. They are evaluator regressions, not
 robot manipulation evidence. Holding/released criteria and process prerequisites
 must reference a movable workpiece root; fixed child meshes cannot prove release.
+
+The generation catalog now supplies local component geometry and rigid-assembly
+bounds for named references, while the rack importer names all six shelf panels.
+Thirty-one focused catalog/library checks passed, including mocked generation
+with a quarter-turned shelf target. Actual bowl/microwave/rack/conveyor metadata
+occupies 39,511 characters, below the existing 200,000-character planning cap.
+This does not establish a live generated scene or physical shelf placement.

@@ -120,3 +120,26 @@ def test_generation_joint_contract_survives_strict_model_schema():
     assert joint["additionalProperties"] is False
     assert set(joint["required"]) == {"name", "initial"}
     assert joint["properties"]["initial"]["type"] == "number"
+
+
+def test_catalog_component_geometry_separates_support_from_compound_bounds():
+    bowl, oven = prepared_asset_catalog()
+    for entry in (bowl, oven):
+        refs = set(entry['body_ids'].values()) | set(entry['geom_ids'].values()) | set(entry['joint_ids'].values())
+        assert set(entry['reference_geometry']) == refs
+        asset = load_prepared_asset(entry['asset_id'], prefix='asset',
+                                    mass=.6 if entry is bowl else None).asset
+        objects = {o.id.replace('asset_', '{prefix}_', 1): o for o in asset.objects}
+        for identifier, geometry in entry['reference_geometry'].items():
+            obj = objects[identifier]
+            assert geometry['position'] == pytest.approx(obj.position)
+            assert geometry['size'] == pytest.approx(obj.size)
+            assert geometry['collision'] == obj.collision
+    body = bowl['reference_geometry'][bowl['body_ids']['object']]
+    assert np.array(body['rigid_bounds']['max'])-body['rigid_bounds']['min'] == pytest.approx(bowl['size'])
+    tray = oven['reference_geometry'][oven['geom_ids']['tray']]
+    assert tray['size'][2] < .03  # Actual support, not the appliance's overall height.
+    assert tray['position'][2]+tray['size'][2]/2 < oven['size'][2]/2
+    encoded = json.dumps([bowl, oven])
+    assert 'mesh_path' not in encoded and 'texture_path' not in encoded
+    assert 'zero joint angles' in oven['geometry_frame']

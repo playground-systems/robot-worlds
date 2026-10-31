@@ -267,12 +267,24 @@ def import_simready_structure(asset_id: str, cache_dir: str | Path, *, prefix="f
         high = np.max([high for _, high in boxes], axis=0)
         origin = np.array([(low[0]+high[0])/2, (low[1]+high[1])/2, low[2]])
         offset = np.array(position)-origin
+        supports = {}
+        if kind == "rack":
+            for item in clearances:
+                # Expose the same source panels used by the shelf-clearance
+                # check, so planning can name a real on_top target.
+                indices = [i for i, (a, b) in enumerate(boxes)
+                           if abs(b[2]-item["support_z"]) < .001 and a[1] <= 0 <= b[1]
+                           and any(a[0] <= x <= b[0] for x in (-1., 1.))]
+                if not indices:
+                    raise ValueError("Rack shelf has no addressable support component")
+                supports.update({f"{item['id']}_support{j}": i for j, i in enumerate(indices)})
         recipe = {"profile": f"{kind}-source-proxies-v1", "asset_id": asset_id, "source": candidate.metadata,
             "decoded_sha256": json.loads(decoded.manifest_path.read_text())["sha256"],
             "weld_grid_metres": .00001 if kind in {"rack", "pallet"} else None,
             "mobility": "movable rigid assembly" if movable else "explicitly fixed warehouse fixture",
             "components": [{"low": a.tolist(), "high": b.tolist()} for a, b in boxes],
             "clearances": [{**item, "low": item["low"].tolist(), "high": item["high"].tolist()} for item in clearances],
+            "support_components": supports,
             "source_total_mass_kg": mass, "source_dynamic_friction": friction,
             "limitations": [COLLISION_NOTICES[kind],
                             "Source inertia, center of mass and restitution are not retained; source total mass is distributed by proxy volume.",
@@ -310,6 +322,8 @@ def import_simready_structure(asset_id: str, cache_dir: str | Path, *, prefix="f
             a, b = item["low"], item["high"]
             asset.regions.append(Region(id=f"{prefix}_{item['id']}", label=item["label"],
                 position=(a+b)/2+offset, size=b-a, interior_of=root_id))
+        asset.geom_ids.update({name: root_id if index == 0 else f"{prefix}_collision{index}"
+                               for name, index in supports.items()})
         asset.body_ids[("movable_" if movable else "fixed_")+kind] = root_id
         check()
         return asset
