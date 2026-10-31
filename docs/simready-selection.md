@@ -48,7 +48,23 @@ Conveyor moving parts require validation or an explicit nonfunctional label.
 Do not use the optimized convex hulls as proof of these features. Reuse the
 existing pinned household assets for bowl-and-microwave acceptance.
 
-Next implementation: meshopt decoding, conversion into the existing source-backed asset library,
-separate interaction-aware collisions, and native validation when permitted.
+`decode_glb(source.glb_path, "asset-cache/decoded")` now decompresses embedded
+meshopt buffer views using the bundled MIT-licensed meshoptimizer 1.3.0 decoder.
+The first decode requires Node.js; verified cache reuse does not. The worker has
+an input/output size limit, deadline and cancellation, receives no model keys,
+and leaves source files untouched. Embedded textures, materials, node transforms
+and physical metadata remain in the intermediate GLB. No physics is inferred.
+
+Sixteen small Node checks verify decoded triangle data, metadata preservation and
+malformed input rejection. Ten Python checks cover the bounded worker, cleanup,
+integrity, cancellation and reuse without Node. Decoding the actual 870,796-byte
+rack took 0.0593 seconds and produced a 1,733,736-byte intermediate with its three
+materials and nine images. This was a byte-decompression check without rendering,
+simulation or collision generation; appearance and contact remain unverified.
+All nine embedded image byte sequences and the scene/material/joint metadata
+matched the source. A verified warm repeat took 0.0039 seconds.
+
+Next implementation: visual conversion into the existing source-backed asset
+library, separate interaction-aware collisions, and native validation when permitted.
 The browser and policy camera must depict the same physical scene. No full
 catalog download or new asset design is needed for these candidates.
