@@ -12,16 +12,16 @@ export class WorldViewer {
   constructor(canvas, labels, onSelect) {
     this.canvas = canvas;
     this.labels = labels;
-    this.onSelect = onSelect; this.active = true; this.disposed = false; this.fitted = true;
+    this.onSelect = onSelect; this.active = true; this.onScreen = true; this.disposed = false; this.fitted = true;
     this.shellNodes = []; this.shellCount = 0; this.cutaway = false; this.loads = new Set(); this.pendingLoads = [];
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#1e1e1e');
-    this.camera = new THREE.PerspectiveCamera(42, 1, 0.02, 500);
+    this.scene.background = new THREE.Color('#d3dae5');
+    this.camera = new THREE.PerspectiveCamera(30, 1, 0.02, 500);
     this.camera.up.set(0, 0, 1);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, 1.5));
     this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.autoUpdate = false;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = .95;
@@ -32,7 +32,7 @@ export class WorldViewer {
     this.layoutEnvironment.needsUpdate = true;
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
-    this.controls.maxPolarAngle = Math.PI * 0.49;
+    this.controls.maxPolarAngle = 1.25;
     this.controls.minDistance = 0.3;
     this.controls.target.set(0, 0, 0.5);
     this.scene.add(new THREE.HemisphereLight(0xe8eef7, 0x797b80, 1.2));
@@ -54,7 +54,10 @@ export class WorldViewer {
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
     this.down = null;
-    this.onPointerDown = e => { this.down = e.button === 0 ? [e.clientX, e.clientY] : null; };
+    this.onPointerDown = e => {
+      canvas.focus({ preventScroll: true });
+      this.down = e.button === 0 ? [e.clientX, e.clientY] : null;
+    };
     this.onPointerUp = e => {
       if (!this.down || Math.hypot(e.clientX - this.down[0], e.clientY - this.down[1]) > 5) return;
       const rect = canvas.getBoundingClientRect();
@@ -68,9 +71,11 @@ export class WorldViewer {
     };
     canvas.addEventListener('pointerdown', this.onPointerDown);
     canvas.addEventListener('pointerup', this.onPointerUp);
+    this.onKeyDown = event => this.handleShortcut(event);
+    canvas.addEventListener('keydown', this.onKeyDown);
     this.animate = () => {
       this.animation = null;
-      if (this.disposed || !this.active || canvas.hidden || document.hidden) return;
+      if (!this.isVisible()) return;
       this.resize();
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
@@ -87,13 +92,50 @@ export class WorldViewer {
     this.controls.addEventListener('start', this.onControlStart);
     this.resizeObserver = new ResizeObserver(() => this.invalidate());
     this.resizeObserver.observe(canvas.parentElement);
-    this.onVisibility = () => { if (!document.hidden) this.invalidate(); };
-    document.addEventListener('visibilitychange', this.onVisibility);
+    this.observeVisibility();
     this.invalidate();
   }
 
+  isVisible() {
+    return !this.disposed && this.active && this.onScreen && !this.canvas.hidden && !document.hidden;
+  }
+
+  observeVisibility() {
+    // Wait for the first intersection before starting potentially large source loads.
+    if (typeof IntersectionObserver !== 'undefined') {
+      this.onScreen = false;
+      this.intersectionObserver = new IntersectionObserver(entries => {
+        const entry = entries.findLast(entry => entry.target === this.canvas);
+        if (!entry) return;
+        this.onScreen = entry.isIntersecting && entry.intersectionRatio > 0;
+        this.updateVisibility();
+      });
+      this.intersectionObserver.observe(this.canvas);
+    }
+    this.onVisibility = () => this.updateVisibility();
+    document.addEventListener('visibilitychange', this.onVisibility);
+  }
+
+  updateVisibility() {
+    if (!this.isVisible()) {
+      if (this.animation != null) cancelAnimationFrame(this.animation);
+      this.animation = null;
+      return;
+    }
+    this.pumpLoads(); this.invalidate();
+  }
+
+  handleShortcut(event) {
+    if (!this.isVisible() || document.activeElement !== this.canvas || event.target !== this.canvas ||
+        event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+    if (event.key === 'Home' || event.key.toLowerCase() === 'f') {
+      event.preventDefault();
+      this.fit(event.key === 'Home' ? null : this.selectedObject);
+    }
+  }
+
   invalidate() {
-    if (!this.disposed && this.active && this.animation == null) this.animation = requestAnimationFrame(this.animate);
+    if (this.isVisible() && this.animation == null) this.animation = requestAnimationFrame(this.animate);
   }
 
   resize() {
@@ -112,8 +154,9 @@ export class WorldViewer {
     this.loadGeneration = (this.loadGeneration || 0) + 1;
     this.select(null); this.shellNodes = []; this.shellCount = 0; this.cutaway = false;
     const generation = this.loadGeneration;
-    this.spec = spec; this.reference = false; this.camera.layers.set(0); this.camera.fov = 42; this.camera.updateProjectionMatrix();
+    this.spec = spec; this.reference = false; this.controls.maxPolarAngle = 1.25; this.camera.layers.set(0); this.camera.fov = 30; this.camera.updateProjectionMatrix();
     this.scene.children.filter(n => n.isLight).forEach(n => { n.visible = true; });
+    this.scene.background.set('#d3dae5');
     this.scene.environment = this.layoutEnvironment; this.environmentTarget?.dispose(); this.environmentTarget = null;
     this.renderer.toneMappingExposure = .95; this.renderer.shadowMap.needsUpdate = true;
     disposeTree(this.group);
@@ -122,9 +165,9 @@ export class WorldViewer {
     this.sourceBatched = false; this.sourceBatchStats = null;
     this.assetErrorLabels = new Map(); this.additionalAssetErrors = 0; this.assetErrorSummary = null;
     const [w, d] = spec.bounds || [6, 6, 3];
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ color: 0x62676d, roughness: .86, metalness: .02, envMapIntensity: .35 }));
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ color: 0xe6ebf2, roughness: .86, metalness: .02, envMapIntensity: .35 }));
     floor.receiveShadow = true; floor.position.z = -0.012; this.group.add(floor);
-    const grid = new THREE.GridHelper(Math.max(w, d), Math.max(2, Math.min(200, Math.ceil(Math.max(w, d) * 2))), 0x818992, 0x6a737e);
+    const grid = new THREE.GridHelper(Math.max(w, d), Math.max(2, Math.min(200, Math.ceil(Math.max(w, d) * 2))), 0xaab6c8, 0xc3cad6);
     grid.scale.set(w/Math.max(w,d), 1, d/Math.max(w,d));
     grid.rotation.x = Math.PI / 2; grid.position.z = 0.001; grid.material.transparent = true; grid.material.opacity = .16; this.group.add(grid);
     const buckets = new Map();
@@ -193,7 +236,7 @@ export class WorldViewer {
   }
 
   pumpLoads() {
-    while (!this.disposed && this.active && this.loads.size < 4 && this.pendingLoads.length) this.loadOBJ(...this.pendingLoads.shift());
+    while (this.isVisible() && this.loads.size < 4 && this.pendingLoads.length) this.loadOBJ(...this.pendingLoads.shift());
   }
 
   async loadOBJ(object, assetBase, generation) {
@@ -269,7 +312,8 @@ export class WorldViewer {
     disposeTree(this.group);
     this.group.clear(); this.labels.replaceChildren(); this.annotations = []; this.objects = [];
     group.traverse(node => { if (node.isMesh) { node.layers.enableAll(); node.castShadow = true; node.receiveShadow = true; } });
-    this.group.add(group); this.reference = true; this.camera.layers.enableAll();
+    this.group.add(group); this.reference = true; this.controls.maxPolarAngle = Math.PI * .49; this.camera.layers.enableAll();
+    this.scene.background.set('#1e1e1e');
     this.scene.environment = null; this.renderer.toneMappingExposure = 1.2; this.renderer.shadowMap.needsUpdate = true;
     this.scene.children.filter(n => n.isLight).forEach(n => { n.visible = false; });
     if (environment) {
@@ -315,6 +359,7 @@ export class WorldViewer {
   }
 
   select(object) {
+    this.selectedObject = object;
     if (this.selectionOutline) { disposeTree(this.selectionOutline); this.scene.remove(this.selectionOutline); this.selectionOutline = null; }
     if (object) {
       const bounds = objectBounds(object);
@@ -332,8 +377,7 @@ export class WorldViewer {
 
   setActive(active) {
     this.active = active;
-    if (!active && this.animation != null) { cancelAnimationFrame(this.animation); this.animation = null; }
-    if (active) { this.pumpLoads(); this.invalidate(); }
+    this.updateVisibility();
   }
 
   abortLoads() { this.assets?.dispose(); this.assets = null; this.loads.clear(); this.pendingLoads = []; }
@@ -341,9 +385,10 @@ export class WorldViewer {
   dispose() {
     if (this.disposed) return;
     this.disposed = true; this.loadGeneration = (this.loadGeneration || 0)+1;
-    this.setActive(false); this.abortLoads(); this.resizeObserver.disconnect();
+    this.setActive(false); this.abortLoads(); this.resizeObserver.disconnect(); this.intersectionObserver?.disconnect();
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     this.canvas.removeEventListener('pointerup', this.onPointerUp);
+    this.canvas.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('visibilitychange', this.onVisibility);
     this.controls.removeEventListener('change', this.onControlChange);
     this.controls.removeEventListener('start', this.onControlStart); this.controls.dispose();

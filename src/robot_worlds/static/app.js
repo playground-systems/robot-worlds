@@ -1,4 +1,4 @@
-import { WorldViewer } from './scene.js';
+import { WorldViewer } from './scene.js?v=viz3d-1';
 
 const $ = id => document.getElementById(id);
 const state = { world: null, navigation: 0, worldId: null, worlds: [], runs: [], tab: 'scene', panel: 'agent', selectedObject: null, layerLimit: 120, mode: 'physical', jobId: null, eventSeen: new Set(), key: false, editing: false, isPreview: false, viewer: null, viewerSpec: null, reference: false, editMode: null, scope: [], lineage: [], lineageLoading: false, lineageError: '', submitting: false, jobContext: null, assets: [] };

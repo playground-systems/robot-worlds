@@ -13,8 +13,8 @@ for (const aspect of [.22, .5, 1, 1.8, 3.5]) {
     { min: [7, -2, 1], max: [7.1, -1.9, 1.2] },
   ]) {
     test(`all corners fit both frustum axes for aspect ${aspect} and ${bounds.max}`, () => {
-      for (const direction of [[.8, -.9, .85], [0, -.001, 1]]) {
-        const fit = perspectiveFit(bounds, aspect, 42, direction), tangent = Math.tan(42*Math.PI/360);
+      for (const direction of [[.8, -.9, .85], [0, -.001, 1]]) for (const fov of [30, 42]) {
+        const fit = perspectiveFit(bounds, aspect, fov, direction), tangent = Math.tan(fov*Math.PI/360);
         for (const point of boundsCorners(bounds)) {
           const relative = point.map((value, i) => value-fit.position[i]);
           const depth = -dot(relative, fit.backward);

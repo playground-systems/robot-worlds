@@ -71,6 +71,13 @@ No new browser screenshot, native material compilation or PBR policy-camera
 parity is established by these checks. The
 warehouse visual acceptance gate remains open.
 
+Subsequent [actual app captures](viz3d-rendering.md) show all five prepared source
+asset types in a deterministic warehouse preview. Original carton printing, rack
+braces and source materials are visible. The viz3d-informed viewer uses a 30°
+camera, readable captions and a 1.5 pixel-ratio cap; offscreen views pause frames
+and queued source loads. These captures add browser evidence, but not native PBR
+parity, frame-rate measurements or live-model warehouse generation.
+
 For normal-mapped GLBs, matching quarter-turn texture transforms with unit scale,
 integer offsets and REPEAT wrapping can be baked into all material images. This
 keeps the original UV tangent basis. Other rotated/reflected normal-map transforms

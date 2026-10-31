@@ -17,13 +17,13 @@ function fixture(extra = {}) {
   vm.runInContext(code, context);
   const viewer = Object.create(context.WorldViewer.prototype), canvas = new EventTarget(), controls = new EventTarget();
   controls.dispose = () => calls.push(['controls']);
-  Object.assign(viewer, { active: true, disposed: false, animation: 4, loads: new Set(), pendingLoads: [], canvas, controls,
+  Object.assign(viewer, { active: true, onScreen: true, disposed: false, animation: 4, loads: new Set(), pendingLoads: [], canvas, controls,
     resizeObserver: { disconnect: () => calls.push(['observer']) }, labels: { replaceChildren: () => calls.push(['labels']) },
     scene: { traverse: callback => callback({}), clear: () => calls.push(['scene']) },
     renderer: { shadowMap: {}, dispose: () => calls.push(['renderer']), forceContextLoss: () => calls.push(['context']) },
-    onPointerDown: () => calls.push(['pointer']), onPointerUp() {}, onVisibility: () => calls.push(['visibility']), onControlChange() {}, onControlStart() {},
+    onPointerDown: () => calls.push(['pointer']), onPointerUp() {}, onKeyDown: () => calls.push(['key']), onVisibility: () => calls.push(['visibility']), onControlChange() {}, onControlStart() {},
   });
-  canvas.addEventListener('pointerdown', viewer.onPointerDown); document.addEventListener('visibilitychange', viewer.onVisibility);
+  canvas.addEventListener('pointerdown', viewer.onPointerDown); canvas.addEventListener('keydown', viewer.onKeyDown); document.addEventListener('visibilitychange', viewer.onVisibility);
   return { viewer, calls, canvas, document };
 }
 
@@ -31,7 +31,7 @@ test('disposing a viewer cancels work, aborts assets and removes event listeners
   const { viewer, calls, canvas, document } = fixture(), request = new AbortController(); viewer.loads.add(request);
   viewer.assets = { dispose: () => request.abort() };
   viewer.pendingLoads.push(['later asset']); viewer.dispose(); viewer.dispose();
-  canvas.dispatchEvent(new Event('pointerdown')); document.dispatchEvent(new Event('visibilitychange')); viewer.invalidate();
+  canvas.dispatchEvent(new Event('pointerdown')); canvas.dispatchEvent(new Event('keydown')); document.dispatchEvent(new Event('visibilitychange')); viewer.invalidate();
   assert(request.signal.aborted); assert.equal(viewer.pendingLoads.length, 0);
   assert.deepEqual(calls, [['cancel', 4], ['observer'], ['controls'], ['scene'], ['labels'], ['renderer'], ['context']]);
   assert.equal(viewer.disposed, true);
@@ -141,4 +141,73 @@ test('failed source shells retain cutaway behavior and object selection', async 
   await viewer.loadOBJ(object, '/', 1);
   assert.equal(mesh.visible, false); assert.equal(viewer.objects[0].userData.object, object);
   viewer.setCutaway(false); assert.equal(mesh.visible, true);
+});
+
+test('offscreen and hidden-tab viewers stop queued loads and resume only when both are visible', () => {
+  let observe, disconnects = 0;
+  const { viewer, calls, canvas, document } = fixture({
+    IntersectionObserver: class {
+      constructor(callback) { observe = callback; }
+      observe(target) { this.target = target; }
+      disconnect() { disconnects++; }
+    },
+  });
+  document.removeEventListener('visibilitychange', viewer.onVisibility);
+  viewer.loadOBJ = value => viewer.loads.add(value);
+  viewer.pendingLoads = [[1], [2], [3], [4], [5]];
+  viewer.observeVisibility(); viewer.pumpLoads();
+  assert.equal(viewer.loads.size, 0, 'wait for the first intersection');
+  observe([{ target: canvas, isIntersecting: true, intersectionRatio: 1 }]);
+  assert.equal(viewer.loads.size, 4);
+  observe([{ target: canvas, isIntersecting: false, intersectionRatio: 0 }]);
+  viewer.loads.delete(1); viewer.pumpLoads(); viewer.invalidate();
+  assert.equal(viewer.pendingLoads.length, 1);
+  assert.deepEqual(calls, [['cancel', 4]]);
+  document.hidden = true;
+  observe([{ target: canvas, isIntersecting: true, intersectionRatio: 1 }]);
+  viewer.setActive(true); assert.equal(viewer.pendingLoads.length, 1);
+  document.hidden = false; document.dispatchEvent(new Event('visibilitychange'));
+  assert.equal(viewer.pendingLoads.length, 0); assert.equal(viewer.loads.size, 4);
+  assert.deepEqual(calls, [['cancel', 4], ['frame']]);
+  document.hidden = true; document.dispatchEvent(new Event('visibilitychange'));
+  assert.deepEqual(calls.at(-1), ['cancel', 17]);
+  viewer.dispose();
+  assert.equal(disconnects, 1);
+  const count = calls.length;
+  document.hidden = false;
+  observe([{ target: canvas, isIntersecting: true, intersectionRatio: 1 }]);
+  document.dispatchEvent(new Event('visibilitychange'));
+  assert.equal(calls.length, count, 'late observer callbacks cannot resurrect a disposed viewer');
+});
+
+test('visibility fallback still suspends tab and hidden canvas work without IntersectionObserver', () => {
+  const { viewer, calls, canvas, document } = fixture();
+  document.removeEventListener('visibilitychange', viewer.onVisibility);
+  viewer.observeVisibility();
+  document.hidden = true; document.dispatchEvent(new Event('visibilitychange'));
+  viewer.invalidate();
+  assert.deepEqual(calls, [['cancel', 4]]);
+  document.hidden = false; canvas.hidden = true;
+  document.dispatchEvent(new Event('visibilitychange')); viewer.setActive(true);
+  assert.deepEqual(calls, [['cancel', 4]]);
+  canvas.hidden = false; viewer.setActive(true);
+  assert.deepEqual(calls, [['cancel', 4], ['frame']]);
+});
+
+test('Home and F fit only the focused viewport and never intercept form or modified keys', () => {
+  const { viewer, canvas, document } = fixture(), fitted = [];
+  viewer.selectedObject = { id: 'rack' }; viewer.fit = object => fitted.push(object);
+  let prevented = 0;
+  const event = { key: 'f', target: canvas, preventDefault() { prevented++; } };
+  viewer.handleShortcut(event);
+  assert.equal(fitted.length, 0);
+  document.activeElement = canvas;
+  viewer.handleShortcut({ ...event, target: {} });
+  viewer.handleShortcut({ ...event, ctrlKey: true });
+  viewer.handleShortcut({ ...event, repeat: true });
+  assert.equal(fitted.length, 0);
+  viewer.handleShortcut(event); viewer.handleShortcut({ ...event, key: 'Home' });
+  assert.deepEqual(fitted, [viewer.selectedObject, null]); assert.equal(prevented, 2);
+  viewer.onScreen = false; viewer.handleShortcut(event);
+  assert.equal(fitted.length, 2);
 });

@@ -6,6 +6,7 @@ import re
 from concurrent.futures.process import BrokenProcessPool
 from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from fastapi.testclient import TestClient
 
@@ -149,7 +150,7 @@ def test_browser_control_ids_and_local_module_dependencies_resolve():
         for dependency in dependencies:
             assert dependency == "three" or dependency.startswith(".")
             if dependency.startswith("."):
-                assert (module.parent / dependency).resolve().is_file(), (filename, dependency)
+                assert (module.parent / urlsplit(dependency).path).resolve().is_file(), (filename, dependency)
 
 
 def test_standalone_report_escapes_untrusted_text_and_rejects_external_frame_paths():

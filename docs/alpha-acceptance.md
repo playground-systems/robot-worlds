@@ -26,8 +26,11 @@ Paid model requests are reserved for bounded full acceptance runs, not developme
 probes. Historical worlds and recordings are not rewritten. Runtime changes require
 fresh candidate validation; older green CI does not validate the current code.
 
-Current browser acceptance is also missing. No CPU-only viewer check, mocked
-bitmap decoder, source-scene import or prior screenshot establishes it.
+The [viz3d-guided warehouse preview](viz3d-rendering.md) now has actual application
+overview and detail screenshots, with original NVIDIA asset textures. Its
+deterministic layout and static checks do not establish live text generation,
+native contacts, reference-level visual quality or the complete browser acceptance
+journey. Those gates remain open.
 
 ## Evidence details
 
