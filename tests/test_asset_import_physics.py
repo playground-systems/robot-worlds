@@ -33,7 +33,10 @@ def test_original_textured_microwave_keeps_empty_cavity_and_passive_joints(nativ
         disc = runtime.model.joint("joint_"+asset.joint_ids["Disc001_joint"]).id
         assert not runtime.model.jnt_limited[disc]
         assert np.isfinite(runtime.data.qpos).all()
-        with Image.open(io.BytesIO(runtime.render(view="overview", lookat=[2, 0, .8], distance=1.2))) as image:
+        # Aim just in front of the door. A target inside the enclosed cavity
+        # correctly fails the spectator's camera-clearance guard.
+        with Image.open(io.BytesIO(runtime.render(view="overview", lookat=[1.8, -.5, .8],
+                                                 azimuth=90, elevation=-15, distance=1.2))) as image:
             assert image.size == (960, 720)
             assert len(set(image.resize((40, 30)).getdata())) > 30
     finally:
