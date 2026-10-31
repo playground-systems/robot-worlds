@@ -13,6 +13,34 @@ app = typer.Typer(no_args_is_help=True, help="Generate physical robot worlds and
 
 
 @app.command()
+def prepare_warehouse(data_dir: Path = Path(".robot-worlds"), output: Path | None = None,
+                      asset: list[str] = typer.Option([], help="Prepare only this source ID; repeat for a subset. Default: all four reviewed assets."),
+                      timeout: float = 300):
+    """Install reusable warehouse assets, without model calls or native simulation."""
+    from robot_worlds.artifacts import public_error
+    from robot_worlds.warehouse_library import prepare_warehouse_library
+
+    def progress(event):
+        if event["type"] == "asset_preparing":
+            typer.echo(f"[{event['index']}/{event['total']}] Preparing {event['asset_id']}…")
+        elif event["type"] == "asset_prepared":
+            typer.echo(f"  {event['components']} components; {event['license']}")
+        else:
+            typer.echo("Saving portable asset library…")
+    try:
+        result = prepare_warehouse_library(output or data_dir / "asset-library",
+            cache_dir=data_dir / "asset-cache", asset_ids=asset or None, timeout=timeout, on_event=progress)
+    except (ValueError, RuntimeError, OSError) as error:
+        typer.echo(public_error(error)["message"], err=True)
+        raise typer.Exit(1) from error
+    typer.echo(f"Installed {len(result.asset_ids)} assets in {result.seconds:.2f}s: {result.path}")
+    typer.echo("Asset preparation complete. Native scene validation still runs during generation.")
+    if output is None:
+        typer.echo("The workbench uses this library for new generation and edits with the same --data-dir.")
+    typer.echo(f"For CLI generation or edits, pass --asset-library {result.path}")
+
+
+@app.command()
 def doctor(json_output: bool = typer.Option(False, "--json"),
            model: str = "gpt-6-astra", data_dir: Path = Path(".robot-worlds")):
     """Check installation offline without starting physics or calling a model."""
@@ -39,12 +67,14 @@ def _progress(event: dict):
 def generate(prompt: str, output: Path = Path("worlds"), model: str = "gpt-6-astra",
              reasoning: str = "medium", max_repairs: int = 2,
              max_cost_usd: float = 5, max_model_seconds: float = 600,
-             scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0):
+             scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0,
+             asset_library: Path | None = typer.Option(None, exists=True, file_okay=False, help="Portable source asset library directory.")):
     """Generate and validate a new world from a text prompt."""
     from robot_worlds.sdk import generate as generate_world
     world = generate_world(prompt, output=output, model=model, reasoning=reasoning,
                            max_repairs=max_repairs, on_event=_progress,
                            scene_profile=scene_profile, max_objects=max_objects, min_objects=min_objects,
+                           asset_library=asset_library,
                            client_options={"max_cost_usd": max_cost_usd, "max_seconds": max_model_seconds,
                                            "max_output_tokens": 16384})
     typer.echo(str(world.path))
@@ -140,12 +170,13 @@ def inspect(world: Path):
 def refine(world: Path, prompt: str, model: str = "gpt-6-astra", max_repairs: int = 2,
            scope: list[str] = typer.Option([], help="Entity allowed to change; repeat to select more."),
            allow_task_changes: bool = False, allow_physics_changes: bool = False,
-           max_cost_usd: float = 5, max_model_seconds: float = 600):
+           max_cost_usd: float = 5, max_model_seconds: float = 600,
+           asset_library: Path | None = typer.Option(None, exists=True, file_okay=False, help="Portable source asset library directory.")):
     """Edit named scene entities and save a validated version with its actual diff."""
     from robot_worlds.sdk import load
     revised = load(world).refine(prompt, model=model, max_repairs=max_repairs, on_event=_progress,
         scope=scope or None, allow_task_changes=allow_task_changes,
-        allow_physics_changes=allow_physics_changes,
+        allow_physics_changes=allow_physics_changes, asset_library=asset_library,
         client_options={"max_cost_usd": max_cost_usd, "max_seconds": max_model_seconds})
     _show_edit(revised)
 
@@ -154,11 +185,12 @@ def refine(world: Path, prompt: str, model: str = "gpt-6-astra", max_repairs: in
 def repair(world: Path, prompt: str = "Fix unresolved validation failures while preserving the task and physical properties.",
            model: str = "gpt-6-astra", max_repairs: int = 2,
            scope: list[str] = typer.Option([], help="Entity allowed to change; repeat to select more."),
-           max_cost_usd: float = 5, max_model_seconds: float = 600):
+           max_cost_usd: float = 5, max_model_seconds: float = 600,
+           asset_library: Path | None = typer.Option(None, exists=True, file_okay=False, help="Portable source asset library directory.")):
     """Diagnose and repair a saved scene without weakening its mission or physics."""
     from robot_worlds.sdk import load
     revised = load(world).repair(prompt, model=model, max_repairs=max_repairs, on_event=_progress,
-        scope=scope or None,
+        scope=scope or None, asset_library=asset_library,
         client_options={"max_cost_usd": max_cost_usd, "max_seconds": max_model_seconds})
     _show_edit(revised)
 

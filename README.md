@@ -20,6 +20,18 @@ Open **http://127.0.0.1:8765**. Enter a scene and task, inspect the generated ge
 
 See the [SDK and sensor contract](docs/sdk.md) for custom policies and appliance environments. See [setup and model access](docs/setup.md) for offline `doctor` checks, API requirements, the optional Codex SDK transport, and clean installation.
 
+For reusable warehouse models, install the reviewed rack, pallet, carton and
+barrier into the workbench's asset library:
+
+```sh
+uv run robot-worlds prepare-warehouse
+```
+
+First preparation needs Node.js 20+; it makes no model calls. Source geometry,
+textures and attribution are retained. [Setup details](docs/setup.md) explain
+subset selection and CLI use. Native contacts and the generated warehouse demo
+remain on the [release acceptance checklist](docs/alpha-acceptance.md).
+
 ```python
 from robot_worlds import generate, LLMAgent
 
@@ -41,7 +53,7 @@ Generation can return an **unvalidated** world. Inspect `world.manifest["validat
 - **Evaluation:** local checks grade the recorded state. Criteria support object identity, contact, containment, grasping, temporal order, holding duration and alternatives. Inference wall time is separate from simulated time.
 - **Inspection:** watch a live spectator camera, the current robot action and provisional milestones while evaluation runs. The final report independently rechecks the full trace. Worlds and runs export as ZIP archives.
 
-TIAGo++ uses the pinned MuJoCo Menagerie model with documented wheel and gripper collision approximations. Unitree G1 uses the 29-DOF body, Dex1 parallel grippers and an official walking policy. Engineering tests cover contact grasping, carrying and flat-ground locomotion; arbitrary terrain and payloads remain unvalidated. See [the implementation evidence and remaining work](docs/product-goal.md).
+TIAGo++ is the primary robot, using the pinned MuJoCo Menagerie model with documented wheel and gripper collision approximations. Experimental Unitree G1 uses the 29-DOF body, Dex1 parallel grippers and an official walking policy. Engineering tests cover contact grasping, carrying and flat-ground locomotion; arbitrary terrain and payloads remain unvalidated. See [the implementation evidence and remaining work](docs/product-goal.md).
 
 For larger facilities, select the large-scene generation profile. For repeated evaluations, the SDK, API and CLI support isolated workers and explicit EGL rendering. MuJoCo physics remains CPU-based. [Parallel evaluation](docs/parallel-evaluation.md) explains the controls and per-episode budgets; [GPU validation](docs/gpu-validation.md) records the measured limits.
 

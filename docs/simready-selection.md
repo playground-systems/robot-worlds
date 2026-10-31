@@ -151,6 +151,15 @@ Warm preparation/registration took 0.0146, 0.0275 and 0.0124 s respectively.
 These are local asset-processing measurements, not live generation or native
 physics/rendering evidence. No full catalog or source-scene import was needed.
 
+`robot-worlds prepare-warehouse` and `prepare_warehouse_library` now install this
+subset into a new portable library. The actual command installed all four into
+the workbench data directory in 2.31 s (2.67 s process wall time), with about
+146 MB maximum resident memory. Source downloads/decodes were already cached;
+this is not a completely cold setup measurement. A warm prepare/copy to a
+temporary destination took 0.2333 s and produced the same library identity.
+That temporary copy was removed. The installed planning catalog includes all
+four warehouse assets plus the two bundled household assets.
+
 The saved four-asset library also passes static checks after whole-asset 90°
 and 270° placement: all 158 components, including 12 visual meshes, retain
 aligned collision bounds. These are SDK placement probes, not model-generated

@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import platform
+import shutil
 import sys
 from importlib import metadata, resources
 from pathlib import Path
@@ -16,6 +17,10 @@ DEPENDENCIES = (
 REQUIRED_RESOURCES = (
     "static/index.html", "static/app.js", "static/styles.css", "static/scene.js",
     "static/scene-resources.js", "static/scene-inspection.js", "static/scene-appearance.js",
+    "static/scene-assets.js", "static/scene-materials.js", "static/scene-textures.js",
+    "warehouse_library.py", "simready_structures.py", "assets/simready/catalog.json",
+    "assets/codecs/decode-glb.mjs", "assets/codecs/meshopt_decoder.mjs",
+    "assets/codecs/meshopt-source.json", "assets/codecs/MESHOPT-LICENSE.md",
     "static/vendor/three.module.js", "static/vendor/three.core.js",
     "static/vendor/OBJLoader.js", "static/vendor/OrbitControls.js", "static/vendor/THREE-LICENSE.txt",
     "assets/robots/tiago/tiago_dual.xml", "assets/robots/tiago/tiago_dual_position.xml",
@@ -91,6 +96,12 @@ def collect_diagnostics(*, model: str = "gpt-6-astra", data_dir: str | Path = ".
     checks.append({"id": "storage", "status": "ok" if advisory_writable else "warning",
                    "message": "The nearest existing data-directory ancestor appears writable." if advisory_writable else "Check write permissions for the chosen data directory.",
                    "limit": "Advisory permission check only; no directory or probe file was created."})
+    node_available = shutil.which("node") is not None
+    checks.append({"id": "warehouse_preparation", "status": "ok" if node_available else "warning",
+                   "node_available": node_available,
+                   "message": "Node is on PATH; its version was not probed. First warehouse preparation requires Node 20+." if node_available else
+                              "Optional warehouse preparation needs Node 20+ for its first mesh decode. Existing prepared libraries and verified decoded caches do not require Node.",
+                   "limit": "No executable was launched. This does not verify warehouse asset compatibility or native simulation."})
     return {"schema_version": "1", "mode": "offline", "offline_ready": not any(check["status"] == "error" for check in checks),
             "model_verified": False, "physics_verified": False, "graphics_verified": False,
             "checks": checks}

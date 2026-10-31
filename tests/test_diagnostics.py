@@ -77,3 +77,17 @@ def test_module_main_produces_parseable_json_and_exit_status(monkeypatch, tmp_pa
         "offline_ready": False, "checks": [], "mode": "offline"})
     assert diagnostics.main(["--json"]) == 1
     assert not json.loads(capsys.readouterr().out)["offline_ready"]
+
+
+def test_optional_warehouse_decoder_does_not_block_basic_workflow_or_reveal_paths(monkeypatch, tmp_path):
+    prepared(monkeypatch, tmp_path)
+    monkeypatch.setattr(diagnostics.shutil, 'which', lambda _: None)
+    report = diagnostics.collect_diagnostics()
+    check = next(c for c in report['checks'] if c['id'] == 'warehouse_preparation')
+    assert report['offline_ready'] and check['status'] == 'warning'
+    assert 'Existing prepared libraries' in check['message']
+    monkeypatch.setattr(diagnostics.shutil, 'which', lambda _: '/private/secret/node')
+    report = diagnostics.collect_diagnostics()
+    check = next(c for c in report['checks'] if c['id'] == 'warehouse_preparation')
+    assert check['node_available'] and 'version was not probed' in check['message']
+    assert '/private/secret' not in json.dumps(report)

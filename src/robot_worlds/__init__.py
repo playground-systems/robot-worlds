@@ -33,6 +33,7 @@ from robot_worlds.simready import (
 )
 from robot_worlds.simready_rack import import_simready_rack
 from robot_worlds.simready_structures import import_simready_structure
+from robot_worlds.warehouse_library import PreparedWarehouseLibrary, prepare_warehouse_library
 
 __all__ = ["AssetResolutionError", "FuelAssetResolver", "SourceAssetRequest", "CollisionPreparationCancelled", "CollisionPreparationError", "PreparedCollision", "prepare_collision_mesh", "import_fuel_mesh_asset", "import_sdf_mesh_asset", "AssetLibrary", "AssetDownloadError", "DownloadedAsset", "download_fuel_asset", "AssetIncompatible", "AssetSearchIncomplete", "Criterion", "LLMAgent", "RemotePolicy", "Report", "SceneObject", "World", "WorldSpec", "evaluate_batch", "generate", "import_convex_mesh_asset", "import_mjcf_asset", "load", "load_prepared_asset", "prepared_asset_catalog", "search_online_assets", "source_asset"]
 __all__ += ["SimReadySource", "download_simready_asset", "simready_asset_catalog", "simready_asset_search"]
@@ -41,3 +42,4 @@ __all__ += ["SurfaceMaterial"]
 __all__ += ["GLBVisuals", "prepare_glb_visuals"]
 __all__ += ["import_simready_rack"]
 __all__ += ["import_simready_structure"]
+__all__ += ["PreparedWarehouseLibrary", "prepare_warehouse_library"]

@@ -19,6 +19,36 @@ Open http://127.0.0.1:8765. Describe a place, robot and task; inspect validation
 
 `doctor --json` produces a shareable offline report. It does not make API calls, import native simulator libraries, create a graphics context or write probe files. An offline pass establishes prerequisite presence; model access, dependency compatibility, native loading and rendering remain separate checks.
 
+To add reusable warehouse assets, install Node.js 20+ for the first mesh decode,
+then run:
+
+```sh
+uv run robot-worlds prepare-warehouse --data-dir .robot-worlds
+```
+
+This prepares four pinned sources: rack, pallet, sealed carton and fixed safety
+barrier. Their GLBs total about 1.93 MB; the prepared portable library is about
+24 MB. It retains original visual data, attribution and disclosed collision
+approximations. No model key, native simulator or GPU is used during preparation.
+The conveyor remains unsupported by this rigid importer.
+
+New workbench generation/refine/repair jobs discover
+`.robot-worlds/asset-library` automatically. Use the same `--data-dir` when
+starting the server. CLI generation and edits accept the library explicitly:
+
+```sh
+uv run robot-worlds generate "A warehouse with parts storage and an inspection area. Use TIAGo++; navigate to inspection." --asset-library .robot-worlds/asset-library
+```
+
+Preparation supports repeated `--asset` flags for a subset, such as
+`--asset pallet_a01 --asset box_corrugated_brown_b20`, and `--timeout` (up to
+600 seconds). It refuses to replace existing directories; use an installed
+library as-is or choose a new `--output` directory. A failed or cancelled attempt
+retains verified caches and publishes no partial library. The final library copy
+is atomic; Ctrl-C interrupts setup. Existing prepared libraries and decoded
+caches can be used without Node. Scene validation still runs during generation;
+preparation alone does not establish native contact behavior or task solvability.
+
 ## Optional Codex SDK transport
 
 With a recent Codex CLI installed and signed in, the SDK can request decisions through `codex exec`. This uses the account's Codex plan limits rather than API credits; it has no API dollar cap. The transport bounds calls and wall time, and uses reported token totals to stop subsequent calls. It does not extract or copy sign-in credentials. See [Codex authentication](https://learn.chatgpt.com/docs/auth).

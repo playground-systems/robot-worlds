@@ -200,3 +200,28 @@ def test_generate_forwards_explicit_large_scene_minimum_and_budgets(dispatch, mo
     assert kwargs["max_objects"] == 900
     assert kwargs["client_options"] == {"max_cost_usd": 2, "max_seconds": 240,
                                        "max_output_tokens": 16384}
+
+
+@pytest.mark.parametrize("command", ['generate', 'refine', 'repair'])
+def test_cli_generation_and_edits_accept_installed_libraries(dispatch, monkeypatch, tmp_path, command):
+    library = tmp_path / 'asset-library'
+    library.mkdir()
+    result_world = SimpleNamespace(path=tmp_path / 'world', manifest={'validation': {'status': 'ready'}, 'edit': {}})
+    method = Mock(return_value=result_world)
+    if command == 'generate':
+        monkeypatch.setattr(sdk, 'generate', method)
+        args = [command, 'A warehouse']
+    else:
+        setattr(dispatch.world, command, method)
+        args = [command, 'saved-world'] + (['Move storage'] if command == 'refine' else [])
+    result = dispatch.runner.invoke(app, [*args, '--asset-library', str(library)])
+    assert result.exit_code == 0, result.output
+    assert method.call_args.kwargs['asset_library'] == library
+
+
+def test_missing_library_cli_path_fails_before_generation(dispatch, monkeypatch, tmp_path):
+    method = Mock()
+    monkeypatch.setattr(sdk, 'generate', method)
+    result = dispatch.runner.invoke(app, ['generate', 'A warehouse', '--asset-library', str(tmp_path/'missing')])
+    assert result.exit_code == 2
+    method.assert_not_called()

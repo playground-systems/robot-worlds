@@ -376,6 +376,25 @@ current limits are 32 registered assets, 1,000 components per asset, 32 MiB per
 source file and 256 MiB of referenced files per library. Automatic online
 selection and broader SDF import remain separate, unfinished work.
 
+For the four reviewed warehouse sources, the SDK can prepare and save a library
+in one call, with the same caches and checks as `robot-worlds prepare-warehouse`:
+
+```python
+from robot_worlds import prepare_warehouse_library
+
+prepared = prepare_warehouse_library(
+    "warehouse-library", cache_dir="asset-cache", timeout=300,
+    on_event=lambda event: print(event["type"], event.get("asset_id", "")),
+)
+# generate(prompt, asset_library=prepared.path)
+```
+
+`asset_ids=["pallet_a01"]` prepares only that source. `cancelled=` accepts a
+cooperative cancellation callback. Existing destinations are rejected; no partial
+library is published if source preparation fails. The final bounded library copy
+is the commit step. This helper creates no scene and performs no model call or
+native simulation. Native validation remains part of generation.
+
 For the reviewed NVIDIA/CodePawl warehouse rack, the bounded importer downloads
 only the pinned model, retains its detailed materials, and prepares separate
 structural collision envelopes:
