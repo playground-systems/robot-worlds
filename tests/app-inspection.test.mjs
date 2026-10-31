@@ -24,7 +24,7 @@ function fixture() {
   const nodes = new Map(ids.map(id => [id, new Element()])), shell = new Element(), events = new Map(), calls = [];
   class Viewer {
     constructor() { this.shellCount = 2; this.cutaway = false; calls.push('create'); }
-    setSpec(spec) { this.spec = spec; calls.push('spec'); }
+    setSpec(spec, assetBase) { this.spec = spec; this.assetBase = assetBase; calls.push('spec'); }
     setActive(active) { this.active = active; calls.push(['active', active]); }
     setCutaway(enabled) { this.cutaway = enabled; }
     select(object) { this.selected = object; }
@@ -49,8 +49,21 @@ test('saved geometry previews do not offer a nonexistent native frame', () => {
   run("state.world.manifest.validation={status:'preview',checks:[{check:'schema',passed:true}]};displaySpec(state.world.spec);");
   assert.equal(nodes.get('physical-tab').disabled, true);
   assert.equal(nodes.get('view-state').textContent, 'CANDIDATE LAYOUT');
+  assert.equal(run('state.viewer.assetBase'), '/api/worlds/version/files/');
   run("state.world.manifest.validation={status:'unvalidated',checks:[{check:'render',passed:true}]};displaySpec(state.world.spec);");
   assert.equal(nodes.get('physical-tab').disabled, false);
+  run("state.worldId=null;state.viewerSpec=null;displaySpec(state.world.spec,true);");
+  assert.equal(run('state.viewer.assetBase'), null);
+});
+
+test('source visual inspector does not report placeholder mass as physical mass', () => {
+  const {run, nodes} = fixture();
+  run("selectObject({...currentSpec().objects[0],kind:'mesh',collision:false,texture_path:'assets/texture.png',parent_id:'body'});");
+  const text = node => [node.textContent || '', ...node.children.map(text)].join(' ');
+  const details = text(nodes.get('inspector-body'));
+  assert.match(details, /Appearance only/);
+  assert.match(details, /Bundled source texture/);
+  assert.doesNotMatch(details, /1 kg/);
 });
 
 test('live camera updates pause WebGL, show actual time, and keep provisional milestones separate', () => {

@@ -98,7 +98,7 @@ function setView(mode) {
   if (layout && currentSpec()) {
     const viewer = getViewer();
     if (viewer && state.viewerSpec !== currentSpec()) {
-      viewer.setSpec(currentSpec(), state.worldId && !state.isPreview ? `/api/worlds/${encodeURIComponent(state.worldId)}/files/` : null);
+      viewer.setSpec(currentSpec(), state.worldId ? `/api/worlds/${encodeURIComponent(state.worldId)}/files/` : null);
       state.viewerSpec = currentSpec(); viewer.select(state.selectedObject);
     }
     if (!viewer && !state.isPreview && state.worldId) { setView('physical'); return; }
@@ -191,7 +191,7 @@ function renderAgentHistory() {
       const links = el('div');
       for (const id of ids.slice(0, 3)) { const entity = entities.find(item => item.id === id), button = el('button', 'inline-entity', entity?.label || id); button.disabled = !!state.jobId || state.submitting; button.onclick = async () => { try { if (state.worldId !== entry.id) await openWorld(entry.id); const current = currentSpec()?.objects?.find(object => object.id === id); if (current) selectObject(current); else { state.tab = 'changes'; syncTabs(); renderInspector(); } } catch (error) { notice(error.message); } }; links.append(button); }
       result.append(links);
-    } else result.append(el('span', '', `Created ${spec?.objects?.length || 0} physical objects. ${spec?.robot || 'Robot'} world.`));
+    } else result.append(el('span', '', `Created ${spec?.objects?.length || 0} scene components. ${spec?.robot || 'Robot'} world.`));
     result.append(el('div', 'conversation-status', validation.status === 'ready' ? 'Recorded checks passed. Task success still needs evaluation.' : validation.status === 'preview' ? 'Preview saved. Native validation has not run.' : 'Validation unresolved. Inspect checks or request a repair.'));
     turn.append(result);
     const parent = parentOf(entry.world);
@@ -263,14 +263,17 @@ function renderObjectProperties(root, object) {
   }
   dimensions(section('Position'), ['X', 'Y', 'Z'], object.position);
   dimensions(section('Dimensions'), ['W', 'D', 'H'], object.size);
-  const physical = section('Physics'); row(physical, 'Body', object.movable ? 'Movable' : 'Fixed'); row(physical, 'Mass', object.mass == null ? null : `${object.mass} kg`);
+  const physical = section('Physics'); row(physical, 'Body', object.collision === false ? 'Appearance only' : object.joint ? 'Articulated' : object.movable ? 'Movable' : 'Fixed');
+  if (object.collision !== false) row(physical, 'Mass', object.mass == null ? null : `${object.mass} kg`);
   if (object.parent_id) row(physical, 'Parent', object.parent_id);
   if (object.joint) { row(physical, 'Joint', object.joint.type || object.joint.kind); row(physical, 'Axis', object.joint.axis?.join(', ')); }
-  if (object.friction) row(physical, 'Friction', Array.isArray(object.friction) ? object.friction.join(' / ') : object.friction);
+  if (object.collision !== false && object.friction) row(physical, 'Friction', Array.isArray(object.friction) ? object.friction.join(' / ') : object.friction);
   const appearance = section('Appearance'), color = object.color || [.5, .5, .5], colorRow = el('div', 'color-value'), swatch = el('span', 'object-swatch');
   const components = color.map(value => Math.round(Math.max(0, Math.min(1, value)) * 255)); swatch.style.backgroundColor = `rgb(${components.join(',')})`;
   colorRow.append(swatch, el('output', '', '#' + components.map(value => value.toString(16).padStart(2, '0')).join('').toUpperCase())); appearance.append(colorRow);
-  if (object.kind === 'mesh') root.append(el('p', 'small muted', 'The layout uses declared mesh bounds. Inspect the native physical view for the imported geometry.'));
+  if (object.texture_path) row(appearance, 'Surface', 'Bundled source texture');
+  if (object.visible === false) row(appearance, 'Display', 'Collision component; appearance supplied by its assembly');
+  if (object.kind === 'mesh') root.append(el('p', 'small muted', object.collision === false ? 'Source visual mesh. Physical contact uses the attached collision components; this mesh adds no mass.' : 'Bundled OBJ geometry is displayed when available. Native contact uses its convex hull.'));
   if (state.worldId) { const edit = el('button', 'button selected-edit', 'Ask agent to change this object'); edit.disabled = !!state.jobId || !state.key; edit.onclick = () => { setEditMode('edit', { preserveDraft: true }); state.scope = [object.id]; renderScope(); }; root.append(edit); }
   root.append(el('p', 'small muted', 'Read-only properties · edit through a text request.'));
 }
