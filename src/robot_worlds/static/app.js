@@ -65,17 +65,18 @@ function getViewer() {
   return state.viewer;
 }
 function displaySpec(spec, preview = false) {
-  state.isPreview = preview; state.reference = false;
+  state.isPreview = preview || statusOf(state.world) !== 'ready'; state.reference = false;
+  const hasNativePreview = !preview && (statusOf(state.world) === 'ready' || state.world?.manifest?.validation?.checks?.some(check => check.check === 'render' && check.passed));
   document.querySelector('.app-shell').classList.remove('showing-report');
   $('report-frame').src = 'about:blank';
   $('report-area').hidden = true; $('work-area').hidden = false; $('viewport').classList.remove('empty'); $('empty-state').hidden = true;
   $('world-title').textContent = spec.name || 'Generating world'; $('workspace-eyebrow').textContent = preview ? 'Candidate · checking physics' : `Robot Worlds · ${shorten(state.worldId, 8)}`;
   $('viewport-info').textContent = `${spec.bounds?.[0] || '?'} × ${spec.bounds?.[1] || '?'} m · ${spec.objects?.length || 0} objects · ${spec.robot || 'robot pending'}`;
-  $('physical-tab').disabled = preview; $('layout-tab').disabled = false; $('fit-view').disabled = false;
+  $('physical-tab').disabled = !hasNativePreview; $('layout-tab').disabled = false; $('fit-view').disabled = false;
   $('world-status').hidden = false; const status = preview ? 'preview' : statusOf(state.world); $('world-status').className = 'badge ' + status; $('world-status').textContent = status;
   renderLayers();
   renderInspector();
-  if (preview) setView('layout');
+  if (!hasNativePreview) setView('layout');
   else { $('physical-image').src = `/api/worlds/${encodeURIComponent(state.worldId)}/preview.png`; setView('layout'); }
   controls();
 }
@@ -191,7 +192,7 @@ function renderAgentHistory() {
       for (const id of ids.slice(0, 3)) { const entity = entities.find(item => item.id === id), button = el('button', 'inline-entity', entity?.label || id); button.disabled = !!state.jobId || state.submitting; button.onclick = async () => { try { if (state.worldId !== entry.id) await openWorld(entry.id); const current = currentSpec()?.objects?.find(object => object.id === id); if (current) selectObject(current); else { state.tab = 'changes'; syncTabs(); renderInspector(); } } catch (error) { notice(error.message); } }; links.append(button); }
       result.append(links);
     } else result.append(el('span', '', `Created ${spec?.objects?.length || 0} physical objects. ${spec?.robot || 'Robot'} world.`));
-    result.append(el('div', 'conversation-status', validation.status === 'ready' ? 'Recorded checks passed. Task success still needs evaluation.' : 'Validation unresolved. Inspect checks or request a repair.'));
+    result.append(el('div', 'conversation-status', validation.status === 'ready' ? 'Recorded checks passed. Task success still needs evaluation.' : validation.status === 'preview' ? 'Preview saved. Native validation has not run.' : 'Validation unresolved. Inspect checks or request a repair.'));
     turn.append(result);
     const parent = parentOf(entry.world);
     if (parent) { const previous = versionButton(parent, '↶ Previous version'); previous.classList.add('previous-version'); turn.append(previous); }

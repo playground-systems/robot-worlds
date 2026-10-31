@@ -4,7 +4,7 @@ import { OBJLoader } from './vendor/OBJLoader.js';
 import { disposeMaterials, disposeTree } from './scene-resources.js';
 import { isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js';
 import { APPEARANCE_NOTICE, estimatedAppearance, studioEnvironmentPixels } from './scene-appearance.js';
-import { closedProfile, geometryKey } from './scene-shapes.js';
+import { geometryKey, revolvedGeometry } from './scene-shapes.js';
 
 /** Layout inspection only. The native PNG is the physical robot representation. */
 export class WorldViewer {
@@ -141,9 +141,7 @@ export class WorldViewer {
       if (kind === 'sphere') geometry = new THREE.SphereGeometry(.5, 20, 12);
       else if (kind === 'cylinder') { geometry = new THREE.CylinderGeometry(.5, .5, 1, 24); geometry.rotateX(Math.PI / 2); }
       else if (kind === 'revolved') {
-        const shape = objects[0].revolved;
-        geometry = new THREE.LatheGeometry(closedProfile(shape.profile).map(p => new THREE.Vector2(...p)), shape.segments);
-        geometry.rotateX(Math.PI / 2);
+        geometry = revolvedGeometry(THREE, objects[0].revolved);
       }
       else geometry = new THREE.BoxGeometry(1, 1, 1);
       geometries.set(shapeKey, geometry);

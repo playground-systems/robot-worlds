@@ -44,6 +44,15 @@ function fixture() {
   return { run, nodes, calls, events, context, shell };
 }
 
+test('saved geometry previews do not offer a nonexistent native frame', () => {
+  const {run, nodes} = fixture();
+  run("state.world.manifest.validation={status:'preview',checks:[{check:'schema',passed:true}]};displaySpec(state.world.spec);");
+  assert.equal(nodes.get('physical-tab').disabled, true);
+  assert.equal(nodes.get('view-state').textContent, 'CANDIDATE LAYOUT');
+  run("state.world.manifest.validation={status:'unvalidated',checks:[{check:'render',passed:true}]};displaySpec(state.world.spec);");
+  assert.equal(nodes.get('physical-tab').disabled, false);
+});
+
 test('live camera updates pause WebGL, show actual time, and keep provisional milestones separate', () => {
   const { run, nodes, calls } = fixture();
   run("setView('layout');showLiveFrame({run_id:'a'.repeat(32),episode:0,sequence:4,time:2.5,path:'episode-000/live.png'});");

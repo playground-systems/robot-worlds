@@ -13,3 +13,9 @@ export function closedProfile(profile) {
   if (area < 0) points.reverse();
   return [...points, [...points[0]]];
 }
+
+export function revolvedGeometry(THREE, shape) {
+  const geometry = new THREE.LatheGeometry(closedProfile(shape.profile).map(p => new THREE.Vector2(...p)), shape.segments);
+  geometry.rotateX(Math.PI / 2);
+  return geometry;
+}

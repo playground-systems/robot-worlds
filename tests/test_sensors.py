@@ -2,6 +2,7 @@
 import math
 from types import SimpleNamespace
 
+import mujoco
 import numpy as np
 import pytest
 
@@ -100,3 +101,13 @@ def test_action_boundary_converts_arm_target_and_removes_oracle_feedback():
     result = runtime.execute({"tool": "drive", "arguments": {"distance": .2, "turn": 0}})
     assert not {"position", "yaw", "distance_traveled", "turn_reached"} & result.keys()
     assert result["encoder_distance_m"] == 0  # No encoder motion despite oracle claim.
+
+
+@pytest.mark.parametrize("warning", ["mjWARN_CONTACTFULL", "mjWARN_CNSTRFULL", "mjWARN_BADQACC"])
+def test_solver_capacity_or_numerical_failure_cannot_continue_as_valid_physics(warning):
+    runtime = sensor_runtime()
+    runtime.data.warning = [SimpleNamespace(number=0) for _ in range(int(mujoco.mjtWarning.mjNWARNING))]
+    runtime._check_physics_warnings()
+    runtime.data.warning[int(getattr(mujoco.mjtWarning, warning))].number = 1
+    with pytest.raises(RuntimeError, match=warning):
+        runtime._check_physics_warnings()

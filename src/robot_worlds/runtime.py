@@ -196,6 +196,7 @@ class Runtime:
                     self._geom_objects[gid] = oid
         self._setup_robot()
         self._reset()
+        self._check_physics_warnings()
         self._initial_yaw = self._yaw()
         self._odometry = WheelOdometry(self._wheel_angles(), self._yaw()) if spec.robot == "tiago++" else None
 
@@ -342,6 +343,14 @@ class Runtime:
     def _append_objects(self, root):
         if sum(collision_count(obj) for obj in self.spec.objects) > MAX_SCENE_COLLIDERS:
             raise ValueError(f"Scene exceeds {MAX_SCENE_COLLIDERS} physical scene colliders")
+        if any(obj.kind == "revolved" for obj in self.spec.objects):
+            # Many wedges can simultaneously rest on one support. MuJoCo's
+            # default arena estimate is too small for this contact pattern.
+            size = root.find("size")
+            if size is None:
+                size = ET.SubElement(root, "size")
+            size.set("memory", "128M")
+            root.find("option").set("jacobian", "sparse")
         world = root.find("worldbody")
         bodies = {}
         remaining = list(self.spec.objects)
@@ -541,6 +550,7 @@ class Runtime:
                 raise SimulationTimeLimit()
             self._before_step()
             mujoco.mj_step(self.model, self.data)
+            self._check_physics_warnings()
             if getattr(self, "_odometry", None) is not None:
                 self._odometry.update(self._wheel_angles(), self._yaw())
             if not np.isfinite(self.data.qpos).all() or np.max(np.abs(self.data.qvel)) > 1e4:
@@ -550,6 +560,14 @@ class Runtime:
             if self.data.time + 1e-8 >= self._next_sample:
                 self._sample()
                 self.publish_live()
+
+    def _check_physics_warnings(self):
+        from .reset_diagnostics import INVALIDATING_WARNINGS
+        warnings = getattr(self.data, "warning", ())
+        for name in sorted(INVALIDATING_WARNINGS):
+            index = int(getattr(mujoco.mjtWarning, name))
+            if index < len(warnings) and warnings[index].number:
+                raise RuntimeError(f"Simulator emitted {name}; physics evidence is invalid. Reduce contact complexity or increase the bounded solver arena.")
 
     def _contact_state(self):
         pairs, fingers = set(), {h: {} for h in ("left", "right")}
