@@ -64,3 +64,25 @@ def test_empty_search_to_generated_hinged_fixture_native_validation_and_export(t
     shutil.rmtree(tmp_path / "asset-cache")
     assert load(world.path).id == world.id
     assert world.export(tmp_path / "generated-fixture.zip").is_file()
+
+
+def test_batched_distinct_source_selection_generates_a_native_portable_world(tmp_path, monkeypatch, native_rendering):
+    from test_batch_asset_resolution import distinct_sources
+    requests, response, candidates = distinct_sources(tmp_path, monkeypatch)
+    initial = draft(requests[0])
+    initial["asset_requests"] = [item.model_dump(mode="json") for item in requests]
+    plan = final_plan(requests[0].asset_id, prefix="blue")
+    plan["prepared_assets"].append(dict(id="red", asset_id=requests[1].asset_id, position=[2, 1, .001]))
+    client = Client([initial, response, plan])
+    world = generate("Move the blue source object; keep the red object nearby", client=client,
+                     output=tmp_path / "worlds", max_repairs=0)
+    assert world.manifest["validation"]["status"] == "ready", world.manifest["validation"]
+    assert len(client.prompts) == 3  # Draft, one shared selection, grounded scene.
+    assert len({obj.texture_path for obj in world.spec.objects if obj.texture_path}) == 2
+    for prefix, selected in zip(("blue", "red"), candidates):
+        obj = next(obj for obj in world.spec.objects if obj.id == prefix+"_part0")
+        metadata = json.loads((world.path / obj.source_metadata).read_text())
+        assert metadata["source_resolution"]["selected"]["id"] == selected.id
+    shutil.rmtree(tmp_path / "asset-cache")
+    assert load(world.path).id == world.id
+    assert world.export(tmp_path / "batch-sources.zip").is_file()

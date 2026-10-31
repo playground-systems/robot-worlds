@@ -127,8 +127,11 @@ replans placement. No preview is published from the unresolved asset draft.
   scene response, without repeating acquisition or selection. The catalog includes
   mobility, dimensions, physical mass and whether mass must be preserved or supplied
   as an estimate. Installed library IDs keep precedence.
-- Installed assets need no extra model request. A new lookup with candidates adds one selection
-  call per asset and another scene-planning call per resolution round.
+- Installed assets need no extra model request. Uncached source requests share
+  selection calls when their complete candidate sets fit the 200,000-character
+  metadata limit; larger sets split across calls without truncation. Identical
+  queries share a completed search within the batch. A scene-planning call follows
+  each resolution round. Cached sources and empty searches need no selection call.
 - Search, selection, download, preparation and reuse appear in progress events.
   Exported metadata retains the query, catalog results, source revision/license
   and selection rationale.
@@ -178,6 +181,14 @@ can instead retain a completed, matching search with zero candidates; it does no
 contain or certify generated geometry. The built-in `FuelAssetResolver(cache_dir, client=...)` is also
 available directly. Native preparation of new concave sources requires the optional
 `preparation` extra; cached sources and already-convex meshes do not.
+
+`FuelAssetResolver.resolve_many(requests)` accepts up to eight requests and returns
+results in input order. Every selection must identify a requested asset exactly
+once and use a candidate from that request's own search. All selection batches are
+validated before new downloads/imports begin; physical preparation remains sequential
+with its existing worker limits. Custom resolvers may implement the same batch
+method; otherwise generation calls them per request. Import failures can leave
+earlier verified cache entries available, but never publish a partial world.
 
 Search for an existing object before authoring a new asset. The SDK exposes a bounded,
 online Fuel catalog lookup:
