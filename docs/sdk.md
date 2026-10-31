@@ -63,6 +63,44 @@ There are no simulator-generated semantic labels, object detections or world map
 
 Earlier development runs used world-frame arm commands and ideal semantic detections. Those recordings retain their original contracts. New evaluations use the revised manifest and require revalidation of older world bundles; policies written against the earlier observation shape need updating.
 
+## Search before creating assets
+
+Search for an existing object before authoring a new asset. The SDK exposes a bounded,
+online Fuel catalog lookup:
+
+```python
+from dataclasses import asdict
+from robot_worlds import search_online_assets
+
+search = search_online_assets("bowl")
+for candidate in search.candidates:
+    print(candidate.id, candidate.revision, candidate.license)
+    print(candidate.metadata["download_url"])
+provenance = asdict(search)  # Retain this with your import/conversion record.
+```
+
+This returns versioned candidates and license metadata, not simulation-ready assets.
+The search scope is recorded: an empty Fuel result is not proof that no asset exists
+elsewhere. Use focused object queries, and query additional catalogs when appropriate.
+Search has page, candidate, response-size and elapsed-time limits; hitting one fails
+the lookup rather than returning a misleading empty result.
+
+`source_asset(query, import_asset=..., create_asset=..., search=...)` coordinates an
+asset pipeline. By default it calls the online lookup above. Supply `search` for a
+different provider or offline tests. It tries candidates with your import adapter
+before calling your creation adapter. The importer must check license, scale,
+appearance and required cavities/joints. Raise `AssetIncompatible` only for an
+examined candidate that cannot meet the request, with a specific reason. An
+unsupported importer or failed download is an error to resolve, not evidence that
+the object needs to be recreated. Creation receives the query, completed search and
+rejection records. The returned `SourcedAsset` retains that evidence and the selected
+source; save it alongside the resulting asset.
+
+**Integration status:** this SDK coordinator is not yet called automatically by
+`generate()` or the workbench. Textured asset ingestion and articulated imports are
+still under implementation. The [selected bowl and microwave](household-assets.md)
+already have pinned originals; the current procedural preview is not their import.
+
 ## Hollow objects and appliance validation
 
 Define a hollow object as attached physical components, with one movable root for a bowl. Opposing finger contacts on different welded pieces count toward the same body's grasp. Containment includes every fixed attached piece, so a bowl bottom inside the cavity with its rim sticking out fails. `on_top` names a particular support surface, such as the microwave floor; it does not treat the roof as the internal floor.
@@ -77,7 +115,7 @@ Imported meshes currently collide as convex hulls. A single concave bowl mesh th
 
 ## Curved hollow geometry
 
-Use `kind="revolved"` for a rotationally symmetric object such as a bowl, cup or funnel. Its `revolved.profile` is a closed polygon describing **material**, including the inner wall and bottom, rather than the outside silhouette alone. Coordinates are normalized `(radius, height)` pairs: radius spans 0–0.5 and height spans −0.5–0.5. The last point connects to the first automatically. `size=[diameter, diameter, height]` sets dimensions in metres.
+When asset sourcing has not found a suitable existing model, `kind="revolved"` can represent a rotationally symmetric object such as a bowl, cup or funnel. The following is an engineering example of that fallback. Its `revolved.profile` is a closed polygon describing **material**, including the inner wall and bottom, rather than the outside silhouette alone. Coordinates are normalized `(radius, height)` pairs: radius spans 0–0.5 and height spans −0.5–0.5. The last point connects to the first automatically. `size=[diameter, diameter, height]` sets dimensions in metres.
 
 ```python
 from robot_worlds import SceneObject

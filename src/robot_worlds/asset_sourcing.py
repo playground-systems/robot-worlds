@@ -47,7 +47,7 @@ class SourcedAsset:
 def source_asset(
     query: str,
     *,
-    search: Callable[[str], AssetSearch],
+    search: Callable[[str], AssetSearch] | None = None,
     import_asset: Callable[[AssetCandidate], Any],
     create_asset: Callable[[str, AssetSearch, list[dict]], Any],
 ) -> SourcedAsset:
@@ -60,6 +60,9 @@ def source_asset(
     """
     if not isinstance(query, str) or not query.strip():
         raise ValueError("Asset lookup needs a nonempty query")
+    if search is None:
+        from .asset_catalog import search_online_assets
+        search = search_online_assets
     report = search(query)
     if not isinstance(report, AssetSearch) or report.query != query:
         raise AssetSearchIncomplete("Asset search did not return evidence for this request")
