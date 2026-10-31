@@ -57,6 +57,13 @@ asset, including joints and cavities, in 90° steps about Z while preserving sca
 uses the previously sourced local asset, without another download or conversion.
 General online asset discovery remains separate from the edit path.
 
+`add_prepared_asset` also accepts `repeat` and world-space `spacing`. For a group
+with multiple copies, catalog `{prefix}` becomes `id_ix_iy_iz` (zero-based).
+Copies retain independent bodies, joints and cavities, while sharing source
+files. Scope must include every expanded ID; a group prefix grants no wildcard
+permission. The complete group is rejected if a later copy conflicts or exceeds
+the component/region budget.
+
 Scope and resource limits apply to every expanded object and cavity region. A
 prefix is not a wildcard: a scope containing only `bowl` does not authorize all
 `bowl_*` components. New assets do not authorize changes to the task, rubric or

@@ -24,6 +24,13 @@ The model invents reusable `assembly_templates`, then places them with `assembly
 
 An instance has a translation, a quarter-turn rotation, and optional XYZ repetition counts and world-space spacing. Expansion creates stable IDs of the form `instance_ix_iy_iz_part`; for example, `storage_7_4_0_top`. Rubrics and processes bind those IDs just like directly generated objects. Local parent links, joint anchors and joint axes are transformed together. Existing materialized objects must agree with their source assembly; conflicting stale edits are rejected.
 
+Prepared source assets support the same grid counts and world-space spacing,
+without asking the model to repeat their geometry or list every copy. A repeated
+group verifies/imports its source once. Copies have independent IDs, physics,
+joints and cavities; mesh and texture paths remain shared. A single prepared copy
+keeps its plain prefix, while repeated copies use `id_ix_iy_iz` as the catalog
+prefix. All copies count toward the physical component budget before allocation.
+
 An explicit `min_objects` (default zero) turns a requested detail count into a repair check; it does not prescribe the layout. The example requires at least 500. The default resource budget is 5,000 physical objects, with an explicit implementation ceiling of 10,000. This bounds expansion memory and does not prescribe a floorplan. Expansion checks counts before allocating repeated geometry. The collision validator uses a spatial hash broadphase and bounded overlap diagnostics. Runtime meshes use native convex-hull collision unless a source adapter supplies separate collision pieces. Primitive and mesh assemblies support all four quarter turns. Source mesh bytes remain unchanged: the frozen mesh rotation and resulting bounding extents drive both native XML and the browser. Prepared-asset references support the same whole-asset rotation for source fixtures, joints and cavities. Arbitrary-angle placement is not supported.
 
 Validation covers schema, IDs, bounds, initial overlaps, robot starting clearance, physical compilation/reset, and available rubric measurements. It does not certify global route connectivity, arm reachability, task solvability, interpretation of every natural-language requirement, or hardware equivalence. Missing assets or failed checks retain a preview and generation diagnostics; they do not silently produce a ready world. Repairs keep the original request in every model call. Cancellation is checked between model requests and before physical validation; an in-flight HTTP request still uses its bounded timeout.

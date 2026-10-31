@@ -150,7 +150,11 @@ Prefer add_prepared_asset for compatible catalog objects. Supply one asset refer
 the importer adds its original geometry, joints, textures and cavity regions. Do not
 also add those components/regions manually. Asset.position is bottom-center in the
 zero-joint pose; optional quarter_turns rotates all parts, joints and cavities together about Z, preserving source scale. Catalog IDs substitute
-{prefix} with asset.id. General object positions still denote geometry centers.
+{prefix} with asset.id for a single copy. Optional repeat=[nx,ny,nz] and world-space
+spacing create independent copies with {prefix}=asset.id_ix_iy_iz (zero-based).
+All copied components count against the object budget; repeated axes require
+nonzero spacing and physical clearance. Mass, when required, is per copy.
+General object positions still denote geometry centers.
 This operation does not change the task/rubric. Scope applies to EVERY expanded
 object and region ID, not merely the asset prefix. Catalog reuse is not a fresh
 internet search; never invent a successful source lookup or unsupported asset.

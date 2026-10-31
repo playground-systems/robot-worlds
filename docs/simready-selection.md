@@ -165,6 +165,14 @@ and 270° placement: all 158 components, including 12 visual meshes, retain
 aligned collision bounds. These are SDK placement probes, not model-generated
 warehouse layouts or native contact/render acceptance.
 
+Compact repetition was also exercised through `generate_spec` with a mocked
+planner and the actual installed carton source. Both a 12×10 layout and a rotated
+10×12 layout produced 120 independent rigid roots and 960 components, passing
+static validation in 0.2986 and 0.1699 s. Each used one 154-character asset
+reference; the expanded object data was about 1.48 million characters before
+freezing paths. These measure local expansion and static checks, not model
+latency, native stability, rendered appearance or a complete warehouse demo.
+
 Next implementation: preserve or explicitly label the conveyor mechanism and
 perform native/browser validation when permitted. The viewer now shares source geometry/materials/maps
 across repeated fixtures; real warehouse frame rate, GPU memory and LOD remain

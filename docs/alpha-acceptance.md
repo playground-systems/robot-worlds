@@ -32,3 +32,9 @@ without rewriting source files. Focused checks cover original microwave parts,
 hinge/cavity frames, mocked library generation and typed edits, portable worlds,
 off-center native XML geometry and browser transforms. These are analytical and
 serialization checks; rotated native contact/render acceptance remains open.
+
+Prepared repetition now verifies a source once per group, expands independent
+copies with stable IDs, and rejects budget/ID failures before publishing the
+group. Mocked planning with actual carton assets produced two 960-component
+arrangements in under 0.3 s each. This is static expansion evidence, not the
+required live generated-warehouse visual acceptance.

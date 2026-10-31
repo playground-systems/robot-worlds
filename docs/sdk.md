@@ -335,6 +335,28 @@ live model selection and autonomous appliance manipulation are not yet demonstra
 Refinement and repair use the same catalog through the typed
 [`add_prepared_asset` edit operation](scene-editing.md#add-an-existing-source-asset).
 
+Repeated source assets can use one compact generation/edit reference:
+
+```json
+{
+  "id": "cartons",
+  "asset_id": "box_corrugated_brown_b20",
+  "position": [-12, -4, 0],
+  "repeat": [12, 10, 1],
+  "spacing": [0.6, 0.8, 0],
+  "quarter_turns": 0
+}
+```
+
+This places 120 independent copies. Spacing uses world axes; quarter turns rotate
+each asset without rotating the grid. For multiple copies, replace `{prefix}` in
+catalog IDs with `cartons_ix_iy_iz`, using zero-based indices—for example,
+`cartons_11_9_0_part0`. A single copy keeps its existing `cartons_part0` naming.
+Mass and joint initial settings apply to each copy. Every copied component counts
+against `max_objects`; expanded regions have a separate 10,000-region cap.
+Each group verifies its source once and reuses the same mesh/texture paths.
+Spacing, budget, ID or placement failures leave the candidate unchanged.
+
 ### Register a reusable source asset
 
 `AssetLibrary` makes supported imports available to generation and scoped edits
