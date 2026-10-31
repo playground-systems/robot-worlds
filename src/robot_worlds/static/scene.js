@@ -120,6 +120,7 @@ export class WorldViewer {
     this.group.clear(); this.objects = []; this.annotations = []; this.labels.replaceChildren();
     this.sourceGroup = new THREE.Group(); this.group.add(this.sourceGroup);
     this.sourceBatched = false; this.sourceBatchStats = null;
+    this.assetErrorLabels = new Map(); this.additionalAssetErrors = 0; this.assetErrorSummary = null;
     const [w, d] = spec.bounds || [6, 6, 3];
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ color: 0x62676d, roughness: .86, metalness: .02, envMapIntensity: .35 }));
     floor.receiveShadow = true; floor.position.z = -0.012; this.group.add(floor);
@@ -209,14 +210,36 @@ export class WorldViewer {
       } else this.sourceGroup.add(group);
     } catch (error) {
       if (assets.controller.signal.aborted || this.disposed || this.loadGeneration !== generation) return;
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(...object.size), new THREE.MeshBasicMaterial({ color: 0xcc8c67, wireframe: true }));
-      mesh.position.set(...object.position); mesh.userData.object = object; this.group.add(mesh); this.objects.push(mesh);
-      this.label(`${object.label || object.id}: ${error.message === 'Scene texture budget reached' ? error.message : 'mesh unavailable'}`, new THREE.Vector3(...object.position));
+      const mesh = assets.placeholder(object);
+      this.objects.push(mesh);
+      if (isInspectionShell(object, this.spec.bounds)) {
+        this.shellNodes.push(mesh); mesh.visible = !this.cutaway; this.group.add(mesh);
+      } else this.sourceGroup.add(mesh);
+      this.showAssetError(object, error);
     } finally {
       this.loads.delete(pending); this.pumpLoads();
       if (!this.disposed && this.loadGeneration === generation && !this.loads.size && !this.pendingLoads.length) this.batchSources();
       if (!this.disposed) this.renderer.shadowMap.needsUpdate = true;
       if (this.loadGeneration === generation) this.invalidate();
+    }
+  }
+
+  showAssetError(object, error) {
+    const message = error.message === 'Scene texture budget reached' ? error.message : 'mesh unavailable';
+    const key = JSON.stringify([object.mesh_path, object.texture_path, object.normal_texture_path,
+      object.orm_texture_path, object.emissive_texture_path, message]);
+    const existing = this.assetErrorLabels.get(key);
+    if (existing) {
+      existing.count++; existing.node.textContent = `${existing.text} (${existing.count} copies)`; return;
+    }
+    if (this.assetErrorLabels.size < 16) {
+      const text = `${object.label || object.id}: ${message}`;
+      const node = this.label(text, new THREE.Vector3(...object.position));
+      this.assetErrorLabels.set(key, { node, text, count: 1 });
+    } else {
+      this.additionalAssetErrors++;
+      if (!this.assetErrorSummary) this.assetErrorSummary = this.label('', new THREE.Vector3(...object.position));
+      this.assetErrorSummary.textContent = `${this.additionalAssetErrors} more unavailable meshes`;
     }
   }
 
@@ -271,7 +294,7 @@ export class WorldViewer {
 
   label(text, position) {
     const node = document.createElement('div'); node.className = 'scene-label'; node.textContent = text;
-    this.labels.append(node); this.annotations.push({ node, position });
+    this.labels.append(node); this.annotations.push({ node, position }); return node;
   }
 
   applyFit(bounds, direction = [.8, -.9, .85]) {
@@ -327,6 +350,7 @@ export class WorldViewer {
     disposeTree(this.scene); this.scene.clear(); this.environmentTarget?.dispose(); this.environmentTarget = null;
     this.labels.replaceChildren(); this.objects = []; this.annotations = []; this.shellNodes = [];
     this.sourceGroup = null; this.sourceBatchStats = null;
+    this.assetErrorLabels?.clear(); this.assetErrorSummary = null;
     this.layoutEnvironment?.dispose(); this.layoutEnvironment = null; this.scene.environment = null;
     this.renderer.dispose(); this.renderer.forceContextLoss();
   }

@@ -113,3 +113,32 @@ test('optional batching failure leaves existing selection objects usable', () =>
   assert.equal(viewer.objects[0], node);
   assert.match(viewer.sourceBatchStats.error, /retained individual/);
 });
+
+test('asset failure annotations group repeated sources and cap DOM nodes for unique failures', () => {
+  const { viewer } = fixture({ THREE: { Vector3: class { constructor(...values) { this.values = values; } } } });
+  const nodes = [];
+  viewer.assetErrorLabels = new Map(); viewer.additionalAssetErrors = 0;
+  viewer.label = text => { const node = { textContent: text }; nodes.push(node); return node; };
+  const object = { id: 'rack', label: 'Rack', mesh_path: 'assets/shared.obj', position: [0,0,0] };
+  for (let i = 0; i < 200; i++) viewer.showAssetError({ ...object, id: `rack${i}` }, new Error('unavailable'));
+  assert.equal(nodes.length, 1); assert.match(nodes[0].textContent, /200 copies/);
+  for (let i = 1; i < 40; i++) viewer.showAssetError({ ...object, mesh_path: `assets/unique${i}.obj` }, new Error('unavailable'));
+  assert.equal(nodes.length, 17); assert.equal(viewer.assetErrorLabels.size, 16);
+  assert.equal(viewer.assetErrorSummary.textContent, '24 more unavailable meshes');
+});
+
+test('failed source shells retain cutaway behavior and object selection', async () => {
+  const mesh = { visible: true, isMesh: true, userData: {} }, object = { id: 'wall' };
+  const { viewer } = fixture({ isInspectionShell: () => true,
+    batchSourceMeshes: () => ({ objects: [], stats: {} }) });
+  viewer.spec = { bounds: [6,6,3] }; viewer.cutaway = true; viewer.reference = false;
+  viewer.shellNodes = []; viewer.objects = []; viewer.loadGeneration = 1;
+  viewer.sourceGroup = { add: () => assert.fail('shell must not be batched'), traverse() {} };
+  viewer.group = { add: node => assert.equal(node, mesh) };
+  viewer.showAssetError = value => assert.equal(value, object);
+  viewer.assets = { controller: new AbortController(), load: async () => { throw new Error('unavailable'); },
+    placeholder(value) { mesh.userData.object = value; return mesh; } };
+  await viewer.loadOBJ(object, '/', 1);
+  assert.equal(mesh.visible, false); assert.equal(viewer.objects[0].userData.object, object);
+  viewer.setCutaway(false); assert.equal(mesh.visible, true);
+});

@@ -118,3 +118,9 @@ dimensions before decoding. Shared textures use a per-world 512 MiB estimated
 texel/mipmap budget with cancellation/disposal accounting. Twenty-six focused
 viewer checks pass without a renderer. This bounds texture reservations, not
 all browser memory, and does not establish viewport performance or visual acceptance.
+
+Repeated missing viewer assets now issue one request per resource until an
+explicit retry or world reload. Shared, batchable wireframe bounds retain
+selection and cutaway behavior, and failure annotations are capped at 17 nodes.
+Twenty-five focused checks passed without rendering or CI. This is bounded
+failure handling, not evidence that the required generated scenes render correctly.

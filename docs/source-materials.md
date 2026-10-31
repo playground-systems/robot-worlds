@@ -97,3 +97,15 @@ not measured GPU usage. Twenty-six focused viewer/resource checks cover stream
 limits, predecode rejection, concurrent reservations, cancellation, cache sharing,
 scene lifecycle and batching. Decoder fixtures and CPU-only Three objects do not
 establish rendered quality or frame rate.
+
+Failed viewer resources remain failed for the current displayed world, preventing
+one unavailable source from being fetched again for every repeated object.
+Reloading the world retries them; `SceneAssets.retryFailures()` lets an internal
+caller clear failures before explicitly requesting another load while retaining
+successful shared resources. Unavailable objects keep selectable wireframe bounds
+with their declared pose. These markers share geometry/materials and can batch;
+failed wall shells still obey cutaway. Repeated error labels are grouped, with
+at most 16 source labels and one overflow summary. Source geometry, physics and
+saved results are unchanged. Twenty-five focused CPU-only checks cover this
+failure behavior, retry, selection, batching and cleanup; rendered acceptance
+remains open.

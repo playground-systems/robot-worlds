@@ -8,7 +8,7 @@ import { loadBundledTexture, readAssetBytes, TextureBudget } from './scene-textu
 /** Immutable asset resources shared only for the lifetime of one displayed world. */
 export class SceneAssets {
   constructor({ maxTextureBytes } = {}) {
-    this.cache = new SceneResourceCache();
+    this.cache = new SceneResourceCache({ cacheFailures: true });
     this.textureBudget = new TextureBudget(maxTextureBytes);
     this.controller = new AbortController();
   }
@@ -109,5 +109,25 @@ export class SceneAssets {
     return markSharedResources(group);
   }
 
-  dispose() { this.controller.abort(); this.cache.dispose(); }
+  retryFailures() { this.cache.clearFailures(); }
+
+  placeholder(object) {
+    if (this.controller.signal.aborted) throw new Error('Scene resources disposed');
+    this.placeholderGeometry ||= new THREE.BoxGeometry(1, 1, 1);
+    this.placeholderMaterial ||= new THREE.MeshBasicMaterial({ color: 0xcc8c67, wireframe: true });
+    const mesh = new THREE.Mesh(this.placeholderGeometry, this.placeholderMaterial);
+    mesh.position.set(...object.position); mesh.scale.set(...object.size);
+    // size already includes the source quarter-turn; only the body pose rotates this bound.
+    if (object.quaternion) mesh.quaternion.set(object.quaternion[1], object.quaternion[2], object.quaternion[3], object.quaternion[0]);
+    else if (object.yaw) mesh.rotation.z = object.yaw;
+    mesh.userData.object = object;
+    mesh.userData.appearance = { estimated: true, basis: 'Source unavailable; wireframe bounds only' };
+    return markSharedResources(mesh);
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true; this.controller.abort(); this.cache.dispose();
+    this.placeholderGeometry?.dispose(); this.placeholderMaterial?.dispose();
+  }
 }

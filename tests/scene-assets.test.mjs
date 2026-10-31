@@ -148,7 +148,7 @@ test('failed map loads do not dispose shared successful maps; explicit retry can
   await assert.rejects(assets.load(object, '/world/'), /Texture unavailable/);
   assert.equal(counts.closed, 0);
   const colorOnly = await assets.load({ ...object, normal_texture_path: null, orm_texture_path: null }, '/world/');
-  fail = false;
+  fail = false; assets.retryFailures();
   const complete = await assets.load(object, '/world/');
   assert.equal(colorOnly.children[0].material.map, complete.children[0].material.map);
   assert.equal(calls.filter(url => url.endsWith('color.png')).length, 1);
@@ -286,4 +286,54 @@ test('batch construction failure retains original scene and cleans new instance 
   assert.throws(() => batchSourceMeshes(THREE,root,{cellSize:0}), /limits/);
   const limited = batchSourceMeshes(THREE,root,{cellSize:1000,maxInstances:2});
   assert.equal(limited.stats.batches,0); assert.equal(limited.objects.length,4);
+});
+
+test('repeated missing sources make one request until an explicit retry', async t => {
+  let missing = true;
+  const { assets, calls } = fixtures(t, url => missing ? new Response('', { status: 404 })
+    : new Response(url.endsWith('.obj') ? source : png()));
+  for (let i = 0; i < 200; i++) {
+    await assert.rejects(assets.load({ ...object, id: `copy${i}` }, '/world/'), /unavailable/);
+  }
+  assert.equal(calls.length, 1);
+  missing = false;
+  await assert.rejects(assets.load(object, '/world/'), /unavailable/);
+  assert.equal(calls.length, 1);
+  assets.retryFailures();
+  const loaded = await assets.load(object, '/world/');
+  assert.equal(loaded.children[0].userData.object.id, object.id);
+  assert.equal(calls.length, 5);
+});
+
+test('failure bounds share resources, preserve pose and remain batchable and selectable', t => {
+  const { assets } = fixtures(t), root = new THREE.Group();
+  const rotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1), Math.PI/2);
+  const input = { ...object, id: 'unavailable', position: [2,3,4], size: [4,2,6], mesh_quarter_turns: 1,
+    quaternion: [rotation.w, rotation.x, rotation.y, rotation.z] };
+  const before = structuredClone(input);
+  const first = assets.placeholder(input), second = assets.placeholder({ ...input, id: 'other' });
+  root.add(first, second); root.updateMatrixWorld(true);
+  const bounds = new THREE.Box3().setFromObject(first), size = bounds.getSize(new THREE.Vector3()).toArray();
+  size.forEach((v, i) => assert(Math.abs(v-[2,4,6][i]) < 1e-6));
+  assert.deepEqual(bounds.getCenter(new THREE.Vector3()).toArray(), [2,3,4]);
+  assert.deepEqual(input, before); assert.equal(first.material.wireframe, true);
+  assert.equal(first.geometry, second.geometry); assert.equal(first.material, second.material);
+  let geometry = 0, material = 0;
+  first.geometry.addEventListener('dispose', () => geometry++); first.material.addEventListener('dispose', () => material++);
+  const result = batchSourceMeshes(THREE, root);
+  assert.equal(result.stats.batchedInstances, 2);
+  assert.deepEqual(result.objects[0].userData.objects.map(o => o.id), ['unavailable', 'other']);
+  disposeTree(root); assert.equal(geometry, 0); assert.equal(material, 0);
+  assets.dispose(); assets.dispose(); assert.equal(geometry, 1); assert.equal(material, 1);
+  assert.throws(() => assets.placeholder(input), /disposed/);
+});
+
+test('external request cancellation does not prevent later resource disposal', t => {
+  const { assets } = fixtures(t);
+  const marker = assets.placeholder(object);
+  let released = 0;
+  marker.geometry.addEventListener('dispose', () => released++);
+  assets.controller.abort();
+  assets.dispose(); assets.dispose();
+  assert.equal(released, 1); assert.equal(assets.cache.closed, true);
 });

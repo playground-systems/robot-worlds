@@ -10,7 +10,7 @@ export function markSharedResources(root) {
 
 /** One owner per scene, including resources that finish loading after disposal. */
 export class SceneResourceCache {
-  constructor() { this.entries = new Map(); this.closed = false; }
+  constructor({ cacheFailures = false } = {}) { this.entries = new Map(); this.closed = false; this.cacheFailures = cacheFailures; }
 
   get(key, load, release) {
     if (this.closed) return Promise.reject(new Error('Scene resources disposed'));
@@ -20,11 +20,16 @@ export class SceneResourceCache {
       if (this.closed) { release(value); throw new Error('Scene resources disposed'); }
       entry.value = value; entry.ready = true; return value;
     }).catch(error => {
-      if (this.entries.get(key) === entry) this.entries.delete(key);
+      entry.failed = true;
+      if (!this.cacheFailures && this.entries.get(key) === entry) this.entries.delete(key);
       throw error;
     });
     this.entries.set(key, entry);
     return entry.promise;
+  }
+
+  clearFailures() {
+    for (const [key, entry] of this.entries) if (entry.failed) this.entries.delete(key);
   }
 
   dispose() {
