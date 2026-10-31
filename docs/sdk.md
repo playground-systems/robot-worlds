@@ -150,6 +150,38 @@ remove the affected entry to reacquire it. A download preserves source files but
 does not import SDF, convert physics or establish task compatibility. Use it inside
 your import adapter; retain the search report alongside its manifest.
 
+For single-link OBJ scans, use the Fuel import adapter inside your sourcing
+pipeline:
+
+```python
+from robot_worlds import download_fuel_asset, import_fuel_mesh_asset
+
+def import_scan(candidate):
+    downloaded = download_fuel_asset(candidate, ".robot-worlds/asset-cache")
+    return import_fuel_mesh_asset(
+        downloaded, candidate=candidate, prefix="source", mass=0.3,
+        # collision_manifest="prepared-collision/manifest.json",  # Concave source.
+    )
+# Pass import_scan as source_asset's import_asset callback, then register its result.
+```
+
+This restricted adapter reads the configured SDF, keeps its fixed/movable setting,
+translations, original OBJ/UVs, one PNG texture, diffuse color and opacity. It
+requires matching visual/collision meshes, unit scale and an explicit estimated
+mass. Contact friction and inertia are estimates disclosed in the resulting asset.
+A source must be verified closed and convex, or have a source-bound collision
+manifest produced during preparation. Concave objects are never replaced by a
+filled convex hull. Importing does not run CoACD automatically.
+
+Articulation, multiple links, explicit inertia/contact settings, rotations,
+external resources, plugins and unsupported appearance features fail explicitly.
+These are missing import capabilities, not evidence that an asset should be
+recreated. Cache bytes are reverified, and generated attribution retains embedded
+copyright comments and notice files. Import metadata records source hashes and
+any supplied collision conversion. For a local package, the corresponding
+`import_sdf_mesh_asset(path, prefix=..., mass=..., source_notice=...)` requires an
+existing attribution notice. See [the source contract and limits](fuel-asset-import.md).
+
 `source_asset(query, import_asset=..., create_asset=..., search=...)` coordinates an
 asset pipeline. By default it calls the online lookup above. Supply `search` for a
 different provider or offline tests. It tries candidates with your import adapter
@@ -217,7 +249,7 @@ world = generate("Put a white bowl inside the lab appliance", asset_library="my-
 
 The example uses the bundled appliance so it runs without downloading a new
 source. For another object, register the `SourcedAsset` returned by your
-`source_asset` pipeline after a supported MJCF or convex-mesh import. Registration
+`source_asset` pipeline after a supported MJCF, SDF scan or convex-mesh import. Registration
 requires selected-source, pinned-revision, license and search evidence. It preserves
 imported masses, dimensions, geometry, joints, cavities and notices. Per-instance
 placement and valid joint initial values are supported; mass overrides are not.
@@ -236,7 +268,7 @@ New generation/refine/repair workers discover it automatically; requests cannot
 supply arbitrary server filesystem paths. Built-in IDs cannot be replaced. The
 current limits are 32 registered assets, 1,000 components per asset, 32 MiB per
 source file and 256 MiB of referenced files per library. Automatic online
-selection and general SDF import remain separate, unfinished work.
+selection and broader SDF import remain separate, unfinished work.
 
 For a local MJCF outside the prepared catalog:
 

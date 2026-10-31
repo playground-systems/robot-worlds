@@ -10,6 +10,7 @@ from robot_worlds.models import Criterion, SceneObject, WorldSpec
 from robot_worlds.policy import LLMAgent
 from robot_worlds.prepared_assets import load_prepared_asset, prepared_asset_catalog
 from robot_worlds.remote_policy import RemotePolicy
+from robot_worlds.sdf_import import import_fuel_mesh_asset, import_sdf_mesh_asset
 from robot_worlds.sdk import Report, World, generate, load
 
-__all__ = ["AssetLibrary", "AssetDownloadError", "DownloadedAsset", "download_fuel_asset", "AssetIncompatible", "AssetSearchIncomplete", "Criterion", "LLMAgent", "RemotePolicy", "Report", "SceneObject", "World", "WorldSpec", "evaluate_batch", "generate", "import_convex_mesh_asset", "import_mjcf_asset", "load", "load_prepared_asset", "prepared_asset_catalog", "search_online_assets", "source_asset"]
+__all__ = ["import_fuel_mesh_asset", "import_sdf_mesh_asset", "AssetLibrary", "AssetDownloadError", "DownloadedAsset", "download_fuel_asset", "AssetIncompatible", "AssetSearchIncomplete", "Criterion", "LLMAgent", "RemotePolicy", "Report", "SceneObject", "World", "WorldSpec", "evaluate_batch", "generate", "import_convex_mesh_asset", "import_mjcf_asset", "load", "load_prepared_asset", "prepared_asset_catalog", "search_online_assets", "source_asset"]

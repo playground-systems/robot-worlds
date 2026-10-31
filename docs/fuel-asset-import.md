@@ -57,8 +57,8 @@ hit, with one network request across both calls. All 11 original files matched
 the selection manifest. These timings measure source acquisition on one machine,
 not text-to-world generation. See the [SDK usage and limits](sdk.md#search-before-creating-assets).
 
-The downloader does not interpret model roots or SDF references. Those checks
-remain importer work. The following are design requirements and recommendations;
+The downloader does not interpret model roots or SDF references. The restricted
+scan importer described below now handles one model root and local scan references. The following are design requirements and recommendations;
 the implementation uses absolute extracted-byte limits rather than a separate
 compression-ratio cap:
 
@@ -78,6 +78,36 @@ compression-ratio cap:
   cache update; incomplete downloads must not look like cache hits.
 - Download success means the source was acquired. Import compatibility, physical
   validation and task suitability remain separate outcomes.
+
+## Implemented scan import
+
+`import_sdf_mesh_asset` accepts one model/link with one matching OBJ visual and
+collision mesh, unit scale and translation-only poses. `import_fuel_mesh_asset`
+adds cache verification, generated attribution and combined source/conversion
+metadata. The source's explicit static flag is retained; a missing flag remains
+dynamic. The caller supplies an estimated mass and friction, and inertia is
+derived from collision geometry. Explicit inertial or surface settings are
+rejected rather than silently overridden. These choices follow the source model
+and link distinctions in the [official model schema](https://raw.githubusercontent.com/gazebosim/sdformat/sdf15/sdf/1.6/model.sdf)
+and [link schema](https://raw.githubusercontent.com/gazebosim/sdformat/sdf15/sdf/1.6/link.sdf).
+
+Without a conversion manifest, the original mesh must pass the closed-convex
+verifier. Concave meshes require an existing source-bound decomposition, including
+per-part checksums and geometry checks. Import never starts a converter or makes
+an articulated object static to get a pass. Unsupported elements/attributes and
+external resources fail explicitly. Material support is one MTL material with
+one PNG diffuse map, diffuse color and opacity; other renderer coefficients are
+retained/disclosed as approximations. Mesh scale/submesh semantics are defined by
+the [official mesh schema](https://raw.githubusercontent.com/gazebosim/sdformat/sdf15/sdf/1.6/mesh_shape.sdf);
+non-unit scale and submesh selection are currently rejected.
+
+A read-only import from the already cached version-1 Google bowl retained its
+original texture, Copyright 2020 Google LLC notice, 158 prepared collision pieces
+and one movable root. Saving/opening it as an `AssetLibrary` also passed. This used
+no network request, new collision conversion, model call or policy episode.
+Synthetic tests cover transforms, fixed/dynamic settings, unsupported physics,
+unsafe paths, corruption and download → import → library portability. Native
+checks are separate from these source-format tests.
 
 ## Scanned-object adapter boundaries
 
