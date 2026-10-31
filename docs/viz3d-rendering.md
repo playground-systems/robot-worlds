@@ -8,8 +8,9 @@ the existing world, asset, selection and evaluator contracts.
 
 ## Capture plan
 
-- Subject: one warehouse with four stocked racks, a clear central aisle, pallet
-  staging, safety barriers and two unpowered roller conveyors.
+- Subject: receiving → storage → manual packing → passive roller transfer →
+  dispatch → shipping. Four stocked racks connect to clear walking aisles;
+  both conveyor ends have operator space, and side guarding protects the line.
 - Reuse the already prepared NVIDIA/CodePawl meshes and original textures at
   source dimensions. Preserve physics geometry and provenance.
 - Assemble a reproducible plan through the generation pipeline with a deterministic
@@ -28,6 +29,31 @@ rendering only; physical contacts and a live generated warehouse remain separate
 acceptance gates.
 
 ## Evidence
+
+### Connected workflow revision
+
+The first preview placed the conveyor as an isolated prop. The revised layout
+has a west receiving opening and a north shipping opening, each with nearby
+pallet staging. Packing feeds the south end of the aligned roller modules;
+the north end opens onto an unloading area before dispatch. The barriers run
+alongside the line instead of across its destination. Floor stencils identify
+the zones in the actual rendered scene.
+
+![Receiving, storage, packing and dispatch](images/nvidia-warehouse-flow/flow-plan.jpg)
+
+![Connected warehouse with receiving and shipping openings](images/nvidia-warehouse-flow/overview.jpg)
+
+The revised preview has 3,368 components and passes static geometry/rubric checks.
+Cached preparation and saving took 3.22 seconds. It remains deterministic and
+not natively validated. Rollers are unpowered: loading, pushing and unloading
+are manual handoffs, including the height change to pallets. No automatic
+transfer or throughput is claimed. [Evidence](images/nvidia-warehouse-flow/evidence.json).
+
+Generation instructions now require purpose, upstream/downstream connections,
+accessible handoff areas, useful guarding and openings before equipment placement.
+This is planning guidance, not a new automatic semantic validator.
+
+### Earlier asset-rendering capture
 
 Actual application captures on October 31:
 
