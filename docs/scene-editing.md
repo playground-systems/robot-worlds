@@ -83,8 +83,9 @@ root; an appearance-only mesh is rejected. This is an edit to a new world's init
 configuration, never a robot action or a teleport during evaluation.
 
 In the inspector, **Include whole object** explicitly adds the selected object's
-parent tree and owned regions to the edit scope. Large scopes show eight IDs and
-collapse the remainder without excluding them. Scope still limits every actual
+parent tree and owned regions to the edit scope. A complete compound selection
+shows its name and count, with exact IDs under **Inspect included entities**.
+Other large scopes show eight IDs and collapse the remainder without excluding them. Scope still limits every actual
 change, and task-bound destinations cannot move without task-change permission.
 The model can use this operation for a subject placement repair, but the usual
 task-difficulty limitations above still apply.

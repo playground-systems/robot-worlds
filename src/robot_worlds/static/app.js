@@ -293,7 +293,7 @@ function renderObjectProperties(root, object) {
         if (state.jobId) return;
         if (assembly.ids.length > 1000) { notice('This object exceeds the 1,000-entity edit scope limit. Select a smaller subassembly.'); return; }
         setEditMode('edit', { preserveDraft: true }); state.scope = [...assembly.ids]; renderScope();
-        notice(`Whole object included: ${assembly.ids.length} entities. Physical root: ${assembly.root}.`);
+        notice(`Included the complete object: ${assembly.ids.length} components and regions.`);
       };
       root.append(whole);
     }
@@ -396,8 +396,14 @@ function renderScope() {
   $('scope-chips').replaceChildren();
   if (!state.scope.length) $('scope-chips').append(el('span', 'small muted', 'Whole world'));
   let overflow;
+  const assembly = wholeObjectScope(state.selectedObject), selected = new Set(state.scope);
+  const completeObject = state.scope.length > 8 && assembly?.ids.length === selected.size && assembly.ids.every(id => selected.has(id));
+  if (completeObject) {
+    $('scope-chips').append(el('span', 'scope-chip', `${state.selectedObject.label || state.selectedObject.id} · ${state.scope.length} included`));
+    overflow = el('details', 'scope-overflow'); overflow.append(el('summary', 'small muted', 'Inspect included entities')); $('scope-chips').append(overflow);
+  }
   for (const [index, id] of state.scope.entries()) {
-    if (index === 8) { overflow = el('details', 'scope-overflow'); overflow.append(el('summary', 'small muted', `Show ${state.scope.length-8} more included entities`)); $('scope-chips').append(overflow); }
+    if (index === 8 && !completeObject) { overflow = el('details', 'scope-overflow'); overflow.append(el('summary', 'small muted', `Show ${state.scope.length-8} more included entities`)); $('scope-chips').append(overflow); }
     const chip = el('span', 'scope-chip', id), remove = el('button', '', '×'); remove.type = 'button'; remove.setAttribute('aria-label', `Remove ${id} from edit scope`); remove.onclick = () => { state.scope = state.scope.filter(value => value !== id); renderScope(); }; chip.append(remove); (overflow || $('scope-chips')).append(chip);
   }
 }

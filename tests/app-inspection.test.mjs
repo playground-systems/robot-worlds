@@ -65,7 +65,18 @@ test('whole-object scope includes physical siblings, jointed descendants and cav
   assert(whole);
   whole.onclick();
   assert.deepEqual(Array.from(run('state.scope')).sort(), ['body','cavity','door','handle','visual'].sort());
-  assert.match(nodes.get('notice').textContent, /Physical root: body/);
+  assert.match(nodes.get('notice').textContent, /complete object: 5/);
+});
+
+test('complete compound selection shows its name with inspectable exact IDs', () => {
+  const {run, nodes} = fixture();
+  run(`state.world.spec.objects = [{id:'root',label:'Bowl',kind:'box'}, ...Array.from({length:10},(_,i)=>({id:'piece_'+i,parent_id:'root'}))];
+    state.selectedObject=state.world.spec.objects[0];state.scope=wholeObjectScope(state.selectedObject).ids;renderScope();`);
+  const chips = nodes.get('scope-chips').children;
+  assert.equal(chips.length, 2);
+  assert.equal(chips[0].textContent, 'Bowl · 11 included');
+  assert.equal(chips[1].children[0].textContent, 'Inspect included entities');
+  assert.equal(chips[1].children.length, 12);
 });
 
 test('large scopes remain fully included with a collapsed remainder', () => {
