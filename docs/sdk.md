@@ -137,7 +137,12 @@ Define a hollow object as attached physical components, with one movable root fo
 
 A cavity region can declare `interior_of` with the appliance's physical root ID. Static checks reject a missing container, a region outside its envelope or a usable volume filled by its box components. The generator is instructed to declare these relationships. This check does not certify a door's swept clearance or curved/mesh cavities. Native reset checks also do not prove the door can be opened by the selected robot.
 
-Imported meshes currently collide as convex hulls. A single concave bowl mesh therefore cannot establish a usable hollow interior; use separate physical pieces or the revolved-profile geometry described below. Photorealistic assets, general concave mesh decomposition and appliance manipulation remain development work.
+A mesh with `collision=True` still collides as a convex hull. For a concave source
+asset, retain its original surface as an appearance-only mesh and supply verified
+collision components separately. The MJCF importer does this for appliances with
+existing primitive colliders. General concave mesh decomposition, the selected
+Google bowl's collision conversion and autonomous appliance manipulation remain
+development work.
 
 ## Checks without model charges
 
