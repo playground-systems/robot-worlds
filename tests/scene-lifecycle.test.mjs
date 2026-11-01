@@ -61,7 +61,8 @@ test('inactive view pauses frames and queued mesh starts; reactivation caps conc
 });
 
 test('cutaway only changes renderer visibility and leaves physical object data intact', () => {
-  const { viewer } = fixture(), object = { id: 'wall', position: [1, 2, 3], size: [1, 2, 3] };
+  const { viewer } = fixture({ hideInspectionShell: () => true }), object = { id: 'wall', position: [1, 2, 3], size: [1, 2, 3] };
+  viewer.spec = { bounds: [10, 8, 5] };
   viewer.shellNodes = [{ visible: true, userData: { objects: [object] } }]; viewer.reference = false;
   const frozen = structuredClone(object); viewer.setCutaway(true);
   assert.equal(viewer.shellNodes[0].visible, false); assert.deepEqual(object, frozen);

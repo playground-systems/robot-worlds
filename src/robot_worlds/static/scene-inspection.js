@@ -50,7 +50,7 @@ export function isInspectionShell(object, bounds = [6, 6, 3]) {
   const name = `${object.id || ''} ${object.label || ''}`.toLowerCase();
   const wallShape = Math.min(x, y) <= .6 && Math.max(x, y) >= 1.5 && z >= 1.4 && Math.max(x, y) >= 4*Math.min(x, y);
   const boundary = x < y ? Math.abs(Math.abs(position[0])-bounds[0]/2) <= Math.max(x/2, .6) : Math.abs(Math.abs(position[1])-bounds[1]/2) <= Math.max(y/2, .6);
-  const namedWall = /(?:^|[\s_-])(wall|partition)(?:$|[\s_\d-])/.test(name);
+  const namedWall = /(?:^|[\s_-])(wall|partition|facade)(?:$|[\s_\d-])/.test(name);
   const roofShape = z <= .6 && x >= 2 && y >= 2 && position[2] >= 1.5;
   const namedRoof = /(?:^|[\s_-])(roof|ceiling)(?:$|[\s_\d-])/.test(name);
   const overheadBeam = /(?:^|[\s_-])(beam|joist)(?:$|[\s_\d-])/.test(name)
@@ -61,8 +61,16 @@ export function isInspectionShell(object, bounds = [6, 6, 3]) {
 
 /** Start enclosed scenes with their interior visible; the user can restore walls. */
 export function initialCutaway(spec) {
-  return (spec.objects || []).some(object => object.visible !== false
-    && isInspectionShell(object, spec.bounds)
-    && (object.size?.[0] || 0) >= 2 && (object.size?.[1] || 0) >= 2
-    && (object.size?.[2] || 0) <= .6);
+  const shells = (spec.objects || []).filter(object => object.visible !== false && isInspectionShell(object, spec.bounds));
+  return shells.length >= 3 || shells.some(object => (object.size?.[0] || 0) >= 2
+    && (object.size?.[1] || 0) >= 2 && (object.size?.[2] || 0) <= .6);
+}
+
+/** Retain far boundary walls as context while removing the enclosure in front. */
+export function hideInspectionShell(object, bounds, cameraPosition) {
+  const [x, y, z] = object.size, p = object.position;
+  if (z <= .6) return true; // roof/overhead beam already classified as a shell
+  const axis = x < y ? 0 : 1;
+  if (Math.abs(p[axis]) < bounds[axis]*.2) return true; // internal partition
+  return p[axis]*cameraPosition[axis] > 0;
 }

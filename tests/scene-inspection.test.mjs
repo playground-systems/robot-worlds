@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const source = await readFile(new URL('../src/robot_worlds/static/scene-inspection.js', import.meta.url));
-const { boundsCorners, objectBounds, perspectiveFit, sceneBounds, isInspectionShell, initialCutaway } = await import(`data:text/javascript;base64,${source.toString('base64')}`);
+const { boundsCorners, objectBounds, perspectiveFit, sceneBounds, isInspectionShell, initialCutaway, hideInspectionShell } = await import(`data:text/javascript;base64,${source.toString('base64')}`);
 const dot = (a, b) => a.reduce((sum, value, i) => sum+value*b[i], 0);
 
 for (const aspect of [.22, .5, 1, 1.8, 3.5]) {
@@ -67,3 +67,22 @@ test('roofed scenes open to their interior without hiding ordinary table or mach
   assert.equal(isInspectionShell({ ...beam, position: [0, 0, 1] }, spec.bounds), false);
   assert.equal(isInspectionShell({ ...beam, parent_id: 'machine' }, spec.bounds), false);
 });
+
+test('cutaway retains far boundary walls and follows the camera without changing geometry', () => {
+  const bounds=[20,16,5], camera=[12,-12,10];
+  const east={size:[.2,16,5],position:[10,0,2.5]}, west={...east,position:[-10,0,2.5]};
+  const south={size:[20,.2,5],position:[0,-8,2.5]}, north={...south,position:[0,8,2.5]};
+  assert.equal(hideInspectionShell(east,bounds,camera),true);
+  assert.equal(hideInspectionShell(south,bounds,camera),true);
+  assert.equal(hideInspectionShell(west,bounds,camera),false);
+  assert.equal(hideInspectionShell(north,bounds,camera),false);
+  assert.equal(hideInspectionShell(west,bounds,[-12,12,10]),true);
+  assert.equal(hideInspectionShell({size:[20,16,.2],position:[0,0,5]},bounds,camera),true);
+ });
+
+test('an inset facade is still an enclosure while its articulated children stay visible', () => {
+  const facade = {id:'south_center',label:'Facade between receiving and shipping portals',kind:'box',position:[0,-5.9,2.5],size:[8.4,.2,5]};
+  assert.equal(isInspectionShell(facade,[20,16,5]),true);
+  assert.equal(hideInspectionShell(facade,[20,16,5],[12,-12,10]),true);
+  assert.equal(isInspectionShell({...facade,parent_id:'door'},[20,16,5]),false);
+ });

@@ -1,4 +1,4 @@
-import { WorldViewer } from './scene.js?v=viz3d-2';
+import { WorldViewer } from './scene.js?v=viz3d-4';
 
 const $ = id => document.getElementById(id);
 const state = { world: null, navigation: 0, worldId: null, worlds: [], runs: [], tab: 'scene', panel: 'agent', selectedObject: null, layerLimit: 120, mode: 'physical', jobId: null, eventSeen: new Set(), key: false, editing: false, isPreview: false, viewer: null, viewerSpec: null, reference: false, editMode: null, scope: [], lineage: [], lineageLoading: false, lineageError: '', submitting: false, jobContext: null, assets: [] };
@@ -85,12 +85,12 @@ function syncViewControls() {
   $('fit-view').disabled = !interactive; $('focus-object').disabled = !interactive || !state.selectedObject || state.reference;
   $('top-view').disabled = !interactive || state.reference; $('cutaway-view').disabled = !interactive || !viewer?.shellCount || state.reference;
   $('cutaway-view').setAttribute('aria-pressed', String(!!viewer?.cutaway));
-  $('cutaway-view').textContent = viewer?.cutaway ? 'Show walls' : 'Cutaway';
-  $('cutaway-view').title = viewer?.shellCount ? `Hide ${viewer.shellCount} inferred fixed wall/roof objects in the layout only. Collision geometry is unchanged.` : 'No fixed wall or roof objects detected';
+  $('cutaway-view').textContent = viewer?.cutaway ? 'Show enclosure' : 'Cutaway';
+  $('cutaway-view').title = viewer?.shellCount ? 'Hide near-facing walls and overhead structure in the layout only. Far walls remain for context; collision geometry is unchanged.' : 'No fixed wall or roof objects detected';
   $('orbit-hint').hidden = !interactive;
   $('view-state').hidden = !currentSpec();
   $('view-state').textContent = state.reference ? 'STATIC REFERENCE' : layout ? (state.isPreview ? 'CANDIDATE LAYOUT' : 'LAYOUT · NOT A ROLLOUT') : 'SAVED NATIVE FRAME';
-  $('viewport-caption').textContent = state.reference ? 'Frozen source visuals · lighting may differ · no simulated behavior.' : layout ? (viewer?.cutaway ? `${viewer.shellCount} inferred wall/roof objects hidden for inspection. ` : '') + 'Reference configuration · robot start marker · joints have not been simulated. ' + (viewer?.appearanceNotice || '') : 'Saved MuJoCo validation image · not a live simulation or evidence of task success.';
+  $('viewport-caption').textContent = state.reference ? 'Frozen source visuals · lighting may differ · no simulated behavior.' : layout ? (viewer?.cutaway ? 'Cutaway inspection · near walls and overhead structure hidden. ' : '') + 'Reference configuration · robot start marker · joints have not been simulated. ' + (viewer?.appearanceNotice || '') : 'Saved MuJoCo validation image · not a live simulation or evidence of task success.';
 }
 function setView(mode) {
   $('live-status').hidden = mode !== 'live';

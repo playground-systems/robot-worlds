@@ -1,0 +1,10 @@
+{
+  "world_id": "e034c4a539fe9f36e1b1eea6c63c45dbf688ae1f1f3f518457f013273cb6a477",
+  "run_id": "a3792d98be824d38b0f158e32ede760a",
+  "capture": "Actual local app at 1280x720, viz3d-4; overview/rack are layout inspection, report is recorded native rollout.",
+  "images": {
+    "rack-detail.png": "fadebd7cf3338efa01ff20ade19dfff1164203bae70ab4840344471da92e450d",
+    "overview.png": "d4c89951b1cbe7498867e891efa792e74346f0b403813c0c87f7d9b0fe57e7b6",
+    "report.png": "3eef2a4c3cfb773b1db2a6ce1a5b855c57fe78e266e4657a195433c02deb008e"
+  }
+}

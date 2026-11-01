@@ -3,7 +3,7 @@ import { OrbitControls } from './vendor/OrbitControls.js';
 import { SceneAssets } from './scene-assets.js';
 import { batchSourceMeshes } from './scene-batching.js';
 import { disposeTree } from './scene-resources.js';
-import { initialCutaway, isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js?v=viz3d-2';
+import { hideInspectionShell, initialCutaway, isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js?v=viz3d-4';
 import { APPEARANCE_NOTICE, estimatedAppearance, studioEnvironmentPixels } from './scene-appearance.js';
 import { geometryKey, revolvedGeometry } from './scene-shapes.js';
 
@@ -86,7 +86,7 @@ export class WorldViewer {
         a.node.style.top = `${(1 - point.y) * canvas.clientHeight / 2}px`;
       }
     };
-    this.onControlChange = () => this.invalidate();
+    this.onControlChange = () => { if (this.cutaway) this.applyCutaway(); this.invalidate(); };
     this.onControlStart = () => { this.fitted = false; };
     this.controls.addEventListener('change', this.onControlChange);
     this.controls.addEventListener('start', this.onControlStart);
@@ -177,7 +177,7 @@ export class WorldViewer {
       const shell = isInspectionShell(object, spec.bounds); if (shell) this.shellCount++;
       if (kind === 'mesh' && assetBase && /\.obj$/i.test(object.mesh_path || '')) { this.pendingLoads.push([object, assetBase, generation]); continue; }
       const appearance = estimatedAppearance(object);
-      const key = `${geometryKey(object)}:${shell ? 'shell' : 'solid'}:${appearance.id}:${object.opacity ?? 1}`;
+      const key = `${geometryKey(object)}:${shell ? 'shell:'+object.id : 'solid'}:${appearance.id}:${object.opacity ?? 1}`;
       if (!buckets.has(key)) buckets.set(key, { kind, shell, appearance, objects: [] });
       buckets.get(key).objects.push(object);
     }
@@ -371,8 +371,18 @@ export class WorldViewer {
 
   setCutaway(enabled) {
     this.cutaway = !!enabled && !this.reference;
-    for (const node of this.shellNodes) node.visible = !this.cutaway;
+    this.applyCutaway();
     this.renderer.shadowMap.needsUpdate = true; this.invalidate(); return this.cutaway;
+  }
+
+  applyCutaway() {
+    const camera = this.camera?.position?.toArray?.() || [0, 0, 0];
+    for (const node of this.shellNodes) {
+      const object = node.userData?.objects?.[0];
+      const visible = !this.cutaway || (object && !hideInspectionShell(object, this.spec.bounds, camera));
+      if (node.visible !== !!visible) this.renderer.shadowMap.needsUpdate = true;
+      node.visible = !!visible;
+    }
   }
 
   setActive(active) {
