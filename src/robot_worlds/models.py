@@ -96,7 +96,7 @@ class SceneObject(Model):
     surface: SurfaceMaterial | None = None
     source_notice: str | None = None
     source_metadata: str | None = None
-    collision: bool = True
+    collision: bool = Field(default=True, description="False for visible fixed source meshes parented to physical geometry, or fixed thin box layout markings (Z thickness at most 0.02m). Markings have no mass/contact and cannot be physical rubric targets.")
     visible: bool = True
     opacity: Color = 1
     revolved: RevolvedShape | None = None
@@ -117,7 +117,8 @@ class SceneObject(Model):
             raise ValueError("Source surface materials currently require mesh geometry")
         if any(getattr(self, field) for field in TEXTURE_FIELDS[1:]) and self.surface is None:
             raise ValueError("PBR maps require an explicit source surface material")
-        if not self.collision and (self.kind != "mesh" or not self.parent_id or self.movable or self.joint):
+        fixed_marking = self.kind == "box" and self.size[2] <= .02 and not self.movable and not self.joint
+        if not self.collision and not fixed_marking and (self.kind != "mesh" or not self.parent_id or self.movable or self.joint):
             raise ValueError("Appearance-only meshes must be fixed children of a physical object")
         if not self.collision and not self.visible:
             raise ValueError("Appearance-only geometry must be visible")

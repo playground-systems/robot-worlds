@@ -29,14 +29,14 @@ def validate_rubric(spec: WorldSpec) -> list[str]:
     for label, c in conditions:
         if c.predicate not in SUPPORTED_PREDICATES:
             errors.append(f"{label}: unsupported predicate {c.predicate}")
-        if c.predicate != "robot_in_region" and c.object_id not in objects:
+        if c.predicate != "robot_in_region" and (c.object_id not in objects or not objects[c.object_id].collision):
             errors.append(f"{label}: object_id must reference a physical object")
         if c.predicate == "robot_in_region" and c.object_id not in (None, "robot"):
             errors.append(f"{label}: robot_in_region object_id must be null or robot")
         if c.predicate in {"in_region", "robot_in_region"} and c.target_id not in regions:
             errors.append(f"{label}: target_id must reference a region")
         if c.predicate in {"on_top", "near"}:
-            if c.target_id not in objects or c.target_id == c.object_id:
+            if c.target_id not in objects or not objects[c.target_id].collision or c.target_id == c.object_id:
                 errors.append(f"{label}: target_id must reference a different physical object")
         if c.predicate == "near" and (c.threshold is None or c.threshold <= 0):
             errors.append(f"{label}: near requires a positive distance threshold")
@@ -153,6 +153,10 @@ def measure_predicate(spec: WorldSpec, condition: Condition, snapshot: dict) -> 
     objects = {o.id: o for o in spec.objects}
     regions = {r.id: r for r in spec.regions}
     try:
+        if c.predicate != "robot_in_region" and not objects[c.object_id].collision:
+            raise ValueError("object_id must reference a physical object, not appearance-only geometry")
+        if c.predicate in {"near", "on_top"} and not objects[c.target_id].collision:
+            raise ValueError("target_id must reference a physical object, not appearance-only geometry")
         state = snapshot.get("robot") if c.predicate == "robot_in_region" else snapshot.get("objects", {}).get(c.object_id)
         if not isinstance(state, dict):
             raise ValueError(f"missing state for {c.object_id or 'robot'}")

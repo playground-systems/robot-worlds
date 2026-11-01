@@ -12,7 +12,7 @@ not replace current native, live-model or application evidence.
 | Physical manipulation | Original-bowl concavity, pre-placed support and no-op failure passed in hosted checks. A new native engineering test lifts every original bowl component over 15 cm using two physical grippers and the public torso actuator, with no counter contact after a one-second hold. A development probe also carries it through retreat, turn and forward travel. | Complete door interaction, insertion, release and stable support with a labeled engineering policy. Run native decoy, partial insertion, held and unstable-placement cases. Lift/carry do not establish placement. |
 | Trustworthy grading | Synthetic original-asset traces exercise the negative cases, full containment, duration and missing measurements. Holding/release must name a movable root. Timed-process loading accepts fixed child-piece contact while excluding decoys and separately articulated children. | Current physical evidence for these measurements and outcomes. No heating or closure requirement is added to the bowl task. |
 | Live generation and editing | Astra through the existing Codex sign-in generated a physically validated original-asset kitchen, then executed nine sensor-only policy actions before its token budget ended. Reporting, export/reload and regrading passed. | Successful manipulation, generated warehouse acceptance and a verified live targeted edit. API-key transport remains blocked by exhausted account credits; Codex plan usage is recorded separately. |
-| Warehouse appearance | Rack, pallet, carton, barrier and passive conveyor source adapters retain original visuals and disclose collision approximations. The conveyor retains 29 hinges; portable 0°/90° placements pass static checks. Viewer sharing/batching, texture budgets and failure recovery have CPU-only coverage. | Native contacts/materials, two genuinely generated detailed layouts, actual overview/close-up screenshots, reference comparison and viewport performance/LOD. The classic policy camera differs from browser PBR. |
+| Warehouse appearance | A live-generated 24 × 20 m, 2,135-component warehouse passed its creation-time physical checks and completed policy/report/export/reload. Original NVIDIA assets are visible in actual application screenshots. | Its layout is too sparse for the visual target, and a zero-tolerance navigation rule produced a false negative against the intended floor-square task. A denser alternative, corrected pre-run validation and measured viewport performance remain open. |
 | Fresh-user journey | Version 0.1.0a1 wheel and source archives installed independently on Linux. The same wheel installed on Apple silicon Python 3.13, passed dependency checks and completed the offline native SDK walkthrough. | Complete the browser walkthrough and recheck any subsequently changed release artifact. |
 | Application and release | Workbench, selection, edit/progress controls, reports, replay and export are implemented. | Current application walkthrough: inspection, validation/error state, targeted edit, policy execution/cancellation, replay and evidence navigation; camera framing without obstruction. Capture warehouse, bowl/interior, interaction and report screenshots. Reconcile release docs/artifacts and reproducible walkthrough. |
 
@@ -100,6 +100,21 @@ and 0.6 kg estimated mass. No object pose writes or attachment forces are used.
 live-generated kitchen, original bowl, report and containment evidence. The
 report now states its stop reason explicitly. Its displayed replay is retained
 from the original run; regrading created a new report without regenerating frames.
+
+The [first generated warehouse workflow](evidence/release-2026-10-31/live-warehouse.json)
+completed in 364 seconds, including three generation attempts and three policy
+decisions. The robot drove two metres, waited two seconds and finished. Its base
+origin was inside the XY target but about 1 mm below its zero-tolerance vertical
+boundary, so the recorded verdict is failed. New validation diagnoses this
+ground-level mismatch before evaluation; it does not silently change tolerances
+or rewrite old scores. The screenshots show functional equipment placement,
+not reference-level visual acceptance.
+
+Thin fixed box markings can now be appearance-only without invented mesh files.
+Native checks verify zero mass/contact flags; rubric checks reject appearance-only
+subjects and supports. This prevents painted lanes from becoming physical
+obstacles or fake grading fixtures. These later changes require a new candidate
+build; earlier archive hashes remain historical evidence.
 
 ## One-off hosted household check — passed
 

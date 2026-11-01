@@ -89,6 +89,26 @@ def test_preview_promotion_is_new_version_and_tampered_ready_rejected(tmp_path):
         load(preview.path)
 
 
+@pytest.mark.parametrize('tolerance,status', [(0., 'unvalidated'), (.005, 'ready')])
+def test_ground_navigation_cannot_silently_exclude_settled_base_origin(tmp_path, tolerance, status):
+    class BelowFloorRuntime(FakeRuntime):
+        def snapshot(self):
+            state = super().snapshot()
+            state['robot']['position'][2] = -.0012
+            return state
+
+    plan = spec().model_dump()
+    plan['regions'] = [dict(id='target', label='Floor square', position=[-2, 0, 1], size=[1, 1, 2])]
+    plan['rubric'] = [dict(id='arrive', description='Stand in the square', predicate='robot_in_region',
+                          target_id='target', tolerance=tolerance)]
+    world = World.from_spec(WorldSpec.model_validate(plan), tmp_path / 'worlds', runtime_factory=BelowFloorRuntime)
+    assert world.manifest['validation']['status'] == status
+    assert world.spec.rubric[0].tolerance == tolerance  # Never silently relax grading.
+    if status == 'unvalidated':
+        check = next(c for c in world.manifest['validation']['checks'] if c['check'] == 'initial_rubric')
+        assert 'settled robot origin' in str(check['errors'])
+
+
 def test_world_spec_is_copy_and_preview_cannot_evaluate(tmp_path):
     world = World.from_spec(spec(), tmp_path / "worlds", validate=False)
     changed = world.spec

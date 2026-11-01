@@ -287,6 +287,21 @@ class World:
                         rubric_errors.append("Required achievement criteria already satisfied at reset: " + ", ".join(bad))
                     if missing:
                         rubric_errors.append("Rubric lacks runtime measurements for: " + ", ".join(missing))
+                    # A wheeled base can settle slightly below the nominal plane
+                    # through compliant contact. A floor-square navigation task
+                    # must not secretly require its frame origin to float above it.
+                    # Diagnose the authored rule; never adjust its tolerance here.
+                    robot_position = state.get("robot", {}).get("position", [])
+                    if (spec.robot == "tiago++" and isinstance(robot_position, (list, tuple))
+                            and len(robot_position) == 3 and isinstance(robot_position[2], (int, float))
+                            and math.isfinite(robot_position[2]) and robot_position[2] < 0):
+                        regions = {region.id: region for region in spec.regions}
+                        for criterion in spec.rubric:
+                            if criterion.required and criterion.predicate == "robot_in_region":
+                                region = regions.get(criterion.target_id)
+                                bottom = region.position[2]-region.size[2]/2 if region else None
+                                if bottom is not None and abs(bottom) < 1e-5 and robot_position[2] < bottom-criterion.tolerance:
+                                    rubric_errors.append(f"{criterion.id}: ground-level target excludes the settled robot origin at Z={robot_position[2]:.6f}m; author an explicit justified contact tolerance or correct target height. Grading has not been relaxed.")
                     errors.extend(rubric_errors)
                     checks.append({"check": "initial_rubric", "passed": not rubric_errors, "errors": rubric_errors})
                     image = runtime.render()
