@@ -551,7 +551,7 @@ independent objects. Prepared assets need no network request or converter at run
 
 ## Hollow objects and appliance validation
 
-Define a hollow object as attached physical components, with one movable root for a bowl. Opposing finger contacts on different welded pieces count toward the same body's grasp. Containment includes every fixed attached piece, so a bowl bottom inside the cavity with its rim sticking out fails. `on_top` names a particular support surface, such as the microwave floor; it does not treat the roof as the internal floor.
+Define a hollow object as attached physical components, with one movable root for a bowl. Opposing finger contacts on different welded pieces count toward the same body's grasp. Containment includes every fixed attached physical piece, so a bowl bottom inside the cavity with its rim sticking out fails. Appearance-only meshes do not add physical volume; their rotated rectangular bounds must not invent solid corners around a round object. Physical component bounds remain conservative under rotation. `on_top` names a particular support surface, such as the microwave floor; it does not treat the roof as the internal floor.
 
 A cavity region can declare `interior_of` with the appliance's physical root ID. Static checks reject a missing container, a region outside its envelope or a usable volume filled by its box components. The generator is instructed to declare these relationships. This check does not certify a door's swept clearance or curved/mesh cavities. Native reset checks also do not prove the door can be opened by the selected robot.
 

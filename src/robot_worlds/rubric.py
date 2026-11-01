@@ -132,6 +132,12 @@ def _body_bounds(objects, identifier, states):
     low, high = [math.inf] * 3, [-math.inf] * 3
     contacts = set()
     for member in rigid_members(objects, identifier):
+        # Appearance meshes are not physical solids. Their rotated bounding
+        # boxes can enclose large empty corners (e.g. the round bowl), inventing
+        # penetration even when every source collision piece fits and is supported.
+        # Keep every physical attached component; never shrink success tolerances.
+        if not objects[member].collision:
+            continue
         state = states.get(member)
         if not isinstance(state, dict):
             raise ValueError(f"missing attached geometry state for {member}")

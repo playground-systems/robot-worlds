@@ -1,4 +1,4 @@
-import { WorldViewer } from './scene.js?v=viz3d-4';
+import { WorldViewer } from './scene.js?v=viz3d-6';
 
 const $ = id => document.getElementById(id);
 const state = { world: null, navigation: 0, worldId: null, worlds: [], runs: [], tab: 'scene', panel: 'agent', selectedObject: null, layerLimit: 120, mode: 'physical', jobId: null, eventSeen: new Set(), key: false, editing: false, isPreview: false, viewer: null, viewerSpec: null, reference: false, editMode: null, scope: [], lineage: [], lineageLoading: false, lineageError: '', submitting: false, jobContext: null, assets: [] };
@@ -61,7 +61,7 @@ window.addEventListener('pageshow', event => { if (!event.persisted || !currentS
 function getViewer() {
   if (state.viewer) return state.viewer;
   try { state.viewer = new WorldViewer($('scene-canvas'), $('scene-labels'), object => selectObject(object)); }
-  catch (error) { notice(`3D layout is unavailable in this browser. The native physical image is still available. ${error.message}`); }
+  catch (error) { notice('3D layout is unavailable in this browser. Use Physical to inspect the saved native image, or reload to retry the 3D view.'); }
   return state.viewer;
 }
 function displaySpec(spec, preview = false) {
@@ -308,6 +308,8 @@ $('focus-object').onclick = () => { if (state.selectedObject) state.viewer?.fit(
 $('top-view').onclick = () => state.viewer?.fit(null, [0, -.001, 1]);
 $('cutaway-view').onclick = () => { state.viewer?.setCutaway(!state.viewer.cutaway); syncViewControls(); };
 function resetWorkspace() {
+  if (state.jobId || state.submitting) return;
+  notice(''); state.jobContext = null; $('job-panel').hidden = true; $('job-events').replaceChildren();
   $('live-status').hidden = true;
   state.navigation++; disposeViewer(); state.reference = false; $('report-frame').src = 'about:blank';
   document.querySelector('.app-shell').classList.remove('showing-report');
@@ -491,7 +493,7 @@ function eventLabel(event) {
   if (event.type === 'action_started') return `Action ${event.step + 1}: ${(event.action?.tool || 'move').replaceAll('_', ' ')}`;
   if (event.type === 'step') return `Feedback: ${(event.result?.status || 'executed').replaceAll('_', ' ')}`;
   if (event.type === 'task_progress') return `${(event.criteria || []).filter(c => c.satisfied).length}/${(event.criteria || []).length} checks observed`;
-  const labels = { edit_started: 'Planning targeted changes', repair_started: 'Diagnosing unresolved checks', candidate: 'Candidate ready for checks', preview: 'Candidate preview', validation: 'Checking geometry and physics', edit_validated: 'Verifying preserved entities', edit_completed: 'Saved version and computed changes', generation_incomplete: 'Budget exhausted · saved unresolved candidate', generation_cancelled: 'Cancelled · preserving available evidence', generation_failed: 'Generation stopped · saved diagnostic record' };
+  const labels = { edit_started: 'Planning targeted changes', repair_started: 'Diagnosing unresolved checks', candidate: 'Candidate ready for checks', preview: 'Candidate preview', validation: 'Checking geometry and physics', edit_validated: 'Verifying preserved entities', edit_completed: 'Saved version and computed changes', generation_incomplete: 'Generation incomplete · diagnostic record saved', generation_cancelled: 'Cancelled · preserving available evidence', generation_failed: 'Generation stopped · saved diagnostic record' };
   const type = labels[event.type] || String(event.type || event.phase || 'update').replaceAll('_', ' ');
   const detail = event.message || (event.errors?.length ? event.errors.map(message).join('; ') : event.error ? message(event.error) : '');
   return detail ? `${type}: ${detail}` : type;
@@ -592,7 +594,7 @@ $('evaluate-form').onsubmit = async event => {
   catch (error) { notice(error.message); }
 };
 async function start() {
-  try { const health = await api('/api/health'); state.key = !!health.key_configured; $('connection').textContent = state.key ? '● Connected' : 'Key required'; $('connection').title = state.key ? 'Local runtime · model key configured' : 'Configure OPENAI_API_KEY on the server'; $('connection').classList.toggle('error', !state.key); if (!state.key) notice('Set OPENAI_API_KEY in the server environment, then restart the local server to generate worlds or run the agent. Saved worlds and reports remain available.'); if (health.model) $('model').value = health.model; await refreshLists(); const params = new URLSearchParams(location.search); if (params.get('reference')) await openReference(params.get('reference'));
+  try { const health = await api('/api/health'); state.key = !!health.key_configured; $('connection').textContent = state.key ? 'Key configured' : 'Key required'; $('connection').title = state.key ? 'Local runtime · model key configured' : 'Configure OPENAI_API_KEY on the server'; $('connection').classList.toggle('error', !state.key); if (!state.key) notice('Set OPENAI_API_KEY in the server environment, then restart the local server to generate worlds or run the agent. Saved worlds and reports remain available.'); if (health.model) $('model').value = health.model; await refreshLists(); const params = new URLSearchParams(location.search); if (params.get('reference')) await openReference(params.get('reference'));
     else if (params.get('job')) { notice(''); const job = await api(`/api/jobs/${encodeURIComponent(params.get('job'))}`); trackJob(job, 'Live robot mission'); }
     else if (params.get('run')) openReport(params.get('run')); else if (params.get('world')) await openWorld(params.get('world')); }
   catch (error) { notice(error.message); $('connection').textContent = 'Local server unavailable'; $('connection').classList.add('error'); }

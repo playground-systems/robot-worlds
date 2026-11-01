@@ -372,7 +372,8 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
             from .artifacts import public_error
             from .llm import LLMError
             diagnostic = public_error(exc)["message"] if isinstance(exc, LLMError) else type(exc).__name__
-            raise GenerationError(f"World generation request failed: {diagnostic}; latest candidate retained", candidate=candidate, attempts=attempt+1, history=history, errors=[diagnostic]) from exc
+            retained = "; latest candidate retained" if candidate is not None else "; no candidate created"
+            raise GenerationError(f"World generation request failed: {diagnostic}{retained}", candidate=candidate, attempts=attempt+1, history=history, errors=[diagnostic]) from exc
         previous = raw
         try:
             plan = GenerationSpec.model_validate(raw)

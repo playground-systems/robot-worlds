@@ -3,7 +3,7 @@ import { OrbitControls } from './vendor/OrbitControls.js';
 import { SceneAssets } from './scene-assets.js';
 import { batchSourceMeshes } from './scene-batching.js';
 import { disposeTree } from './scene-resources.js';
-import { hideInspectionShell, initialCutaway, isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js?v=viz3d-4';
+import { hideInspectionShell, initialCutaway, isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js?v=viz3d-6';
 import { APPEARANCE_NOTICE, estimatedAppearance, studioEnvironmentPixels } from './scene-appearance.js';
 import { geometryKey, revolvedGeometry } from './scene-shapes.js';
 
@@ -407,6 +407,9 @@ export class WorldViewer {
     this.sourceGroup = null; this.sourceBatchStats = null;
     this.assetErrorLabels?.clear(); this.assetErrorSummary = null;
     this.layoutEnvironment?.dispose(); this.layoutEnvironment = null; this.scene.environment = null;
-    this.renderer.dispose(); this.renderer.forceContextLoss();
+    // The workbench reuses this canvas for preview → validated world and
+    // version switches. Losing its context here also destroys the next renderer.
+    // Dispose GPU resources/listeners; the browser owns canvas-context lifetime.
+    this.renderer.dispose();
   }
 }

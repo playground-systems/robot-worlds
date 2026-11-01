@@ -35,6 +35,8 @@ def test_model_failure_keeps_actionable_diagnostic_without_secret(monkeypatch):
     with pytest.raises(GenerationError) as caught:
         generate_spec("Kitchen", client=Unfunded())
     assert "Restore credits" in str(caught.value)
+    assert "no candidate created" in str(caught.value)
+    assert "candidate retained" not in str(caught.value)
     assert "credit_balance_exhausted" in caught.value.errors[0]
     assert "test-private-key" not in str(caught.value)
     assert "test-private-key" not in str(caught.value.errors)

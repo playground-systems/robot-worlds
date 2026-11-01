@@ -484,7 +484,7 @@ class World:
                 phase = "runtime"
                 for step in range(max_steps):
                     if cancellation_requested():
-                        episode["status"] = "cancelled"
+                        episode.update(status="cancelled", termination="cancelled")
                         break
                     observation = runtime.observe()
                     observation["tools"] = list(observation.get("tools", [])) + [copy.deepcopy(FINISH_TOOL)]
@@ -548,7 +548,8 @@ class World:
             except PolicyBudgetExceeded as exc:
                 episode.update(status="completed", termination="policy_budget", error=public_error(exc))
             except Exception as exc:
-                episode.update(status="policy_error" if phase == "policy" else "simulation_error", error=public_error(exc))
+                failure = "policy_error" if phase == "policy" else "simulation_error"
+                episode.update(status=failure, termination=failure, error=public_error(exc))
             finally:
                 episode["wall_seconds"] = time.monotonic() - started
                 try:

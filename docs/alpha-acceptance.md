@@ -189,3 +189,26 @@ and world bounds were preserved. The new version passed physical validation,
 navigation, portable reload and regrading. The parent version and run remain
 unchanged. Both workflows use Codex plan usage; no dollar charge is reported by
 that transport. These are warm-cache timings, not fresh-download timings.
+
+## Browser recovery and geometry regressions
+
+The isolated loopback model fixture exercises the normal HTTP client, generation,
+worker, physics and browser paths with a dummy key. It makes no paid requests.
+It reproduced and verified fixes for two UI issues: a configured key was labeled
+“Connected” before authentication, and all incomplete generations were described
+as budget failures. Invalid-key errors now identify the HTTP failure and next step.
+Starting a new world also clears the previous terminal job notice.
+
+The same walkthrough exposed a WebGL context lifecycle defect: disposing the
+preview forcibly lost the persistent canvas context before constructing the
+validated-world viewer. Disposal now frees renderer resources without destroying
+the reusable canvas. A fresh preview-to-ready browser generation retained its
+interactive 3D view after this fix.
+
+A native 45°-rotated original-bowl fixture reproduced a containment false negative
+from including the appearance mesh's rotated rectangular bounds. Grading now
+aggregates every attached physical collision piece and excludes appearance-only
+volume. The original tolerance, source collision geometry and duration remain
+unchanged. The rotated fixture and four native failure/geometry checks passed;
+50 focused rubric, adversarial and evidence-audit checks also passed. Historical
+worlds and reports were not rewritten.

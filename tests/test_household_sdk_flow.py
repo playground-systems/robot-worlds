@@ -226,6 +226,7 @@ def test_household_cancel_between_actions_preserves_partial_report(household_wor
         cancelled=cancelled.is_set)
     assert len(probe.results) == 1
     assert report.result["episodes"][0]["status"] == "cancelled"
+    assert report.result["episodes"][0]["termination"] == "cancelled"
     assert report.summary["valid"] == 0
     assert report.summary["invalid_or_interrupted"] == 1
     assert report.summary["success_rate"] is None

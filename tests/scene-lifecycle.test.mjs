@@ -27,13 +27,13 @@ function fixture(extra = {}) {
   return { viewer, calls, canvas, document };
 }
 
-test('disposing a viewer cancels work, aborts assets and removes event listeners exactly once', () => {
+test('disposing a viewer releases resources once without destroying the reusable canvas context', () => {
   const { viewer, calls, canvas, document } = fixture(), request = new AbortController(); viewer.loads.add(request);
   viewer.assets = { dispose: () => request.abort() };
   viewer.pendingLoads.push(['later asset']); viewer.dispose(); viewer.dispose();
   canvas.dispatchEvent(new Event('pointerdown')); canvas.dispatchEvent(new Event('keydown')); document.dispatchEvent(new Event('visibilitychange')); viewer.invalidate();
   assert(request.signal.aborted); assert.equal(viewer.pendingLoads.length, 0);
-  assert.deepEqual(calls, [['cancel', 4], ['observer'], ['controls'], ['scene'], ['labels'], ['renderer'], ['context']]);
+  assert.deepEqual(calls, [['cancel', 4], ['observer'], ['controls'], ['scene'], ['labels'], ['renderer']]);
   assert.equal(viewer.disposed, true);
 });
 

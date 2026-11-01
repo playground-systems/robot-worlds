@@ -211,3 +211,30 @@ def test_native_brief_recontact_does_not_pass_stable_support_duration():
         assert result['success'] is False
     finally:
         runtime.close()
+
+
+def test_rotated_original_round_bowl_keeps_exact_physical_containment_and_support():
+    import math
+
+    import numpy as np
+    spec, bowl, oven = sourced_scene(inside=True)
+    center = np.array(oven.regions[0].position[:2])
+    angle = math.pi/4
+    rotation = np.array([[math.cos(angle), -math.sin(angle)], [math.sin(angle), math.cos(angle)]])
+    runtime = Runtime(spec, render=False)
+    try:
+        # Privileged initial-pose fixture, not a robot manipulation trajectory.
+        body = runtime._object_bodies[bowl.body_ids['object']]
+        joint = runtime.model.body_jntadr[body]
+        address = runtime.model.jnt_qposadr[joint]
+        xy = center + rotation @ (runtime.data.qpos[address:address+2]-center)
+        runtime.data.qpos[address:address+2] = xy
+        runtime.data.qpos[address+3:address+7] = [math.cos(angle/2), 0, 0, math.sin(angle/2)]
+        import mujoco
+        mujoco.mj_forward(runtime.model, runtime.data)
+        runtime.execute({'tool': 'wait', 'arguments': {'seconds': .3}})
+        for criterion in spec.rubric:
+            result = measure_predicate(spec, criterion, runtime.snapshot())
+            assert result['satisfied'] is True, (criterion.id, result)
+    finally:
+        runtime.close()
