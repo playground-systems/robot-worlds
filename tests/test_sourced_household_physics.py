@@ -233,6 +233,9 @@ def test_rotated_original_round_bowl_keeps_exact_physical_containment_and_suppor
         import mujoco
         mujoco.mj_forward(runtime.model, runtime.data)
         runtime.execute({'tool': 'wait', 'arguments': {'seconds': .3}})
+        from robot_worlds.rubric import _body_bounds
+        _, half, _ = _body_bounds({o.id: o for o in spec.objects}, bowl.body_ids['object'], runtime.snapshot()['objects'])
+        assert max(half[:2])*2 < .213  # The original circular rim is about 0.209 m wide.
         for criterion in spec.rubric:
             result = measure_predicate(spec, criterion, runtime.snapshot())
             assert result['satisfied'] is True, (criterion.id, result)

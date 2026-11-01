@@ -97,13 +97,19 @@ TOOLS = [
     ),
     _tool(
         "move_arm",
-        "Move a gripper grasp center toward robot-base XYZ metres (X forward, Y left, Z up; origin at the base, pelvis for G1) through joint servos. Local IK can fail or encounter obstacles; inspect actual reached position. Optional approach chooses base-frame down (-Z), base-frame forward (+X), or keep the current hand orientation (default). Maximum reach is limited by the robot.",
+        "Move a gripper grasp center toward robot-base XYZ metres (X forward, Y left, Z up; origin at the base, pelvis for G1) through joint servos. Local IK can fail or encounter obstacles; inspect actual reached position. Optional approach chooses base-frame down (-Z), base-frame forward (+X), forward_down (45 degrees forward and down, TIAGo++ only), or keep the current hand orientation (default). Maximum reach is limited by the robot.",
         {
             "hand": HAND,
             "position": {"type": "array", "items": NUMBER, "minItems": 3, "maxItems": 3},
-            "approach": {"type": "string", "enum": ["down", "forward", "keep"]},
+            "approach": {"type": "string", "enum": ["down", "forward", "forward_down", "keep"]},
         },
         ["hand", "position"],
+    ),
+    _tool(
+        "move_arm_joints",
+        "TIAGo++ only: move seven arm joints (shoulder to wrist) to absolute radians through bounded source position servos, at up to 0.45 rad/s. Use observed arm_joint_positions to save/restore a posture. Targets must fit source joint limits. This is not collision-free planning; inspect encoder feedback.",
+        {"hand": HAND, "positions": {"type": "array", "items": NUMBER, "minItems": 7, "maxItems": 7}},
+        ["hand", "positions"],
     ),
     _tool(
         "move_torso",
@@ -205,6 +211,23 @@ class Runtime:
             for oid, obid in self._object_bodies.items():
                 if bid == obid:
                     self._geom_objects[gid] = oid
+        # Only task-bound physical meshes need vertex bounds in the privileged
+        # trace. Navigation-only warehouses do not pay this per-sample cost.
+        conditions = [*spec.rubric, *(c for cycle in spec.process_cycles for c in cycle.prerequisites)]
+        measured = set()
+        for condition in conditions:
+            if condition.predicate in {"in_region", "on_top"}:
+                measured.update(rigid_members(self._objects, condition.object_id))
+            if condition.predicate == "on_top":
+                measured.add(condition.target_id)
+        self._measured_meshes = {}
+        for gid, oid in self._geom_objects.items():
+            if oid not in measured or not self._objects[oid].collision:
+                continue
+            if self.model.geom_type[gid] == mujoco.mjtGeom.mjGEOM_MESH:
+                mesh = self.model.geom_dataid[gid]
+                start, count = self.model.mesh_vertadr[mesh], self.model.mesh_vertnum[mesh]
+                self._measured_meshes.setdefault(oid, []).append((gid, self.model.mesh_vert[start:start+count]))
         self._setup_robot()
         self._reset()
         self._check_physics_warnings()
@@ -732,6 +755,23 @@ class Runtime:
                         }
                     )
 
+    def _collision_vertex_bounds(self, identifier):
+        """Exact world-axis extrema of compiled collision mesh vertices.
+
+        MuJoCo folds mesh centering/rotation into the geom frame. Use its geom
+        transform, not the body transform or unprocessed source vertex frame.
+        Extrema of a convex hull equal extrema of its input vertices.
+        """
+        meshes = self._measured_meshes.get(identifier)
+        if not meshes:
+            return None
+        lower, upper = np.full(3, np.inf), np.full(3, -np.inf)
+        for gid, vertices in meshes:
+            points = vertices @ self.data.geom_xmat[gid].reshape(3, 3).T + self.data.geom_xpos[gid]
+            lower = np.minimum(lower, points.min(axis=0))
+            upper = np.maximum(upper, points.max(axis=0))
+        return {"source": "native_collision_vertices_v1", "lower": lower.tolist(), "upper": upper.tolist()}
+
     def snapshot(self):
         objects = {}
         for oid, bid in self._object_bodies.items():
@@ -751,6 +791,9 @@ class Runtime:
                     b if a == oid else a for a, b in self._last_contact_pairs if oid in (a, b)
                 ],
             }
+            bounds = self._collision_vertex_bounds(oid)
+            if bounds is not None:
+                state["geometry_bounds"] = bounds
             if getattr(obj, "joint", None):
                 state["joint_position"] = float(self.data.joint("joint_" + oid).qpos[0])
             objects[oid] = state
@@ -780,6 +823,8 @@ class Runtime:
                     world_point(args["position"], *self._base_transform()),
                     args.get("approach", "keep"),
                 )
+            elif name == "move_arm_joints":
+                result = self._move_arm_joints(**args)
             elif name == "gripper":
                 result = self._gripper(**args)
             elif name == "move_torso":
@@ -934,8 +979,11 @@ class Runtime:
         self.data.ctrl[actuators] = target
 
     def _orientation_target(self, hand, approach, orientation):
-        if approach == "down":
+        if approach in {"down", "forward_down"}:
             orientation = np.diag([-1.0, 1.0, -1.0]) if hand == "right" else np.eye(3)
+            if approach == "forward_down":
+                c = math.sqrt(.5)
+                orientation = np.array([[c, 0, -c], [0, 1, 0], [c, 0, c]]) @ orientation
         elif approach == "forward":
             z = np.array([1.0, 0.0, 0.0]) * (1 if hand == "right" else -1)
             x = np.array([0.0, 1.0, 0.0])
@@ -943,10 +991,31 @@ class Runtime:
         elif approach == "keep":
             return orientation
         else:
-            raise ValueError("approach must be down, forward, or keep")
+            raise ValueError("approach must be down, forward, forward_down, or keep")
         # Targets and camera depth use the full base-link rotation. Approach
         # directions must use that same frame, including after driving/turning.
         return self._base_transform()[1] @ orientation
+
+    def _move_arm_joints(self, hand, positions):
+        if self.spec.robot != "tiago++":
+            raise ValueError("Direct arm joint commands are available only for TIAGo++")
+        target = np.asarray(positions, dtype=float)
+        if hand not in self._arm_joints or target.shape != (7,) or not np.isfinite(target).all():
+            raise ValueError("hand must be left/right and positions must contain seven finite radians")
+        joints = self._arm_joints[hand]
+        low, high = self.model.jnt_range[joints, 0], self.model.jnt_range[joints, 1]
+        if np.any(target < low) or np.any(target > high):
+            raise ValueError("Arm joint target is outside the source robot limits")
+        initial = self._arm_controls(hand)
+        steps = math.floor(float(np.max(np.abs(target-initial)))/.45/.02)+1
+        for index in range(steps):
+            self._command_arm(hand, initial+(target-initial)*(index+1)/steps)
+            self._step(.02)
+        self._step(.4)
+        actual = self.data.qpos[self.model.jnt_qposadr[joints]].copy()
+        error = float(np.max(np.abs(actual-target)))
+        return {"status": "reached" if error < .05 else "blocked_or_unreached",
+                "arm_joint_positions": actual.tolist(), "maximum_error_rad": error}
 
     def _move_arm(self, hand, target, approach="keep"):
         if hand not in self._arm_joints or target.shape != (3,) or not np.isfinite(target).all():

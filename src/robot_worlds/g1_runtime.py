@@ -329,7 +329,11 @@ class G1Runtime(Runtime):
 
     @property
     def tools(self):
-        tools = [dict(t) for t in TOOLS if t["name"] not in {"gripper", "move_torso"}]
+        tools = [copy.deepcopy(t) for t in TOOLS if t["name"] not in {"gripper", "move_torso", "move_arm_joints"}]
+        for tool in tools:
+            if tool["name"] == "move_arm":
+                tool["parameters"]["properties"]["approach"]["enum"] = ["down", "forward", "keep"]
+                tool["description"] = tool["description"].replace(" forward_down (45 degrees forward and down, TIAGo++ only),", "")
         tools[0] = _tool(
             "drive",
             "Walk a nominal distance using a timed 0.25m/s velocity command, then turn using relative IMU heading. Linear displacement is not measured: use RGB-D to assess actual progress. Contact, balance and obstacles can cause failure. Maximum2m and pi radians.",

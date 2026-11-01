@@ -449,12 +449,24 @@ class World:
             episode = {"index": episode_index, "seed": seed+episode_index, "status": "running",
                        "steps": [], "frames": [], "inference_seconds": 0.0}
             result["episodes"].append(episode)
-            runtime, episode_policy = None, None
+            runtime, episode_policy, progress_grader, trace_checkpoint = None, None, None, None
             phase = "runtime"
             started = time.monotonic()
             try:
                 runtime = (runtime_factory or _runtime)(frozen.spec, render=render,
                     asset_root=frozen.path, seed=episode["seed"], max_sim_seconds=max_sim_seconds)
+                # Only built-in runtimes own immutable, append-only snapshots.
+                # Custom adapters retain uncached grading of their current trace.
+                from robot_worlds.runtime import Runtime
+                builtin_runtime = type(runtime) is Runtime
+                if frozen._spec.robot == "g1":
+                    from robot_worlds.g1_runtime import G1Runtime
+                    builtin_runtime = type(runtime) is G1Runtime
+                if builtin_runtime:
+                    from robot_worlds.rubric import _ProgressGrader
+                    progress_grader = _ProgressGrader(frozen.spec)
+                    from robot_worlds.artifacts import _TraceCheckpoint
+                    trace_checkpoint = _TraceCheckpoint(episode_dir / "trace.json")
                 episode["runtime"] = _runtime_manifest(runtime)
                 changed = [key for key in ("engine", "engine_version", "timestep", "controller", "model_fingerprint", "implementation_fingerprint", "trace_interval", "clock", "action_contract", "sensor_contract", "policy_sha256", "policy_source_revision", "policy_frequency_hz")
                            if key in expected_runtime and episode["runtime"].get(key) != expected_runtime[key]]
@@ -528,13 +540,16 @@ class World:
                     if hasattr(episode_policy, "record_result"):
                         episode_policy.record_result(step_record["result"])
                     phase = "runtime"
-                    write_json(episode_dir / "trace.json", runtime.trace)
+                    if trace_checkpoint:
+                        trace_checkpoint.write(runtime.trace)
+                    else:
+                        write_json(episode_dir / "trace.json", runtime.trace, compact=True)
                     write_json(folder / "result.json", result)
                     emit({"type": "step", "run_id": run_id, "episode": episode_index, **step_record})
                     if render and on_event and hasattr(runtime, "publish_live"):
                         runtime.publish_live(force=True)
                     if on_event:
-                        progress = grade(frozen.spec, runtime.trace)
+                        progress = progress_grader.score(runtime.trace) if progress_grader else grade(frozen.spec, runtime.trace)
                         emit({"type": "task_progress", "run_id": run_id, "episode": episode_index,
                               "time": float(runtime.snapshot()["time"]), "provisional": True,
                               "criteria": [{key: criterion[key] for key in ("id", "description", "satisfied", "completion_time")}
@@ -574,9 +589,12 @@ class World:
                             trace.append(last)
                         episode["sim_seconds"] = float(last["time"])
                         canonical(trace)
-                        write_json(episode_dir / "trace.json", trace)
+                        if trace_checkpoint:
+                            trace_checkpoint.write(trace)
+                        else:
+                            write_json(episode_dir / "trace.json", trace, compact=True)
                         episode["trace_evidence"] = _trace_evidence(episode_dir / "trace.json", trace, episode, result, complete=True)
-                        episode["rubric"] = grade(frozen.spec, trace)
+                        episode["rubric"] = progress_grader.score(trace) if progress_grader else grade(frozen.spec, trace)
                     except Exception as exc:
                         episode["grading_error"] = public_error(exc)
                         if episode["status"] == "completed":
@@ -591,7 +609,7 @@ class World:
                             except (TypeError, ValueError):
                                 break
                         trace = safe
-                        write_json(episode_dir / "trace.json", safe)
+                        write_json(episode_dir / "trace.json", safe, compact=True)
                         episode["trace_evidence"] = _trace_evidence(episode_dir / "trace.json", safe, episode, result, complete=False)
                     try:
                         if render and last is not None:
@@ -627,7 +645,7 @@ class World:
                             if episode["status"] == "completed":
                                 episode["status"] = "simulation_error"
                 else:
-                    write_json(episode_dir / "trace.json", [])
+                    write_json(episode_dir / "trace.json", [], compact=True)
                     episode["trace_evidence"] = _trace_evidence(episode_dir / "trace.json", [], episode, result, complete=False)
                 if policy_factory is not None and episode_policy is not None and hasattr(episode_policy, "close"):
                     try:

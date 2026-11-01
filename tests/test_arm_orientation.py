@@ -152,3 +152,45 @@ def test_g1_neither_advertises_nor_executes_a_torso_lift():
     assert 'move_torso' not in {tool['name'] for tool in runtime.tools}
     with pytest.raises(ValueError, match='TIAGo'):
         runtime._move_torso(.15)
+
+
+@pytest.mark.parametrize('hand', ['left', 'right'])
+def test_tiago_diagonal_approach_keeps_fingers_horizontal_and_points_forward_down(hand):
+    runtime = controller(Runtime, np.eye(3))
+    orientation = runtime._orientation_target(hand, 'forward_down', np.eye(3))
+    direction = orientation[:, 2] * (1 if hand == 'right' else -1)
+    assert direction == pytest.approx([math.sqrt(.5), 0, -math.sqrt(.5)])
+    assert orientation[:, 1] == pytest.approx([0, 1, 0])
+
+
+def test_joint_posture_commands_are_rate_bounded_and_return_encoder_error():
+    from types import SimpleNamespace
+    runtime = object.__new__(Runtime)
+    runtime.spec = SimpleNamespace(robot='tiago++')
+    runtime._arm_joints = {'right': np.arange(7)}
+    runtime.model = SimpleNamespace(jnt_range=np.array([[-2., 2.]]*7), jnt_qposadr=np.arange(7))
+    runtime.data = SimpleNamespace(qpos=np.zeros(7))
+    runtime._arm_controls = lambda hand: np.zeros(7)
+    commands = []
+    runtime._command_arm = lambda hand, value: commands.append(value.copy())
+    runtime._step = lambda seconds: None
+    target = np.array([.3, -.8, 0, 1.5, 0, 0, 0])
+    result = runtime._move_arm_joints('right', target)
+    assert commands[-1] == pytest.approx(target)
+    assert np.max(np.abs(np.diff(np.vstack([np.zeros(7), commands]), axis=0))) <= .45*.02 + 1e-12
+    assert result['status'] == 'blocked_or_unreached'  # Encoder did not follow mocked commands.
+    assert result['maximum_error_rad'] == 1.5
+    assert runtime.data.qpos == pytest.approx(np.zeros(7))
+    with pytest.raises(ValueError, match='source robot limits'):
+        runtime._move_arm_joints('right', [3]*7)
+
+
+def test_g1_does_not_advertise_tiago_only_joint_or_diagonal_tools():
+    from types import SimpleNamespace
+    runtime = object.__new__(G1Runtime)
+    runtime.spec = SimpleNamespace(robot='g1')
+    assert 'move_arm_joints' not in {tool['name'] for tool in runtime.tools}
+    arm = next(t for t in runtime.tools if t['name'] == 'move_arm')
+    assert 'forward_down' not in arm['parameters']['properties']['approach']['enum']
+    with pytest.raises(ValueError, match='TIAGo'):
+        runtime._move_arm_joints('right', [0]*7)

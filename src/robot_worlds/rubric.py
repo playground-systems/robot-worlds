@@ -117,6 +117,23 @@ def _extents(obj, state):
     return [sum(abs(row[i])*size[i]/2 for i in range(3)) for row in rotation]
 
 
+def _object_bounds(obj, state):
+    position, half = _vector(state.get("position")), _extents(obj, state)
+    envelope_low = [position[i]-half[i] for i in range(3)]
+    envelope_high = [position[i]+half[i] for i in range(3)]
+    measured = state.get("geometry_bounds")
+    if measured is None:
+        return envelope_low, envelope_high  # Older traces retain conservative bounds.
+    if (obj.kind not in {"mesh", "revolved"} or not isinstance(measured, dict)
+            or measured.get("source") != "native_collision_vertices_v1"):
+        raise ValueError("unsupported physical geometry measurement")
+    low, high = _vector(measured.get("lower")), _vector(measured.get("upper"))
+    if any(low[i] >= high[i] or low[i] < envelope_low[i]-1e-5
+           or high[i] > envelope_high[i]+1e-5 for i in range(3)):
+        raise ValueError("physical geometry measurement exceeds the frozen shape envelope")
+    return low, high
+
+
 def rigid_members(objects, identifier):
     """Include fixed child geometry; articulated children have their own motion."""
     members = {identifier}
@@ -141,10 +158,9 @@ def _body_bounds(objects, identifier, states):
         state = states.get(member)
         if not isinstance(state, dict):
             raise ValueError(f"missing attached geometry state for {member}")
-        position = _vector(state.get("position"))
-        half = _extents(objects[member], state)
-        low = [min(low[i], position[i] - half[i]) for i in range(3)]
-        high = [max(high[i], position[i] + half[i]) for i in range(3)]
+        member_low, member_high = _object_bounds(objects[member], state)
+        low = [min(low[i], member_low[i]) for i in range(3)]
+        high = [max(high[i], member_high[i]) for i in range(3)]
         # A missing contact measurement cannot prove release or support.
         if isinstance(state.get("contacts"), list):
             contacts.update(state["contacts"])
@@ -219,7 +235,9 @@ def measure_predicate(spec: WorldSpec, condition: Condition, snapshot: dict) -> 
                 position, half, contacts = _body_bounds(objects, c.object_id, snapshot.get("objects", {}))
                 # Support names a particular surface (e.g. microwave floor), not
                 # the highest point of every component attached to the appliance.
-                target_half = _extents(objects[c.target_id], target)
+                target_low, target_high = _object_bounds(objects[c.target_id], target)
+                target_position = [(target_low[i]+target_high[i])/2 for i in range(3)]
+                target_half = [(target_high[i]-target_low[i])/2 for i in range(3)]
                 if "contacts" not in state or not isinstance(state["contacts"], list):
                     raise ValueError("on_top requires measured object contact IDs")
                 gap = position[2]-half[2] - target_position[2]-target_half[2]
@@ -267,7 +285,32 @@ def carried_measurements(spec: WorldSpec, condition: Condition, trace: list[dict
     return measurements
 
 
-def grade(spec: WorldSpec, trace: list[dict]) -> dict:
+class _ProgressGrader:
+    """Internal cache for the built-in runtime's append-only snapshot trace.
+
+    Reuse measurements, not verdicts: temporal intervals and ordering are still
+    recomputed by the same grader. Replacement/truncation invalidates the cache.
+    Do not use this for caller-mutated snapshots or arbitrary runtime adapters.
+    """
+    def __init__(self, spec):
+        self.spec = spec.model_copy(deep=True)
+        self.frames = []
+        self.values = {c.id: [] for c in self.spec.rubric if c.predicate != "carried_distance"}
+
+    def score(self, trace):
+        if len(trace) < len(self.frames) or any(a is not b for a, b in zip(self.frames, trace)):
+            self.frames.clear()
+            for values in self.values.values():
+                values.clear()
+        for frame in trace[len(self.frames):]:
+            for criterion in self.spec.rubric:
+                if criterion.id in self.values:
+                    self.values[criterion.id].append(measure_predicate(self.spec, criterion, frame))
+            self.frames.append(frame)
+        return grade(self.spec, trace, _measurements=self.values)
+
+
+def grade(spec: WorldSpec, trace: list[dict], *, _measurements=None) -> dict:
     errors = validate_rubric(spec)
     if errors:
         raise ValueError("Invalid rubric: " + "; ".join(errors))
@@ -292,6 +335,7 @@ def grade(spec: WorldSpec, trace: list[dict]) -> dict:
         ready = not dependencies or all(t is not None for t in dependency_times)
         ready_at = max(dependency_times) if ready and dependencies else None
         measurements = (carried_measurements(spec, c, trace) if c.predicate == "carried_distance"
+                        else _measurements[cid] if _measurements is not None
                         else [measure_predicate(spec, c, frame) for frame in trace])
         intervals, start = [], None
         for i, (t, measurement) in enumerate(zip(times, measurements)):

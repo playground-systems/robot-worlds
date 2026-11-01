@@ -210,3 +210,54 @@ def test_process_prerequisites_reject_unmeasurable_release_subject():
     spec = WorldSpec.model_validate(data)
     assert any("process cycle" in error and "movable workpiece" in error
                for error in validate_rubric(spec))
+
+
+@pytest.mark.parametrize('bounds', [
+    {'source': 'invented', 'lower': [-2.1, -.1, 1], 'upper': [-1.9, .1, 1.2]},
+    {'source': 'native_collision_vertices_v1', 'lower': [-3, -.1, 1], 'upper': [-1.9, .1, 1.2]},
+    {'source': 'native_collision_vertices_v1', 'lower': [-1.9, -.1, 1], 'upper': [-2.1, .1, 1.2]},
+    {'source': 'native_collision_vertices_v1', 'lower': [float('nan'), 0, 1], 'upper': [-1.9, .1, 1.2]},
+])
+def test_malformed_or_out_of_shape_mesh_measurements_are_unscorable(bounds):
+    spec = world()
+    spec.objects[0] = spec.objects[0].model_copy(update={'kind': 'mesh', 'mesh_path': 'fixture.obj'})
+    state = frame(1, output=True)
+    state['objects']['part']['geometry_bounds'] = bounds
+    assert measure_predicate(spec, spec.rubric[0], state)['satisfied'] is None
+
+
+def test_incremental_progress_measures_only_new_snapshots_and_matches_full_grading(monkeypatch):
+    from robot_worlds import rubric
+    spec = world([
+        dict(id='place', description='place', predicate='in_region', object_id='part', target_id='output', duration=.2),
+        dict(id='release', description='release', predicate='released', object_id='part', after=['place'], duration=.1),
+    ])
+    full = [frame(0, holding='right'), frame(.1, output=True, holding='right'),
+            frame(.3, output=True, holding='right'), frame(.4, output=True), frame(.6, output=True)]
+    expected = [grade(spec, full[:i]) for i in range(1, len(full)+1)]
+    calls = []
+    original = rubric.measure_predicate
+    def measured(*args):
+        calls.append(args[1].id)
+        return original(*args)
+    monkeypatch.setattr(rubric, 'measure_predicate', measured)
+    monitor = rubric._ProgressGrader(spec)
+    for i in range(1, len(full)+1):
+        # A new list with the same owned snapshots is still append-only.
+        assert monitor.score(full[:i]) == expected[i-1]
+        assert len(calls) == i*len(spec.rubric)
+    assert monitor.score(full) == expected[-1]
+    assert len(calls) == len(full)*len(spec.rubric)
+    replaced = [frame(0), frame(1)]
+    assert monitor.score(replaced) == grade(spec, replaced)
+
+
+def test_progress_cache_handles_missing_measurements_and_carried_distance():
+    from robot_worlds.rubric import _ProgressGrader
+    spec = world([dict(id='carry', description='carry', predicate='carried_distance',
+                       object_id='part', threshold=.5)])
+    trace = [frame(0, holding='right'), frame(1, output=True, holding='right'), frame(2, missing=True)]
+    monitor = _ProgressGrader(spec)
+    for i in range(1, len(trace)+1):
+        assert monitor.score(trace[:i]) == grade(spec, trace[:i])
+    assert monitor.score(trace[:1]) == grade(spec, trace[:1])  # Truncation starts a new trace.

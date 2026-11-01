@@ -231,7 +231,7 @@ def test_llm_auth_or_transport_failure_remains_an_invalid_policy_episode(tmp_pat
     )
     episode = report.result["episodes"][0]
     assert episode["status"] == "policy_error"
-    assert "termination" not in episode
+    assert episode["termination"] == "policy_error"
     assert report.summary["valid"] == 0
     assert report.summary["invalid_or_interrupted"] == 1
     assert report.summary["success_rate"] is None

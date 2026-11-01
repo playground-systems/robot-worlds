@@ -69,6 +69,15 @@ new evaluations. Saved recordings are unchanged.
 
 `query_depth(pixel=[u,v])` samples the full-resolution depth camera and returns a visible surface point in the robot base frame. Pixels start at the image's top-left. It does not identify an object, return its center, or see behind an occluder. `move_arm` accepts the same base frame: X forward, Y left, Z up. G1's origin is its pelvis; TIAGo's is its base link. A measured surface point may need an approach/grasp offset chosen by your policy. The `forward` (+X) and `down` (-Z) approach presets use this same base frame, including its rotation; `keep` preserves the hand orientation at the start of the action. Arm feedback includes measured `error_m` and `orientation_error_rad`. `reached` requires both position and orientation tolerances; it does not certify grasp or task success.
 
+TIAGo++ also supports `approach="forward_down"`, a 45° approach between forward
+and down with the finger closing direction kept horizontal. Use
+`move_arm_joints(hand="right", positions=[...])` to command seven absolute joint
+angles in radians, ordered shoulder to wrist. Source joint limits and a 0.45 rad/s
+command ramp apply. Feedback reports measured encoders and maximum error;
+`reached` does not certify collision-free motion. Saved proprioceptive joint
+positions can serve as a return posture. These two additions are not advertised
+for the experimental G1.
+
 TIAGo++ also exposes `move_torso(extension=0.30)`, an absolute lift-joint extension
 in metres within 0–0.35. It ramps the source actuator at up to 0.05 m/s and reports
 commanded and measured extension. Both arms rise with the torso; contact can
@@ -551,7 +560,7 @@ independent objects. Prepared assets need no network request or converter at run
 
 ## Hollow objects and appliance validation
 
-Define a hollow object as attached physical components, with one movable root for a bowl. Opposing finger contacts on different welded pieces count toward the same body's grasp. Containment includes every fixed attached physical piece, so a bowl bottom inside the cavity with its rim sticking out fails. Appearance-only meshes do not add physical volume; their rotated rectangular bounds must not invent solid corners around a round object. Physical component bounds remain conservative under rotation. `on_top` names a particular support surface, such as the microwave floor; it does not treat the roof as the internal floor.
+Define a hollow object as attached physical components, with one movable root for a bowl. Opposing finger contacts on different welded pieces count toward the same body's grasp. Containment includes every fixed attached physical piece, so a bowl bottom inside the cavity with its rim sticking out fails. Appearance-only meshes do not add physical volume; their rotated rectangular bounds must not invent solid corners around a round object. For task-bound collision meshes, new traces record extrema of the compiled vertices in world coordinates; regrading uses those measurements after checking them against the frozen shape envelope. Older traces and primitives retain conservative bounds. Appearance-only meshes never add volume. `on_top` names a particular support surface, such as the microwave floor; it does not treat the roof as the internal floor.
 
 A cavity region can declare `interior_of` with the appliance's physical root ID. Static checks reject a missing container, a region outside its envelope or a usable volume filled by its box components. The generator is instructed to declare these relationships. This check does not certify a door's swept clearance or curved/mesh cavities. Native reset checks also do not prove the door can be opened by the selected robot.
 

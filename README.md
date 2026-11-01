@@ -4,6 +4,11 @@ Describe a place and a task. Generate a physical robot world and editable rubric
 
 Robot Worlds is an early self-hosted robotics project. Simulation runs locally with MuJoCo; generation and the default robot agent use your OpenAI API key. A factory is the first reference setting. The scene format also supports workshops, homes, labs, warehouses and other arrangements of rigid objects and articulated mechanisms.
 
+![Live-generated warehouse with original NVIDIA racks, cartons and pallets](docs/images/dense-warehouse/rack-detail.png)
+
+*Actual workbench capture. This generated scene passed a short navigation evaluation;
+it does not demonstrate autonomous warehouse logistics.*
+
 ## Run locally
 
 Requires Python 3.11 or later and [uv](https://docs.astral.sh/uv/getting-started/installation/). Physical execution is tested on Apple silicon macOS and Linux with NVIDIA EGL rendering. Use `MUJOCO_GL=egl` on a compatible headless NVIDIA host.
@@ -20,8 +25,8 @@ Open **http://127.0.0.1:8765**. Enter a scene and task, inspect the generated ge
 
 See the [SDK and sensor contract](docs/sdk.md) for custom policies and appliance environments. See [setup and model access](docs/setup.md) for offline `doctor` checks, API requirements, the optional Codex SDK transport, and clean installation.
 
-For reusable warehouse models, install the reviewed rack, pallet, carton and
-barrier into the workbench's asset library:
+For reusable warehouse models, install the reviewed rack, pallet, carton,
+barrier and passive conveyor into the workbench's asset library:
 
 ```sh
 uv run robot-worlds prepare-warehouse
@@ -29,8 +34,8 @@ uv run robot-worlds prepare-warehouse
 
 First preparation needs Node.js 20+; it makes no model calls. Source geometry,
 textures and attribution are retained. [Setup details](docs/setup.md) explain
-subset selection and CLI use. Native contacts and the generated warehouse demo
-remain on the [release acceptance checklist](docs/alpha-acceptance.md).
+subset selection and CLI use. The [release evidence](docs/alpha-acceptance.md) separates validated generation,
+navigation and engineering manipulation from autonomous task success.
 
 ```python
 from robot_worlds import generate, LLMAgent

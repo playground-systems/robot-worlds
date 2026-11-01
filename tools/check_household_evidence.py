@@ -18,6 +18,9 @@ REQUIRED = {
         'test_household_remote_failure_preserves_evidence_without_task_verdict[invalid_action]',
         'test_household_cancel_between_actions_preserves_partial_report',
     },
+    'test_asset_import_physics': {
+        'test_original_textured_microwave_keeps_empty_cavity_and_passive_joints',
+    },
     'test_sourced_household_physics': {
         'test_original_bowl_arm_search_does_not_overflow_contact_solver',
         'test_original_bowl_lifts_with_two_hands_and_public_torso_actuation',
