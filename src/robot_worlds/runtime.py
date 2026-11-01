@@ -106,6 +106,12 @@ TOOLS = [
         ["hand", "position"],
     ),
     _tool(
+        "move_torso",
+        "TIAGo++ only: move the torso lift to an absolute joint extension of 0–0.35 metres, at up to 0.05 m/s through its position servo. Both arms move with the torso. Inspect measured extension; obstacles or load can prevent reaching it.",
+        {"extension": {"type": "number", "minimum": 0, "maximum": 0.35}},
+        ["extension"],
+    ),
+    _tool(
         "gripper",
         "Set finger opening in metres per finger: 0 closes, 0.045 opens. Objects are held only by physical friction/contact, and can slip.",
         {"hand": HAND, "opening": NUMBER},
@@ -776,6 +782,8 @@ class Runtime:
                 )
             elif name == "gripper":
                 result = self._gripper(**args)
+            elif name == "move_torso":
+                result = self._move_torso(args["extension"])
             elif name == "wait":
                 seconds = float(args["seconds"])
                 if not math.isfinite(seconds) or not 0 <= seconds <= 5:
@@ -819,6 +827,26 @@ class Runtime:
         if not self.trace or self.data.time > self.trace[-1]["time"]:
             self._sample()
         return self._last_result
+
+    def _move_torso(self, extension):
+        extension = float(extension)
+        if self.spec.robot != "tiago++":
+            raise ValueError("move_torso is supported only by TIAGo++")
+        if not math.isfinite(extension) or not 0 <= extension <= .35:
+            raise ValueError("extension must be between 0 and 0.35 metres")
+        actuator = self.model.actuator("torso_lift_joint_position").id
+        target = float(np.clip(extension, *self.model.actuator_ctrlrange[actuator]))
+        joint = self.data.joint("torso_lift_joint")
+        start = float(joint.qpos[0])
+        steps = max(1, math.ceil(abs(target-start)/.05/.02))
+        for i in range(steps):
+            self.data.ctrl[actuator] = start+(target-start)*(i+1)/steps
+            self._step(.02)
+        self._step(.4)
+        measured = float(joint.qpos[0])
+        return {"status": "reached" if abs(measured-target) < .01 else "blocked_or_unreached",
+                "commanded_extension_m": target, "measured_extension_m": measured,
+                "error_m": abs(measured-target)}
 
     def _gripper(self, hand, opening):
         opening = float(opening)
@@ -1121,6 +1149,7 @@ class Runtime:
                 "relative_heading_rad": math.atan2(math.sin(yaw), math.cos(yaw)),
                 "gravity_direction": (rotation.T @ np.array([0., 0., -1.])).tolist(),
                 "odometry": self._odometry.observation() if self._odometry is not None else None,
+                "torso_extension_m": float(self.data.joint("torso_lift_joint").qpos[0]) if self.spec.robot == "tiago++" else None,
                 "hands": {
                     h: {"position": local_point(self.data.site_xpos[s], origin, rotation),
                         "arm_joint_positions": self.data.qpos[self.model.jnt_qposadr[self._arm_joints[h]]].tolist(),

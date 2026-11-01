@@ -9,7 +9,7 @@ not replace current native, live-model or application evidence.
 | Gate | Available evidence | Required work still open |
 | --- | --- | --- |
 | SDK action loop | The latest focused Linux run passed 77 checks. The built wheel also passed original-asset generation with a mock, native RGB-D/action execution, reporting, export/reload and regrading in a fresh Mac environment outside the checkout. | Successful manipulation remains separate from these integration checks. |
-| Physical manipulation | The focused native run passed original-bowl concavity, pre-placed support in the microwave and the no-op failure case. Arm approach presets use the same complete base frame as position targets; feedback checks measured orientation as well as position. | Demonstrate robot approach, grasp, door interaction, transport, insertion, release and stable support with a labeled engineering policy. Run native decoy, partial insertion, held and unstable-placement cases. |
+| Physical manipulation | Original-bowl concavity, pre-placed support and no-op failure passed in hosted checks. A new native engineering test lifts every original bowl component over 15 cm using two physical grippers and the public torso actuator, with no counter contact after a one-second hold. A development probe also carries it through retreat, turn and forward travel. | Complete door interaction, insertion, release and stable support with a labeled engineering policy. Run native decoy, partial insertion, held and unstable-placement cases. Lift/carry do not establish placement. |
 | Trustworthy grading | Synthetic original-asset traces exercise the negative cases, full containment, duration and missing measurements. Holding/release must name a movable root. Timed-process loading accepts fixed child-piece contact while excluding decoys and separately articulated children. | Current physical evidence for these measurements and outcomes. No heating or closure requirement is added to the bowl task. |
 | Live generation and editing | Astra through the existing Codex sign-in generated a physically validated original-asset kitchen, then executed nine sensor-only policy actions before its token budget ended. Reporting, export/reload and regrading passed. | Successful manipulation, generated warehouse acceptance and a verified live targeted edit. API-key transport remains blocked by exhausted account credits; Codex plan usage is recorded separately. |
 | Warehouse appearance | Rack, pallet, carton, barrier and passive conveyor source adapters retain original visuals and disclose collision approximations. The conveyor retains 29 hinges; portable 0°/90° placements pass static checks. Viewer sharing/batching, texture budgets and failure recovery have CPU-only coverage. | Native contacts/materials, two genuinely generated detailed layouts, actual overview/close-up screenshots, reference comparison and viewport performance/LOD. The classic policy camera differs from browser PBR. |
@@ -88,6 +88,13 @@ native fixture now returns an unreachable-target result without advancing live
 state or crashing (2.36-second focused test). Actual actuator execution still
 uses full physics. Position/Jacobian equivalence and base-frame checks pass;
 this fix does not establish a successful grasp.
+
+The subsequent `move_torso` action exposes TIAGo's existing source actuator with
+a 0.05 m/s target ramp and encoder feedback. G1 excludes it. The original-bowl
+two-hand lift test passes locally in 11.24 seconds; this later action is not
+covered by the earlier release archives. The fixture changes counter dimensions
+and initial placement to provide access, retaining the bowl's original geometry
+and 0.6 kg estimated mass. No object pose writes or attachment forces are used.
 
 [Current application screenshots](images/live-household/evidence.json) show the
 live-generated kitchen, original bowl, report and containment evidence. The

@@ -69,6 +69,13 @@ new evaluations. Saved recordings are unchanged.
 
 `query_depth(pixel=[u,v])` samples the full-resolution depth camera and returns a visible surface point in the robot base frame. Pixels start at the image's top-left. It does not identify an object, return its center, or see behind an occluder. `move_arm` accepts the same base frame: X forward, Y left, Z up. G1's origin is its pelvis; TIAGo's is its base link. A measured surface point may need an approach/grasp offset chosen by your policy. The `forward` (+X) and `down` (-Z) approach presets use this same base frame, including its rotation; `keep` preserves the hand orientation at the start of the action. Arm feedback includes measured `error_m` and `orientation_error_rad`. `reached` requires both position and orientation tolerances; it does not certify grasp or task success.
 
+TIAGo++ also exposes `move_torso(extension=0.30)`, an absolute lift-joint extension
+in metres within 0–0.35. It ramps the source actuator at up to 0.05 m/s and reports
+commanded and measured extension. Both arms rise with the torso; contact can
+block motion or cause a held object to slip. The encoder reading is available as
+`observation["robot"]["torso_extension_m"]`. G1 has no torso lift and does not
+advertise this action. No action attaches an object or writes its pose.
+
 ```python
 # Actions returned by a policy, not a complete controller:
 {"tool": "query_depth", "arguments": {"pixel": [320, 300]}}

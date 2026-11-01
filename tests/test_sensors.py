@@ -43,6 +43,7 @@ def test_depth_backprojection_uses_only_measured_pixel_and_calibration():
 
 def sensor_runtime(render=False):
     runtime = object.__new__(Runtime)
+    runtime.spec = SimpleNamespace(robot="tiago++")
     runtime._base_transform = lambda: (np.array([20., 30., .5]), np.eye(3))
     runtime._yaw = lambda: .4
     runtime._initial_yaw = .4
@@ -51,6 +52,7 @@ def sensor_runtime(render=False):
     runtime._arm_joints = {"right": [0]}
     runtime.model = SimpleNamespace(jnt_qposadr=np.array([0]))
     runtime.data = SimpleNamespace(time=0., qpos=np.array([.2]), site_xpos=np.array([[20.5, 29.6, 1.2]]))
+    runtime.data.joint = lambda name: SimpleNamespace(qpos=np.array([.15]))
     runtime._finger_positions = lambda hand: [.04, .04]
     runtime._last_result = None
     runtime._render_enabled = render
@@ -71,6 +73,7 @@ def test_observation_has_no_object_semantics_or_global_robot_pose():
     assert len(observation["sensors"]["depth"]["values"]) == 24
     assert len(observation["sensors"]["depth"]["values"][0]) == 32
     assert observation["robot"]["odometry"]["position_xy_m"] == [0, 0]
+    assert observation["robot"]["torso_extension_m"] == .15
 
 
 def test_disabled_camera_cannot_fall_back_to_simulator_perception():

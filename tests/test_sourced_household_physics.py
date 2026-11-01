@@ -33,6 +33,49 @@ def test_original_bowl_arm_search_does_not_overflow_contact_solver():
         runtime.close()
 
 
+def test_original_bowl_lifts_with_two_hands_and_public_torso_actuation():
+    spec, bowl, _ = sourced_scene()
+    spec.robot_start = (.35, 0, 0)
+    spec.objects[0].size = (.4, .5, .6)
+    members = {obj.id for obj in bowl.objects}
+    for obj in spec.objects:
+        if obj.id in members:
+            obj.position = (obj.position[0]-.1, *obj.position[1:])
+    runtime = Runtime(spec, render=False, max_sim_seconds=60)
+    try:
+        def move(hand, target):
+            result = runtime.execute({'tool': 'move_arm', 'arguments': {
+                'hand': hand, 'position': local_point(target, *runtime._base_transform()),
+                'approach': 'down'}})
+            assert result['status'] == 'reached', result
+
+        def grip(hand, opening):
+            return runtime.execute({'tool': 'gripper', 'arguments': {'hand': hand, 'opening': opening}})
+
+        # Privileged fixed-fixture engineering sequence, not a sensor-only policy.
+        # Poses are commanded through the same public actuator interface.
+        grip('left', .045)
+        move('left', [.9, .094, .8])
+        grip('right', .045)
+        move('right', [.9, -.094, .8])
+        move('left', [.9, .094, .655])
+        grip('left', 0)
+        move('right', [.9, -.094, .655])
+        grip('right', 0)
+        before = runtime.snapshot()['objects']
+        result = runtime.execute({'tool': 'move_torso', 'arguments': {'extension': .345}})
+        assert result['status'] == 'reached', result
+        assert result['measured_extension_m'] == pytest.approx(.345, abs=.01)
+        runtime.execute({'tool': 'wait', 'arguments': {'seconds': 1}})
+        after = runtime.snapshot()['objects']
+        # Every attached bowl piece must rise, and none may retain counter support.
+        assert min(after[oid]['position'][2]-before[oid]['position'][2] for oid in members) > .15
+        assert all('source_counter' not in after[oid]['contacts'] for oid in members)
+        assert after[bowl.body_ids['object']]['held_by'] in {'left', 'right'}
+    finally:
+        runtime.close()
+
+
 def test_sphere_settles_in_scanned_bowl_not_on_a_filled_collision_hull():
     spec, bowl, _ = sourced_scene()
     visual = bowl.objects[-1]

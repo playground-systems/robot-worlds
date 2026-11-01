@@ -329,7 +329,7 @@ class G1Runtime(Runtime):
 
     @property
     def tools(self):
-        tools = [dict(t) for t in TOOLS if t["name"] != "gripper"]
+        tools = [dict(t) for t in TOOLS if t["name"] not in {"gripper", "move_torso"}]
         tools[0] = _tool(
             "drive",
             "Walk a nominal distance using a timed 0.25m/s velocity command, then turn using relative IMU heading. Linear displacement is not measured: use RGB-D to assess actual progress. Contact, balance and obstacles can cause failure. Maximum2m and pi radians.",

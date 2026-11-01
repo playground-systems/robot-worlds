@@ -134,3 +134,21 @@ def test_ik_updates_pose_and_jacobian_without_solving_hypothetical_contacts(monk
     mujoco.mj_jacSite(model, reference, expected, None, 0)
     mujoco.mj_jacSite(model, runtime._ik_data, actual, None, 0)
     assert actual == pytest.approx(expected)
+
+
+@pytest.mark.parametrize('extension', [-.01, .36, float('nan'), float('inf')])
+def test_torso_rejects_invalid_extension_before_actuator_access(extension):
+    from types import SimpleNamespace
+    runtime = object.__new__(Runtime)
+    runtime.spec = SimpleNamespace(robot='tiago++')
+    with pytest.raises(ValueError, match='extension'):
+        runtime._move_torso(extension)
+
+
+def test_g1_neither_advertises_nor_executes_a_torso_lift():
+    from types import SimpleNamespace
+    runtime = object.__new__(G1Runtime)
+    runtime.spec = SimpleNamespace(robot='g1')
+    assert 'move_torso' not in {tool['name'] for tool in runtime.tools}
+    with pytest.raises(ValueError, match='TIAGo'):
+        runtime._move_torso(.15)

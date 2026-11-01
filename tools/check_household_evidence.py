@@ -20,6 +20,7 @@ REQUIRED = {
     },
     'test_sourced_household_physics': {
         'test_original_bowl_arm_search_does_not_overflow_contact_solver',
+        'test_original_bowl_lifts_with_two_hands_and_public_torso_actuation',
         'test_sphere_settles_in_scanned_bowl_not_on_a_filled_collision_hull',
         'test_original_bowl_fits_and_stays_supported_inside_original_appliance',
         'test_sdk_runs_original_assets_from_mocked_generation_through_export',
