@@ -79,6 +79,14 @@ workflow uses an explicit PR label event:
    the label after collecting the result. Resolve failures against that exact
    candidate before another authorized run.
 
+The same workflow now has narrower label modes: `run-package-acceptance`
+refreshes wheel/source archives and clean installs without repeating simulation;
+`run-warehouse-acceptance` runs the saved-plan dense storage workflow. These opt-in
+labels also suppress the full CI matrices. Use the smallest mode covering the
+change, and never describe a package-only run as native physics verification.
+The package-only mode passed in run 41268962945; the warehouse-only mode passed in run 41269459293. Those historical results
+do not certify later runtime changes.
+
 Once the workflow lands on the default branch, inspect its current triggers
 instead of assuming this activation sequence is still necessary.
 

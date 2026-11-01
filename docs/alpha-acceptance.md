@@ -1,18 +1,19 @@
 # Alpha acceptance evidence
 
-The release target is install → text generation → physical policy execution →
-inspect evidence → export/reload. **The candidate is not yet accepted:** the dense warehouse storage regression and final package refresh remain open.
-Rendered physical placement, camera views, and browser presentation are verified.
+The reviewable **0.1.0a1 OSS alpha meets the scoped acceptance gates** for
+install → generate → execute → inspect → export/reload. PR #1 remains a draft;
+no merge or publication has occurred. This is focused alpha evidence, not a
+full-suite or general autonomous-robotics claim.
 
-| Gate | Verified evidence | Remaining work |
+| Gate | Verified evidence | Boundary |
 | --- | --- | --- |
-| SDK and HTTP | Mocked generation with original assets, native sensors/actions, remote policy errors, cancellation, reporting and portable regrading pass focused checks. | Check the final built artifacts after the latest runtime changes. |
-| Physical manipulation | The original bowl was grasped, lifted, carried a short distance, guided into the original microwave, released and supported. All three criteria passed through public SDK actions and after export/reload/regrading. | Installed-wheel placement and both inspection views passed in run 41267484990. This engineering controller knows the fixture; the door starts open. It is not autonomous manipulation or a door-opening demonstration. |
-| Grading | Native decoy, partial insertion, continued holding and brief recontact checks reject false success. Actual compiled collision vertices avoid rotated-bounds false failures without changing tolerances. | All 16 required native cases passed without skips; the focused run passed 235 tests. |
-| Live model workflow | Astra via supported Codex sign-in generated a kitchen and two warehouses. One dense warehouse and a scoped edit passed short navigation, reporting and portable regrading. | Sensor-only household manipulation failed within its token budget. API-key account credits remain exhausted; Codex plan usage is separate. |
-| Browser | Actual walkthrough covered invalid-key recovery, generation cancellation, preview-to-ready rendering, scoped edit and parent navigation, policy execution/cancellation and evidence. | Report, criterion evidence, grasp and unobstructed interior captures are retained below. Long-object inspectors now scroll within the sidebar. |
-| Installation | Earlier 0.1.0a1 wheel/source archives installed outside the checkout on Linux. The wheel also passed a fresh Apple silicon installation and offline native SDK walkthrough. | Repeat against the final candidate artifacts. |
-| Presentation | Actual generated NVIDIA warehouse overview, detail and report images are retained. | The new generated 3,427-component facility adds beams, panel walls, loading openings and named lanes. Cached viewer performance and the walkthrough are recorded below. |
+| SDK and HTTP | Native multi-action SDK/HTTP checks cover realistic observations, errors, cancellation, reports and portable regrading. The dense storage regression passes. | Mocked generation and recorded-action tests are labeled separately from live runs. |
+| Physical manipulation | Original bowl grasp, lift, short carry, guided insertion, release and support pass all three criteria and portable regrading in an installed wheel. | Privileged engineering controller; initially open door; no autonomous manipulation or door-opening claim. |
+| Grading | Decoy, partial insertion, held-object and unstable/recontact checks reject false success. All 16 required native cases and 235 selected tests pass. | Geometric/contact predicates and documented sampling limits, not calibrated real-world success prediction. |
+| Live models | Live kitchen/warehouse generation, sensor-only policy execution, reporting and portable reload; a live scoped edit preserves unrelated entities. | Household policy failed honestly. A separate warehouse navigation task passed. Codex sign-in and ordinary BYO API access remain separate transports. |
+| Browser | Preview replacement, invalid-key recovery, cancellation, scoped edits, parent navigation, reports, criterion evidence and unobstructed camera captures. | Long inspectors scroll inside the sidebar; rendering is distinct from rollout evidence. |
+| Installation | Final wheel/source archives clean-install on Linux; the exact wheel passes a fresh Apple silicon native SDK workflow in 7.05 seconds. | Python 3.13 was exercised for this candidate; no NVIDIA GPU is required for the Mac path. |
+| Presentation | Live-generated 3,427-component facility, source equipment details, structure, lanes, named areas, bowl interior, interaction and report captures. | Estimated materials/lighting, passive conveyors and no autonomous warehouse logistics. |
 
 ## Physical placement
 
@@ -49,6 +50,14 @@ Actual application captures: [report](images/engineering-household/report.png),
 [original bowl inside the microwave](images/engineering-household/microwave-interior.png).
 The software-rendered native frames show shadow speckling; no image retouching or
 historical replay regeneration was used.
+
+The [current runtime candidate](evidence/release-2026-10-31/candidate-checks.json)
+also passed all 235 selected tests, the 16-case native audit, and installed-wheel
+placement/export/regrading in 184.60 seconds. Its
+[current report](images/engineering-household/report-current.png) and
+[interior view](images/engineering-household/microwave-interior-current.png)
+are captured from that run. Python runtime sources match the final package;
+the later browser change only fixes panel sizing.
 
 ## Live generation and editing
 
@@ -100,16 +109,39 @@ The reference has denser pallet loading and stronger cinematic reflections.
 This alpha uses estimated materials and studio illumination; its passive rollers
 do not implement powered transport or a facility logistics system.
 
-A [90-frame cached orbit](evidence/release-2026-10-31/viewer-dense.json) of the
-3,046-component alternative on an M1 Pro / 16 GiB Mac measured 16.7 ms median and
-17.5 ms p95 frame intervals, 145 draw calls and 1.95 million triangles. First view
-took 2.20 seconds with cached assets. This short run is not a cold-network,
+A [90-frame cached orbit](evidence/release-2026-10-31/viewer-presentation.json) of the
+3,427-component presentation warehouse on an M1 Pro / 16 GiB Mac measured 16.7 ms median and
+17.7 ms p95 frame intervals, 162 draw calls and 2.54 million triangles. First view
+took 2.51 seconds with cached assets. This short run is not a cold-network,
 sustained GPU or universal performance claim.
 
 [Aggregate model usage](evidence/release-2026-10-31/model-usage.json) records 41
 Codex calls attempted and 1,431,223 reported tokens. One timed-out call has no
 reported usage, so this total is incomplete. No dollar invoice is available;
 API budget reservations are not confirmed charges. No new paid compute was started.
+
+The five-source warehouse library took 23.10 seconds to acquire and prepare on a
+fresh hosted runner. Original household asset import measured 347 ms cold versus
+87 ms warm in that process; those import timings use bundled sources and exclude
+network/model time. [Preparation measurements](evidence/release-2026-10-31/preparation.json)
+retain their scope.
+
+## Dense native storage
+
+The [installed-wheel warehouse regression](evidence/release-2026-10-31/dense-native-storage.json)
+passed with 3,427 objects in every recorded sample, 1,168 samples over 58.24
+simulated seconds, a 182,130,667-byte gzip trace, and matching exported/reloaded
+and regraded results. Peak process memory was 4.77 GB. The recorded-action task
+failed; its valid failure was preserved rather than turned into a pass.
+
+Total harness time was 552.28 seconds on one CPU runner, including about 106
+seconds unnecessarily deep-copying the frozen specification during the audit.
+The harness now caches that object count once; no faster rerun is claimed.
+Native execution and large-trace regrading remain CPU-heavy. Start with one
+worker and leave memory headroom; cached browser frame rate is a separate measure.
+Generation was mocked from a saved live plan, and the six actions were recorded
+from an earlier sensor-only agent attempt. This is storage/portability evidence,
+not a new autonomous demonstration.
 
 ## Browser recovery
 
@@ -122,6 +154,22 @@ Cancellation preserves an invalid/interrupted episode rather than counting it as
 a valid task failure. A later native regression verifies the explicit stop reason.
 
 ## Packages and focused verification
+
+The [final package record](evidence/release-2026-10-31/final-package.json) pins the
+0.1.0a1 wheel and source archive SHA-256 values, package commit and verified
+GitHub artifact. [Package-only run 41268962945](https://github.com/playground-systems/robot-worlds/actions/runs/41268962945)
+passed archive inspection, independent wheel/source installs and offline
+checks. This narrow refresh includes the browser panel fix without repeating
+native simulation. Subsequent acceptance-harness changes do not alter package
+runtime sources.
+
+The exact wheel then passed the [fresh Mac native SDK workflow](evidence/release-2026-10-31/final-mac-native.json)
+in 7.05 seconds outside the checkout on Python 3.13.14 / Apple silicon. Depth
+query, encoder drive, gripper action, waiting, report, export/reload and regrading
+all passed. Its intentional task failure remained a failure. The Mac graphics
+driver warns about unavailable ARB_clip_control; finite depth is checked, but
+metric calibration is not claimed.
+
 
 Historical [run 41235518874](https://github.com/playground-systems/robot-worlds/actions/runs/41235518874)
 passed 77 checks, built both 0.1.0a1 archives and installed each outside the checkout.
@@ -138,12 +186,12 @@ from a clean installed wheel. It uses one Ubuntu runner with a 15-minute cap,
 single-threaded numeric libraries and no model key. Current focused local checks
 include 97 SDK, trace-integrity and spectator cases plus 33 viewer checks; changed
 Python files pass Ruff. The dense trace path retains every sample and object while
-using lossless gzip checkpoints and exact repeated-state pooling. Its full-size
-installed-package regression remains a separate release gate.
+using lossless gzip checkpoints and exact repeated-state pooling. Its [full-size installed-package regression](evidence/release-2026-10-31/dense-native-storage.json) passed in
+[run 41269459293](https://github.com/playground-systems/robot-worlds/actions/runs/41269459293).
 
-Normal commits use `[skip ci]`. The dedicated `run-household-acceptance` label
-suppresses the existing full-suite and packaging jobs. The unmerged workflow runs
-on its explicit label event; remove the label after recording the result. The
+Normal commits use `[skip ci]`. The dedicated household, warehouse-only and package-only opt-in labels
+suppress the existing full-suite and packaging jobs. The unmerged workflow runs
+on its explicit label event; all opt-in labels were removed after recording the results. The
 user authorized the remaining focused execution on October 31. No merge or
 publication is planned during candidate preparation.
 

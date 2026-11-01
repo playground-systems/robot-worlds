@@ -95,7 +95,7 @@
     }
   ],
   "ci_run": "https://github.com/playground-systems/robot-worlds/actions/runs/41267484990",
-  "commit": "b670acb85bd0d45d652d5b98af51626f288fa640",
+  "commit": "23b8fe2699c4edcb7ded03e9bed8ae20d94a4312",
   "job_conclusion": "failure: separate warehouse regression timed out; engineering step passed",
   "artifact": {
     "id": 13067469664,
@@ -309,5 +309,6 @@
     "Privileged engineering controller, initially open door, short carry and guided insertion; not sensor-only autonomous manipulation.",
     "Native software-rendered shadows show speckling; browser warehouse uses a separate visual renderer.",
     "Camera captures are supplemental views of this run, not regenerated historical replays."
-  ]
+  ],
+  "pull_request_head": "b670acb85bd0d45d652d5b98af51626f288fa640"
 }

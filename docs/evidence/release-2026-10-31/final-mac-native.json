@@ -1,0 +1,73 @@
+{
+  "status": "passed",
+  "scope": "mocked generation, native sensors/actions, report, export/reload and regrade",
+  "manipulation_success": false,
+  "model_calls": 0,
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "python": "3.13.14",
+  "package_path": "/private/tmp/robot-worlds-final-mac/lib/python3.13/site-packages/robot_worlds/__init__.py",
+  "world_id": "7186734ae4388e50bfd753cc7cca30902a6dfbc584f5eefd44769b444cd103a5",
+  "summary": {
+    "attempted": 1,
+    "valid": 1,
+    "successes": 0,
+    "invalid_or_interrupted": 0,
+    "success_rate": 0.0,
+    "success_interval_95": [
+      0,
+      0.7934506856227626
+    ]
+  },
+  "tool_feedback": [
+    {
+      "tool": "query_depth",
+      "status": "measured",
+      "pixel": [
+        10,
+        310
+      ],
+      "depth_m": 1.9399,
+      "frame": "base",
+      "surface_position": [
+        1.7614,
+        1.9196,
+        0.0014
+      ],
+      "simulated_seconds": 0.0
+    },
+    {
+      "tool": "drive",
+      "status": "executed",
+      "translation_feedback": "wheel_odometry",
+      "estimated_distance_m": 0.06906658335994474,
+      "measured_turn_rad": 0.002473237815524438,
+      "encoder_distance_m": 0.06906666770264636,
+      "simulated_seconds": 3.199999999999869
+    },
+    {
+      "tool": "gripper",
+      "status": "executed",
+      "finger_positions": [
+        0.035593937008383134,
+        0.038396406929674255
+      ],
+      "simulated_seconds": 0.7999999999999119
+    },
+    {
+      "tool": "wait",
+      "status": "executed",
+      "simulated_seconds": 0.19999999999997842
+    },
+    {
+      "ended": true,
+      "success": "determined_by_rubric"
+    }
+  ],
+  "elapsed_seconds": 7.051926959000411,
+  "package_ci_run": 41268962945,
+  "package_commit": "08ee250d29f316f528de555d5fa8fd17bd6f8f19",
+  "wheel_sha256": "3465f3d2007848c7220fa4ae381e221c902bc24bc2b23c23e454ca5fddba4f6c",
+  "dependency_check": "passed: no broken requirements",
+  "hardware": "Apple M1 Pro, 16 GiB RAM",
+  "graphics_note": "Native Mac driver reported ARB_clip_control unavailable. Finite RGB-D and depth query were verified; metric sensor calibration is not claimed."
+}

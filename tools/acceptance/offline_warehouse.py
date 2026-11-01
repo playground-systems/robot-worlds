@@ -64,7 +64,9 @@ def main():
                      client=SavedPlan(), asset_library=args.library, online_assets=False,
                      max_repairs=0, output=args.output/'worlds')
     assert world.manifest['validation']['status'] == 'ready'
-    print('validated', len(world.spec.objects), 'components', flush=True)
+    # World.spec is an isolated deep copy; request it once, not per sample.
+    component_count = len(world.spec.objects)
+    print('validated', component_count, 'components', flush=True)
     # Retain the built-in runtime only for acceptance auditing. The policy still
     # sees the normal sensor contract. Avoid decoding the full saved trajectory
     # twice: regrade below already verifies its hash, samples and provenance.
@@ -83,7 +85,7 @@ def main():
     phase("recorded states audit started")
     trace = observed_runtimes[0].trace
     assert len(trace) > 500, 'Regression did not exercise a long enough dense trace'
-    assert all(len(frame['objects']) == len(world.spec.objects) for frame in trace)
+    assert all(len(frame['objects']) == component_count for frame in trace)
     assert len(trace) <= episode['trace_evidence']['sample_count'] <= len(trace)+1
     del trace
     observed_runtimes.clear()
@@ -103,7 +105,7 @@ def main():
     rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     record = {'kind': 'mocked plan replay and recorded actions; native physics, sensors, grading and portable artifacts',
               'model_calls': 0, 'autonomous': False, 'world_id': world.id, 'report_id': report.path.name,
-              'components': len(world.spec.objects), 'samples': episode['trace_evidence']['sample_count'],
+              'components': component_count, 'samples': episode['trace_evidence']['sample_count'],
               'trace_bytes': trace_path.stat().st_size, 'sim_seconds': episode['sim_seconds'],
               'summary': report.summary, 'portable_reload_and_regrade': True,
               'elapsed_seconds': time.monotonic()-start,
