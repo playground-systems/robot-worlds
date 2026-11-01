@@ -72,6 +72,10 @@ def test_original_bowl_lifts_with_two_hands_and_public_torso_actuation():
         assert min(after[oid]['position'][2]-before[oid]['position'][2] for oid in members) > .15
         assert all('source_counter' not in after[oid]['contacts'] for oid in members)
         assert after[bowl.body_ids['object']]['held_by'] in {'left', 'right'}
+        from robot_worlds.rubric import grade
+        assert measure_predicate(spec, spec.rubric[2], runtime.snapshot())['satisfied'] is False
+        release = next(c for c in grade(spec, runtime.trace)['criteria'] if c['id'] == 'released')
+        assert release['status'] == 'failed'
     finally:
         runtime.close()
 
@@ -129,3 +133,81 @@ def test_sdk_runs_original_assets_from_mocked_generation_through_export(tmp_path
     assert report.summary["successes"] == 0  # A no-op does not place the bowl.
     assert report.regrade(world, output=tmp_path / "regraded").summary["successes"] == 0
     assert world.export(tmp_path / "world.zip").is_file()
+
+
+def test_native_wrong_bowl_inside_does_not_satisfy_target_identity():
+    from robot_worlds.rubric import grade
+    spec, bowl, _ = sourced_scene(inside=True)
+    members = {o.id for o in bowl.objects}
+    # A second copy of the same source asset is a decoy, never a substitute ID.
+    decoy = [o.model_copy(deep=True) for o in bowl.objects]
+    for obj in decoy:
+        obj.id = 'decoy_' + obj.id
+        if obj.parent_id:
+            obj.parent_id = 'decoy_' + obj.parent_id
+    visual = bowl.objects[-1]
+    bottom = min(o.position[2]-o.size[2]/2 for o in bowl.objects if o.collision)
+    delta = (1-visual.position[0], -visual.position[1], .601-bottom)
+    for obj in spec.objects:
+        if obj.id in members:
+            obj.position = tuple(a+b for a, b in zip(obj.position, delta))
+    spec.objects.extend(decoy)
+    runtime = Runtime(spec, render=False)
+    try:
+        runtime.execute({'tool': 'wait', 'arguments': {'seconds': .4}})
+        target = measure_predicate(spec, spec.rubric[0], runtime.snapshot())
+        decoy_rule = spec.rubric[0].model_copy(update={'object_id': 'decoy_'+bowl.body_ids['object']})
+        assert measure_predicate(spec, decoy_rule, runtime.snapshot())['satisfied'] is True
+        assert target['satisfied'] is False
+        assert grade(spec, runtime.trace)['success'] is False
+    finally:
+        runtime.close()
+
+
+def test_native_partial_insertion_is_not_full_containment():
+    from robot_worlds.rubric import grade
+    spec, bowl, oven = sourced_scene(inside=True)
+    door = next(o for o in spec.objects if o.id == oven.joint_ids['microjoint'])
+    door.joint.initial = -1.57079632679
+    for obj in bowl.objects:
+        obj.position = (obj.position[0], obj.position[1]-.08, obj.position[2])
+    runtime = Runtime(spec, render=False)
+    try:
+        runtime.execute({'tool': 'wait', 'arguments': {'seconds': .4}})
+        result = measure_predicate(spec, spec.rubric[0], runtime.snapshot())
+        assert result['satisfied'] is False
+        assert min(result['measured']['containment_margins']) < -.02
+        assert grade(spec, runtime.trace)['success'] is False
+    finally:
+        runtime.close()
+
+
+def test_native_brief_recontact_does_not_pass_stable_support_duration():
+    from robot_worlds.rubric import grade
+    spec, bowl, _ = sourced_scene(inside=True)
+    runtime = Runtime(spec, render=False)
+    try:
+        # Apply a real upward disturbance, then remove it. No pose overwrite,
+        # fixed attachment, altered collision geometry or fabricated trace.
+        body = runtime._object_bodies[bowl.body_ids['object']]
+        import mujoco
+        import numpy as np
+        mujoco.mj_applyFT(runtime.model, runtime.data, np.array([0., 0., 10.]),
+                          np.zeros(3), runtime.data.subtree_com[body].copy(), body,
+                          runtime.data.qfrc_applied)
+        runtime._step(.08)
+        runtime.data.qfrc_applied[:] = 0
+        assert measure_predicate(spec, spec.rubric[1], runtime.snapshot())['satisfied'] is False
+        for _ in range(30):
+            runtime._step(.05)
+            if measure_predicate(spec, spec.rubric[1], runtime.snapshot())['satisfied']:
+                break
+        else:
+            pytest.fail('Disturbed original bowl did not recontact the tray')
+        result = grade(spec, runtime.trace)
+        support = next(c for c in result['criteria'] if c['id'] == 'supported')
+        assert support['satisfied'] is False, support
+        assert support['evidence']['duration_required'] == .2
+        assert result['success'] is False
+    finally:
+        runtime.close()

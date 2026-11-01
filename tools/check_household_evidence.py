@@ -23,6 +23,9 @@ REQUIRED = {
         'test_original_bowl_lifts_with_two_hands_and_public_torso_actuation',
         'test_sphere_settles_in_scanned_bowl_not_on_a_filled_collision_hull',
         'test_original_bowl_fits_and_stays_supported_inside_original_appliance',
+        'test_native_wrong_bowl_inside_does_not_satisfy_target_identity',
+        'test_native_partial_insertion_is_not_full_containment',
+        'test_native_brief_recontact_does_not_pass_stable_support_duration',
         'test_sdk_runs_original_assets_from_mocked_generation_through_export',
     },
 }

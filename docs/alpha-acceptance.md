@@ -8,11 +8,11 @@ not replace current native, live-model or application evidence.
 
 | Gate | Available evidence | Required work still open |
 | --- | --- | --- |
-| SDK action loop | The latest focused Linux run passed 77 checks. The built wheel also passed original-asset generation with a mock, native RGB-D/action execution, reporting, export/reload and regrading in a fresh Mac environment outside the checkout. | Successful manipulation remains separate from these integration checks. |
-| Physical manipulation | Original-bowl concavity, pre-placed support and no-op failure passed in hosted checks. A new native engineering test lifts every original bowl component over 15 cm using two physical grippers and the public torso actuator, with no counter contact after a one-second hold. A development probe also carries it through retreat, turn and forward travel. | Complete door interaction, insertion, release and stable support with a labeled engineering policy. Run native decoy, partial insertion, held and unstable-placement cases. Lift/carry do not establish placement. |
-| Trustworthy grading | Synthetic original-asset traces exercise the negative cases, full containment, duration and missing measurements. Holding/release must name a movable root. Timed-process loading accepts fixed child-piece contact while excluding decoys and separately articulated children. | Current physical evidence for these measurements and outcomes. No heating or closure requirement is added to the bowl task. |
-| Live generation and editing | Astra through the existing Codex sign-in generated a physically validated original-asset kitchen, then executed nine sensor-only policy actions before its token budget ended. Reporting, export/reload and regrading passed. | Successful manipulation, generated warehouse acceptance and a verified live targeted edit. API-key transport remains blocked by exhausted account credits; Codex plan usage is recorded separately. |
-| Warehouse appearance | A live-generated 24 × 20 m, 2,135-component warehouse passed its creation-time physical checks and completed policy/report/export/reload. Original NVIDIA assets are visible in actual application screenshots. | Its layout is too sparse for the visual target, and a zero-tolerance navigation rule produced a false negative against the intended floor-square task. A denser alternative, corrected pre-run validation and measured viewport performance remain open. |
+| SDK action loop | The second focused Linux run passed 79 checks; subsequent torso and navigation changes still need the final candidate check. The built wheel also passed original-asset generation with a mock, native RGB-D/action execution, reporting, export/reload and regrading in a fresh Mac environment outside the checkout. | Successful manipulation remains separate from these integration checks. |
+| Physical manipulation | Original-bowl concavity, pre-placed support and no-op failure passed in hosted checks. A new native engineering test lifts every original bowl component over 15 cm using two physical grippers and the public torso actuator, with no counter contact after a one-second hold. A development probe also carries it through retreat, turn and forward travel. | Complete door interaction, insertion, release and stable support with a labeled engineering policy. Native decoy, partial insertion, continued-holding and brief-recontact failure checks now pass locally; include them in the final hosted evidence. Lift/carry do not establish placement. |
+| Trustworthy grading | Synthetic original-asset traces exercise the negative cases, full containment, duration and missing measurements. Holding/release must name a movable root. Timed-process loading accepts fixed child-piece contact while excluding decoys and separately articulated children. | Current native checks reject a decoy in the cavity, partial insertion, a still-held bowl, and momentary tray recontact after a physical disturbance. Final candidate evidence remains to be collected. No heating or closure requirement is added to the bowl task. |
+| Live generation and editing | Astra through the existing Codex sign-in generated a physically validated original-asset kitchen, then executed nine sensor-only policy actions before its token budget ended. Reporting, export/reload and regrading passed. | Successful manipulation remains open. A live targeted barrier edit and subsequent navigation/report/export/reload passed, preserving all other entities and requirements. API-key transport remains blocked by exhausted account credits; Codex plan usage is recorded separately. |
+| Warehouse appearance | A live-generated 24 × 20 m, 2,135-component warehouse passed its creation-time physical checks and completed policy/report/export/reload. Original NVIDIA assets are visible in actual application screenshots. | The first layout was too sparse and its zero-tolerance navigation rule failed at ground contact. Pre-run validation now rejects that mismatch. A distinct 20 × 16 m, 3,046-component warehouse passed generation and navigation; current app overview/detail/report images are saved. Reference-level presentation and measured viewport performance remain open. |
 | Fresh-user journey | Version 0.1.0a1 wheel and source archives installed independently on Linux. The same wheel installed on Apple silicon Python 3.13, passed dependency checks and completed the offline native SDK walkthrough. | Complete the browser walkthrough and recheck any subsequently changed release artifact. |
 | Application and release | Workbench, selection, edit/progress controls, reports, replay and export are implemented. | Current application walkthrough: inspection, validation/error state, targeted edit, policy execution/cancellation, replay and evidence navigation; camera framing without obstruction. Capture warehouse, bowl/interior, interaction and report screenshots. Reconcile release docs/artifacts and reproducible walkthrough. |
 
@@ -169,3 +169,23 @@ event after authorization ([GitHub trigger reference](https://docs.github.com/en
 3. Remove/reapply the label once to request the single household job.
 4. Record the run ID and remove the label. Subsequent commits retain `[skip ci]`.
    Another attempt needs a diagnosed change and authorization covering that run.
+
+## Dense warehouse and scoped live edit
+
+The [dense alternative](evidence/release-2026-10-31/live-dense-warehouse.json)
+completed in 251.85 seconds: one generation call (44,634 tokens) and three
+sensor-only policy calls (78,809 tokens). Six racks, 72 cartons, six pallets and
+two passive conveyors use original sourced geometry. The navigation criterion
+passed without changing it after execution. This does not demonstrate material
+handling or autonomous logistics. [Overview](images/dense-warehouse/overview.png),
+[rack detail](images/dense-warehouse/rack-detail.png) and
+[recorded report](images/dense-warehouse/report.png) are actual application captures.
+
+The [targeted edit](evidence/release-2026-10-31/live-targeted-edit.json) completed in
+140.52 seconds: one edit call (34,098 tokens), three policy calls (79,643 tokens).
+It translated one seven-part barrier assembly by 25 cm. Exact comparison verified
+that every unrelated entity, all physical parameters, task, rubric, robot start
+and world bounds were preserved. The new version passed physical validation,
+navigation, portable reload and regrading. The parent version and run remain
+unchanged. Both workflows use Codex plan usage; no dollar charge is reported by
+that transport. These are warm-cache timings, not fresh-download timings.
