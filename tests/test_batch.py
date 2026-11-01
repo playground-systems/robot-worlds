@@ -77,7 +77,7 @@ def test_actual_spawned_physics_policies_and_frames_preserve_episode_identity(tm
         for frame in episode["frames"]:
             assert frame["path"].startswith(f"episode-{index:03d}/")
             assert (report.path / frame["path"]).is_file()
-        assert (report.path / f"episode-{index:03d}" / "trace.json").is_file()
+        assert (report.path / f"episode-{index:03d}" / "trace.json.gz").is_file()
     print(f"Two native MuJoCo render+step episodes, {workers} spawned workers: {elapsed:.3f}s ({2/elapsed:.3f} episodes/s), physics CPU")
 
 
@@ -88,7 +88,7 @@ def test_worker_policy_failure_is_not_an_ordinary_task_failure(tmp_path, native_
     assert report.summary["valid"] == 0
     assert report.summary["success_rate"] is None
     assert all(e["status"] == "policy_error" for e in report.result["episodes"])
-    assert all((report.path / f"episode-{i:03d}" / "trace.json").is_file() for i in range(2))
+    assert all((report.path / f"episode-{i:03d}" / "trace.json.gz").is_file() for i in range(2))
 
 
 def test_parallel_configs_reject_opaque_clients_and_literal_credentials():

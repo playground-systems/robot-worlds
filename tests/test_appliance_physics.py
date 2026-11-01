@@ -48,7 +48,7 @@ def test_appliance_sdk_generation_sensor_execution_regrade_and_export(tmp_path, 
     assert policy.results[0]["status"] == "measured"
     assert policy.results[0]["frame"] == "base"
     result = report.result
-    _verified_regrade_trace(report.path / "episode-000/trace.json", result["episodes"][0], result, load(report.path / "world"))
+    _verified_regrade_trace(report.path / "episode-000/trace.json.gz", result["episodes"][0], result, load(report.path / "world"))
     assert report.regrade(world, output=tmp_path / "regraded").summary["successes"] == 0
     archive = world.export(tmp_path / "world.zip")
     with zipfile.ZipFile(archive) as bundle:
@@ -56,4 +56,4 @@ def test_appliance_sdk_generation_sensor_execution_regrade_and_export(tmp_path, 
     assert load(tmp_path / "imported").id == world.id
     archive = report.export(tmp_path / "report.zip")
     with zipfile.ZipFile(archive) as bundle:
-        assert {"result.json", "report.html", "episode-000/trace.json"} <= set(bundle.namelist())
+        assert {"result.json", "report.html", "episode-000/trace.json.gz"} <= set(bundle.namelist())

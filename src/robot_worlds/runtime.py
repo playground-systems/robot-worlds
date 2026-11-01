@@ -48,7 +48,7 @@ def runtime_implementation_identity(robot: str, action_contract: list[dict]) -> 
     nonbehavioral edit. Missing resources/version metadata fail closed. These
     hashes identify an implementation; they do not attest to an untampered host.
     """
-    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py", "spectator.py", "sensors.py", "revolved.py", "mesh_assets.py"]
+    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py", "trace_storage.py", "spectator.py", "sensors.py", "revolved.py", "mesh_assets.py"]
     dependencies = ["mujoco", "numpy", "pillow", "pydantic"]
     if robot == "g1":
         modules.append("g1_runtime.py")
@@ -168,6 +168,8 @@ class Runtime:
         self._live_view = None
         self._last_result = None
         self.trace = []
+        from .trace_storage import StatePool
+        self._trace_state_pool = StatePool()
         self._events = []
         self._last_contact_pairs = set()
         self._last_held = set()
@@ -679,7 +681,7 @@ class Runtime:
                 }
             )
         self._last_contact_pairs, self._last_held = pairs, held
-        self.trace.append(self.snapshot())
+        self.trace.append(self._trace_state_pool.retain(self.snapshot()))
         self._next_sample = float(self.data.time) + 0.05
 
     def _process_snapshot(self):

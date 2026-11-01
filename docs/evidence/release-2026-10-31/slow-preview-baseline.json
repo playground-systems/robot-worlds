@@ -1,0 +1,34 @@
+{
+  "run_url": "https://github.com/playground-systems/robot-worlds/actions/runs/41264254407",
+  "head_sha": "064d3208f991f61eb451425bd09bc777d65e27ae",
+  "status": "cancelled_after_slow_preview_cadence_was_reproduced",
+  "artifact_id": 13066178274,
+  "artifact_sha256": "127bef6805ec4513fb318b06aaa3364f1616a92820e105548861172cfd92114b",
+  "artifact_bytes": 74499016,
+  "testsuites": [
+    {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "163",
+      "time": "117.301",
+      "timestamp": "2026-11-01T02:13:23.138575+00:00",
+      "hostname": "runnervm48cm3"
+    }
+  ],
+  "native_audit_required_cases": 16,
+  "native_audit_status": "passed",
+  "preparation": {
+    "scene_components": 181,
+    "cold_import_ms": 345.74742699999206,
+    "warm_import_ms": 88.83629400003201,
+    "removed_native_probes": 163,
+    "legacy_preparation_ms": 271.0515750000013,
+    "direct_preparation_ms": 100.36865199998601,
+    "max_bounds_difference_m": 1.2849234509726415e-08
+  },
+  "engineering_last_completed_step": 25,
+  "engineering_success_verified": false,
+  "reason": "Slow spectator rendering could become due again immediately after a frame, crowding out physics. Regression reproduced and fixed; a new candidate is under verification."
+}

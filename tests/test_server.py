@@ -115,3 +115,19 @@ def test_uploaded_mesh_is_content_addressed_and_explicitly_bound_to_generation(a
     assert client.post("/api/assets/script.py", content=b"code").status_code == 422
     assert client.post("/api/assets/empty.obj", content=b"").status_code == 422
     assert client.post("/api/generate", json={"prompt": "Use asset", "asset_ids": ["../outside.obj"]}).status_code == 422
+
+
+def test_compressed_trace_download_is_not_mislabeled_as_plain_json(api):
+    import gzip
+    client, _, root = api
+    run_id = 'b'*32
+    run = root/'runs'/run_id
+    write_json(run/'result.json', {'id':run_id,'status':'completed'})
+    trace = run/'episode-000'/'trace.json.gz'
+    trace.parent.mkdir()
+    trace.write_bytes(gzip.compress(b'[{"time":0}]'))
+    response = client.get(f'/api/runs/{run_id}/files/episode-000/trace.json.gz')
+    assert response.status_code == 200
+    assert response.headers['content-type'] == 'application/gzip'
+    assert 'attachment' in response.headers['content-disposition']
+    assert gzip.decompress(response.content) == b'[{"time":0}]'

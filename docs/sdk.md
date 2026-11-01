@@ -599,3 +599,17 @@ The profile must be simple, nonzero-area, and contain 3–12 points. It must rea
 The native engine triangulates the material cross-section and sweeps each triangle into convex wedges. These wedges preserve the cavity and share one rigid body; their mass totals the declared object mass. The browser displays the same segmented profile. This supports curved hollow geometry without a prebuilt asset catalog. It is still a faceted rigid-body approximation, not deformable ceramic, a textured scanned asset or a claim of photorealism.
 
 Scene validation counts generated collision pieces separately from object count and caps them at 20,000. Static overlap checks retain empty cavities while conservatively bounding curved facets; native compilation, contact and settling checks still apply. Task-bound profiles, attached geometry and cavity bindings are protected during repair, just like the existing rubric targets.
+
+
+### Trace storage
+
+Native runs write `episode-000/trace.json.gz`: a standard gzip-compressed JSON
+array containing every recorded sample, object state and full replay pose.
+`episode.trace_evidence.file` identifies the member; older runs and custom runtime
+adapters may use `trace.json`. Integrity hashes cover the actual stored bytes.
+Compression does not round measurements or change the sampling interval.
+
+The SDK writes one sample at a time and shares exactly equal object records in
+memory. Regrading reads the array incrementally and verifies its original identity.
+Standard tools such as `gzip.open(path, "rt")` can read the export. Reports link to
+the correct downloadable file, including for older uncompressed runs.

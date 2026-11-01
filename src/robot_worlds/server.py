@@ -499,6 +499,8 @@ def create_app(data_dir: str | Path = ".robot-worlds", *, executor_factory=None)
             raise HTTPException(404, "Artifact not found") from exc
         if not path.is_file():
             raise HTTPException(404, "Artifact not found")
+        if path.suffix == ".gz":
+            return FileResponse(path, media_type="application/gzip", filename=path.name)
         return FileResponse(path)
 
     @app.get("/api/worlds/{world_id}/export")

@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import shutil
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,11 +34,18 @@ def file_digest(path: Path) -> str:
 def write_json(path: Path, value: Any, *, compact: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     options = {"separators": (",", ":")} if compact else {"indent": 2}
-    payload = json.dumps(value, allow_nan=False, **options).encode()
     fd, temp = tempfile.mkstemp(prefix=".writing-", dir=path.parent)
     try:
         with os.fdopen(fd, "wb") as stream:
-            stream.write(payload)
+            if compact and isinstance(value, list):
+                stream.write(b"[")
+                for index, item in enumerate(value):
+                    if index:
+                        stream.write(b",")
+                    stream.write(json.dumps(item, allow_nan=False, **options).encode())
+                stream.write(b"]")
+            else:
+                stream.write(json.dumps(value, allow_nan=False, **options).encode())
             stream.write(b"\n")
             stream.flush()
             os.fsync(stream.fileno())
@@ -47,50 +53,6 @@ def write_json(path: Path, value: Any, *, compact: bool = False) -> None:
     finally:
         Path(temp).unlink(missing_ok=True)
 
-
-class _TraceCheckpoint:
-    """Atomic JSON-array checkpoints for owned, append-only native snapshots.
-
-    Copy the previous encoded prefix and encode only new samples. Readers still
-    see the ordinary complete trace.json array, including after interruption.
-    Custom runtime adapters must use write_json because they may mutate history.
-    """
-    def __init__(self, path: Path):
-        self.path = path
-        self.frames = []
-        self.initialized = False
-
-    def write(self, trace):
-        unchanged_prefix = len(trace) >= len(self.frames) and all(a is b for a, b in zip(self.frames, trace))
-        if not self.initialized or not unchanged_prefix:
-            write_json(self.path, trace, compact=True)
-        elif len(trace) == len(self.frames):
-            return
-        else:
-            # Serialize before touching the previous durable checkpoint. A bad
-            # sample (e.g. NaN) must leave the old valid JSON and cursor intact.
-            payload = json.dumps(trace[len(self.frames):], separators=(",", ":"), allow_nan=False).encode()[1:-1]
-            fd, temporary = tempfile.mkstemp(prefix=".writing-trace-", dir=self.path.parent)
-            os.close(fd)
-            try:
-                shutil.copyfile(self.path, temporary)
-                with open(temporary, "r+b") as stream:
-                    stream.seek(-2, os.SEEK_END)
-                    if stream.read(2) != b"]\n":
-                        raise ValueError("Unexpected trace checkpoint encoding")
-                    stream.seek(-2, os.SEEK_END)
-                    if self.frames:
-                        stream.write(b",")
-                    stream.write(payload)
-                    stream.write(b"]\n")
-                    stream.truncate()
-                    stream.flush()
-                    os.fsync(stream.fileno())
-                os.replace(temporary, self.path)
-            finally:
-                Path(temporary).unlink(missing_ok=True)
-        self.frames = list(trace)
-        self.initialized = True
 
 
 def read_json(path: Path) -> Any:

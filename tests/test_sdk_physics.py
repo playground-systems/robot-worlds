@@ -1,7 +1,7 @@
 """A real local MuJoCo bundle/reset/evaluate/report smoke path."""
-from robot_worlds.artifacts import read_json
 from robot_worlds.models import WorldSpec
 from robot_worlds.sdk import World
+from robot_worlds.trace_storage import read_trace
 
 
 def test_real_mujoco_world_and_noop_report(tmp_path, native_rendering):
@@ -27,6 +27,6 @@ def test_real_mujoco_world_and_noop_report(tmp_path, native_rendering):
     episode = report.result["episodes"][0]
     assert episode["runtime"]["engine"] == "mujoco"
     assert episode["rubric"]["status"] == "failed"
-    assert read_json(report.path / "episode-000" / "trace.json")[0]["time"] == 0
+    assert read_trace(report.path / "episode-000" / "trace.json.gz")[0]["time"] == 0
     assert (report.path / "episode-000" / "final.png").is_file()
     assert (report.path / "report.html").is_file()

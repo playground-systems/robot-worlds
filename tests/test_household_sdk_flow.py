@@ -17,9 +17,9 @@ import pytest
 from test_prepared_assets import prepared_plan
 
 from robot_worlds import generate, load
-from robot_worlds.artifacts import read_json
 from robot_worlds.remote_policy import RemotePolicy
 from robot_worlds.sdk import Report
+from robot_worlds.trace_storage import read_trace
 
 
 class SensorPolicy:
@@ -166,7 +166,7 @@ def test_household_sensor_action_report_and_portable_reload(household_world, tmp
     assert episode["replay"]["frame_count"] >= 2
     for frame in episode["frames"]:
         assert (report.path / frame["path"]).read_bytes().startswith(b"\x89PNG")
-    trace = read_json(report.path / "episode-000/trace.json")
+    trace = read_trace(report.path / "episode-000/trace.json.gz")
     # Privileged state is used only here, outside the policy, to prove real motion.
     assert trace[-1]["robot"]["position"][0] - trace[0]["robot"]["position"][0] > .02
 
@@ -209,7 +209,7 @@ def test_household_remote_failure_preserves_evidence_without_task_verdict(househ
     assert report.summary["valid"] == 0
     assert report.summary["invalid_or_interrupted"] == 1
     assert report.summary["success_rate"] is None
-    assert read_json(report.path / "episode-000/trace.json")
+    assert read_trace(report.path / "episode-000/trace.json.gz")
     assert (report.path / "report.html").is_file()
 
 
@@ -230,5 +230,5 @@ def test_household_cancel_between_actions_preserves_partial_report(household_wor
     assert report.summary["valid"] == 0
     assert report.summary["invalid_or_interrupted"] == 1
     assert report.summary["success_rate"] is None
-    assert read_json(report.path / "episode-000/trace.json")
+    assert read_trace(report.path / "episode-000/trace.json.gz")
     assert (report.path / "report.html").is_file()

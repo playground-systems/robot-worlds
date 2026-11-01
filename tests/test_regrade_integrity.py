@@ -218,3 +218,22 @@ def test_changed_rubric_with_identical_runtime_can_be_regraded_twice(recorded, m
     assert second.summary["valid"] == 1
     assert second.summary["successes"] == 0
     assert second.result["evidence_origin_run_id"] == "original-run"
+
+
+def test_compressed_trace_retains_identity_and_regrades_without_recollection(recorded):
+    from robot_worlds.trace_storage import TraceCheckpoint
+    path = recorded.trace_path.with_suffix('.json.gz')
+    TraceCheckpoint(path).write(recorded.trace)
+    recorded.trace_path.unlink()
+    episode = recorded.result['episodes'][0]
+    episode['trace_evidence'] = sdk._trace_evidence(path, recorded.trace, episode, recorded.result, complete=True)
+    write_json(recorded.report.path/'result.json', recorded.result)
+    revised = regrade(recorded)
+    assert revised.summary['successes'] == 1
+    assert revised.result['episodes'][0]['trace_evidence']['file'] == 'trace.json.gz'
+
+
+def test_trace_evidence_cannot_redirect_reader_outside_the_episode(recorded):
+    recorded.result['episodes'][0]['trace_evidence']['file'] = '../../private.json'
+    write_json(recorded.report.path/'result.json', recorded.result)
+    assert_insufficient(regrade(recorded))

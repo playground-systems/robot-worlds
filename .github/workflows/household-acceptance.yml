@@ -52,6 +52,11 @@ jobs:
             tests/test_live.py \
             tests/test_rubric.py \
             tests/test_sdk.py \
+            tests/test_regrade_integrity.py \
+            tests/test_appliance_physics.py \
+            tests/test_sdk_physics.py \
+            tests/test_batch.py \
+            tests/test_server.py \
             --basetemp "$RUNNER_TEMP/household-acceptance" \
             --junitxml=household-evidence/junit.xml
       - name: Audit required native checks without accepting skips
@@ -87,6 +92,14 @@ jobs:
                   --output "$RUNNER_TEMP/household-engineering" --render \
                   > "$GITHUB_WORKSPACE/household-evidence/engineering.log" 2>&1
                 cp "$RUNNER_TEMP/household-engineering/acceptance.json" "$GITHUB_WORKSPACE/household-evidence/engineering.json"
+                "$environment/bin/robot-worlds" prepare-warehouse --output "$RUNNER_TEMP/warehouse-library" --timeout 300 \
+                  > "$GITHUB_WORKSPACE/household-evidence/warehouse-preparation.log" 2>&1
+                /usr/bin/time -v -o "$GITHUB_WORKSPACE/household-evidence/warehouse-resources.txt" \
+                  timeout --signal=TERM 300s xvfb-run -a "$environment/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/offline_warehouse.py" \
+                  --output "$RUNNER_TEMP/warehouse-storage" --library "$RUNNER_TEMP/warehouse-library" \
+                  --fixture "$GITHUB_WORKSPACE/tests/fixtures/warehouse" \
+                  > "$GITHUB_WORKSPACE/household-evidence/warehouse.log" 2>&1
+                cp "$RUNNER_TEMP/warehouse-storage/acceptance.json" "$GITHUB_WORKSPACE/household-evidence/warehouse.json"
               fi
             )
           done
@@ -103,8 +116,12 @@ jobs:
             ${{ runner.temp }}/household-engineering/acceptance.json
             ${{ runner.temp }}/household-engineering/world.zip
             ${{ runner.temp }}/household-engineering/report.zip
+            ${{ runner.temp }}/warehouse-storage/acceptance.json
+            ${{ runner.temp }}/warehouse-storage/world.zip
+            ${{ runner.temp }}/warehouse-storage/report.zip
             ${{ runner.temp }}/household-acceptance/**/result.json
             ${{ runner.temp }}/household-acceptance/**/trace.json
+            ${{ runner.temp }}/household-acceptance/**/trace.json.gz
             ${{ runner.temp }}/household-acceptance/**/manifest.json
             ${{ runner.temp }}/household-acceptance/**/report.html
             ${{ runner.temp }}/household-acceptance/**/frames/*.png

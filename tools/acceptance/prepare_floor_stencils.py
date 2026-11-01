@@ -22,18 +22,18 @@ vt 0 0
 vt 1 0
 vt 1 1
 vt 0 1
-f 1 3 2
-f 1 4 3
+f 1/1 3/3 2/2
+f 1/1 4/4 3/3
 f 5/1 6/2 7/3
 f 5/1 7/3 8/4
-f 1 2 6
-f 1 6 5
-f 2 3 7
-f 2 7 6
-f 3 4 8
-f 3 8 7
-f 4 1 5
-f 4 5 8
+f 1/1 2/2 6/3
+f 1/1 6/3 5/4
+f 2/1 3/2 7/3
+f 2/1 7/3 6/4
+f 3/1 4/2 8/3
+f 3/1 8/3 7/4
+f 4/1 1/2 5/3
+f 4/1 5/3 8/4
 """
 
 
@@ -62,7 +62,8 @@ def prepare(output, labels):
     record = {'kind': 'supplied architectural graphics', 'mesh_path': str(mesh),
               'source_notice': str(notice), 'texture_paths': textures,
               'instructions': 'Use kind=mesh, collision=false, movable=false, color=[1,1,1], size about [3,0.55,0.002]. '
-                              'Place above the floor finish without overlap or z-fighting; orient with yaw. '
+                              'Set parent_id to a fixed physical architectural element (for example a wall), as required for appearance-only meshes. '
+                              'Positions stay world-space. Place above the floor finish without overlap or z-fighting; orient with yaw. '
                               'Top-face lettering reads from negative Y at yaw=0. Use only at meaningful work areas; '
                               'these are nonphysical markings, never supports or rubric targets.',
               'sha256': {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in output.iterdir()}}

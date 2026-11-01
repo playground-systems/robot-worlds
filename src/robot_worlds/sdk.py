@@ -27,6 +27,7 @@ from robot_worlds.artifacts import (
     write_json,
 )
 from robot_worlds.models import ASSET_FILE_FIELDS, WorldSpec
+from robot_worlds.trace_storage import TraceCheckpoint, read_trace
 
 FINISH_TOOL = {
     "type": "function", "name": "finish",
@@ -63,7 +64,7 @@ def _trace_evidence(path: Path, trace: list, episode: dict, result: dict, *, com
     """Freeze collection metadata; hashes detect changes, not malicious re-signing."""
     runtime = episode.get("runtime", {})
     return {
-        "version": 1, "sha256": file_digest(path), "sample_count": len(trace),
+        "version": 1, "file": path.name, "sha256": file_digest(path), "sample_count": len(trace),
         "start_time": trace[0].get("time") if trace and isinstance(trace[0], dict) else None,
         "end_time": trace[-1].get("time") if trace and isinstance(trace[-1], dict) else None,
         "complete": complete, "model_fingerprint": runtime.get("model_fingerprint"),
@@ -87,7 +88,7 @@ def _verified_regrade_trace(path: Path, episode: dict, result: dict, world: Worl
         raise ValueError("Trace collection provenance does not match this episode")
     if not path.is_file() or file_digest(path) != evidence.get("sha256"):
         raise ValueError("Recorded trace is missing or its hash changed since collection")
-    trace = read_json(path)
+    trace = read_trace(path)
     if not isinstance(trace, list) or not trace or len(trace) != evidence.get("sample_count"):
         raise ValueError("Recorded trace sample count does not match collection evidence")
     times = [state.get("time") if isinstance(state, dict) else None for state in trace]
@@ -450,6 +451,7 @@ class World:
                        "steps": [], "frames": [], "inference_seconds": 0.0}
             result["episodes"].append(episode)
             runtime, episode_policy, progress_grader, trace_checkpoint = None, None, None, None
+            trace_path = episode_dir / "trace.json"
             phase = "runtime"
             started = time.monotonic()
             try:
@@ -465,8 +467,8 @@ class World:
                 if builtin_runtime:
                     from robot_worlds.rubric import _ProgressGrader
                     progress_grader = _ProgressGrader(frozen.spec)
-                    from robot_worlds.artifacts import _TraceCheckpoint
-                    trace_checkpoint = _TraceCheckpoint(episode_dir / "trace.json")
+                    trace_path = episode_dir / "trace.json.gz"
+                    trace_checkpoint = TraceCheckpoint(trace_path)
                 episode["runtime"] = _runtime_manifest(runtime)
                 changed = [key for key in ("engine", "engine_version", "timestep", "controller", "model_fingerprint", "implementation_fingerprint", "trace_interval", "clock", "action_contract", "sensor_contract", "policy_sha256", "policy_source_revision", "policy_frequency_hz")
                            if key in expected_runtime and episode["runtime"].get(key) != expected_runtime[key]]
@@ -543,7 +545,7 @@ class World:
                     if trace_checkpoint:
                         trace_checkpoint.write(runtime.trace)
                     else:
-                        write_json(episode_dir / "trace.json", runtime.trace, compact=True)
+                        write_json(trace_path, runtime.trace, compact=True)
                     write_json(folder / "result.json", result)
                     emit({"type": "step", "run_id": run_id, "episode": episode_index, **step_record})
                     if render and on_event and hasattr(runtime, "publish_live"):
@@ -588,12 +590,11 @@ class World:
                         if not trace or trace[-1] != last:
                             trace.append(last)
                         episode["sim_seconds"] = float(last["time"])
-                        canonical(trace)
                         if trace_checkpoint:
                             trace_checkpoint.write(trace)
                         else:
-                            write_json(episode_dir / "trace.json", trace, compact=True)
-                        episode["trace_evidence"] = _trace_evidence(episode_dir / "trace.json", trace, episode, result, complete=True)
+                            write_json(trace_path, trace, compact=True)
+                        episode["trace_evidence"] = _trace_evidence(trace_path, trace, episode, result, complete=True)
                         episode["rubric"] = progress_grader.score(trace) if progress_grader else grade(frozen.spec, trace)
                     except Exception as exc:
                         episode["grading_error"] = public_error(exc)
@@ -609,8 +610,8 @@ class World:
                             except (TypeError, ValueError):
                                 break
                         trace = safe
-                        write_json(episode_dir / "trace.json", safe, compact=True)
-                        episode["trace_evidence"] = _trace_evidence(episode_dir / "trace.json", safe, episode, result, complete=False)
+                        TraceCheckpoint(trace_path).write(safe)
+                        episode["trace_evidence"] = _trace_evidence(trace_path, safe, episode, result, complete=False)
                     try:
                         if render and last is not None:
                             name = "final.png"
@@ -838,8 +839,11 @@ class Report:
                        created_at=utc_now(), status="running", regraded=True,
                        evidence_origin_run_id=original.get("evidence_origin_run_id", original["id"]))
         for episode in revised["episodes"]:
-            trace_path = destination / f"episode-{episode['index']:03d}" / "trace.json"
             try:
+                trace_file = episode.get("trace_evidence", {}).get("file", "trace.json")
+                if trace_file not in {"trace.json", "trace.json.gz"}:
+                    raise ValueError("Unsupported trace evidence file")
+                trace_path = destination / f"episode-{episode['index']:03d}" / trace_file
                 trace = _verified_regrade_trace(trace_path, episode, original, original_world)
             except Exception as exc:
                 episode.pop("rubric", None)
