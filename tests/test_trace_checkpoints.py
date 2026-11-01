@@ -105,3 +105,16 @@ def test_large_repeated_scene_serialization_does_not_build_a_second_full_trace(t
     restored = read_trace(path)
     assert restored == trace
     assert restored[0]['objects']['part_999'] is restored[-1]['objects']['part_999']
+
+
+
+def test_pool_preserves_boolean_integer_float_and_signed_zero_evidence():
+    import math
+
+    from robot_worlds.trace_storage import StatePool
+    pool = StatePool()
+    frames = [pool.retain({'objects': {'part': {'value': value}}}) for value in (1, True, 1.0, 0.0, -0.0)]
+    values = [f['objects']['part']['value'] for f in frames]
+    assert [type(v) for v in values] == [int, bool, float, float, float]
+    assert math.copysign(1, values[-1]) == -1
+    assert len({id(f['objects']['part']) for f in frames}) == 5

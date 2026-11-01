@@ -8,11 +8,28 @@ from __future__ import annotations
 
 import gzip
 import json
+import math
 import os
 import shutil
 import tempfile
 from contextlib import nullcontext
 from pathlib import Path
+
+
+def _same_json_value(left, right):
+    # Python equates True with 1, and -0.0 with +0.0. A lossless evidence pool
+    # must retain JSON types and the sign of zero, not merely numeric equality.
+    if type(left) is not type(right):
+        return False
+    if left is right:
+        return True
+    if isinstance(left, dict):
+        return left.keys() == right.keys() and all(_same_json_value(v, right[k]) for k, v in left.items())
+    if isinstance(left, list):
+        return len(left) == len(right) and all(_same_json_value(a, b) for a, b in zip(left, right))
+    if isinstance(left, float) and left == 0 and right == 0:
+        return math.copysign(1, left) == math.copysign(1, right)
+    return left == right
 
 
 class StatePool:
@@ -29,7 +46,7 @@ class StatePool:
         for identifier, state in frame['objects'].items():
             identifier = self.identifiers.setdefault(identifier, identifier)
             previous = self.states.get(identifier)
-            if previous == state:
+            if previous == state and _same_json_value(previous, state):
                 state = previous
             else:
                 self.states[identifier] = state

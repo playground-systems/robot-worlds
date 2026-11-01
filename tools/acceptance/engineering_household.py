@@ -157,7 +157,7 @@ def main():
             capture = ('grasp', dict(lookat=[.8, 0, 1.0], azimuth=135, elevation=-25, distance=1.6))
         if (args.render and value.get('type') == 'action_started'
                 and value.get('action', {}).get('tool') == 'finish'):
-            capture = ('microwave-interior', dict(lookat=[1.18, 0, .75], azimuth=-45, elevation=-10, distance=.45))
+            capture = ('microwave-interior', dict(lookat=[1.18, 0, .75], azimuth=45, elevation=-10, distance=.45))
         if capture:
             name, camera = capture
             member = f'episode-000/inspection-{name}.png'

@@ -4,7 +4,7 @@ import math
 import numpy as np
 import pytest
 
-from robot_worlds.spectator import clear_camera
+from robot_worlds.spectator import clear_camera, near_plane_clearance
 
 
 def wall_x(x):
@@ -45,3 +45,25 @@ def test_open_space_preserves_requested_view_and_does_not_change_target():
     np.testing.assert_array_equal(point, [0, 0, .8])
     with pytest.raises(RuntimeError, match="No clear spectator"):
         clear_camera(point, 4, 135, -25, lambda *args: .2)
+
+
+
+def test_actual_near_plane_fits_appliance_opening_without_bypassing_walls():
+    def cavity_wall(origin, direction, maximum):
+        return 0 if not .65 < origin[2] < .85 else None
+    target = [1.18, 0, .75]
+    with pytest.raises(RuntimeError):
+        clear_camera(target, .45, 45, -10, cavity_wall, clearance=.25)
+    clearance = near_plane_clearance(.025, 45)
+    assert .02 < clearance < .03
+    assert clear_camera(target, .45, 45, -10, cavity_wall, clearance=clearance) == (45, -10, .45)
+    angle, elevation, distance = clear_camera([3.55, .77, .8], 4, 135, -25,
+                                              wall_x(5.9), clearance=clearance)
+    eye_x = 3.55-distance*math.cos(math.radians(angle))*math.cos(math.radians(elevation))
+    assert eye_x < 5.9-clearance
+
+
+@pytest.mark.parametrize('near,fov,aspect', [(0,45,1), (.1,180,1), (.1,45,0), (float('nan'),45,1)])
+def test_invalid_camera_frustum_rejected(near, fov, aspect):
+    with pytest.raises(ValueError):
+        near_plane_clearance(near, fov, aspect)

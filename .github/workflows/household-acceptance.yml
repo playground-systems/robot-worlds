@@ -50,6 +50,7 @@ jobs:
             tests/test_asset_import_physics.py \
             tests/test_trace_checkpoints.py \
             tests/test_live.py \
+            tests/test_spectator.py \
             tests/test_rubric.py \
             tests/test_sdk.py \
             tests/test_regrade_integrity.py \
@@ -71,6 +72,7 @@ jobs:
           uv build
           python tools/check_distribution.py dist > household-evidence/distribution.json
       - name: Install both archives outside the checkout
+        id: install
         shell: bash
         run: |
           set -euo pipefail
@@ -86,23 +88,39 @@ jobs:
               "$environment/bin/python" -I -c 'import os, pathlib, robot_worlds; location=pathlib.Path(robot_worlds.__file__).resolve(); assert not location.is_relative_to(pathlib.Path(os.environ["GITHUB_WORKSPACE"]).resolve()), location; print(location)'
               "$environment/bin/robot-worlds" doctor --json > "$GITHUB_WORKSPACE/household-evidence/doctor-$kind.json"
               "$environment/bin/robot-worlds" --help > "$GITHUB_WORKSPACE/household-evidence/help-$kind.txt"
-              if [[ "$kind" == wheel ]]; then
-                /usr/bin/time -v -o "$GITHUB_WORKSPACE/household-evidence/engineering-resources.txt" \
-                  timeout --signal=TERM 600s xvfb-run -a "$environment/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/engineering_household.py" \
-                  --output "$RUNNER_TEMP/household-engineering" --render \
-                  > "$GITHUB_WORKSPACE/household-evidence/engineering.log" 2>&1
-                cp "$RUNNER_TEMP/household-engineering/acceptance.json" "$GITHUB_WORKSPACE/household-evidence/engineering.json"
-                "$environment/bin/robot-worlds" prepare-warehouse --output "$RUNNER_TEMP/warehouse-library" --timeout 300 \
-                  > "$GITHUB_WORKSPACE/household-evidence/warehouse-preparation.log" 2>&1
-                /usr/bin/time -v -o "$GITHUB_WORKSPACE/household-evidence/warehouse-resources.txt" \
-                  timeout --signal=TERM 300s xvfb-run -a "$environment/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/offline_warehouse.py" \
-                  --output "$RUNNER_TEMP/warehouse-storage" --library "$RUNNER_TEMP/warehouse-library" \
-                  --fixture "$GITHUB_WORKSPACE/tests/fixtures/warehouse" \
-                  > "$GITHUB_WORKSPACE/household-evidence/warehouse.log" 2>&1
-                cp "$RUNNER_TEMP/warehouse-storage/acceptance.json" "$GITHUB_WORKSPACE/household-evidence/warehouse.json"
-              fi
+
             )
           done
+      - name: Render engineering placement from the installed wheel
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/robot-worlds-clean"
+          status=0
+          /usr/bin/time -v -o "$GITHUB_WORKSPACE/household-evidence/engineering-resources.txt" \
+            timeout --signal=TERM 300s xvfb-run -a "$RUNNER_TEMP/robot-worlds-wheel/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/engineering_household.py" \
+            --output "$RUNNER_TEMP/household-engineering" --render \
+            > "$GITHUB_WORKSPACE/household-evidence/engineering.log" 2>&1 || status=$?
+          if [[ -f "$RUNNER_TEMP/household-engineering/acceptance.json" ]]; then
+            cp "$RUNNER_TEMP/household-engineering/acceptance.json" "$GITHUB_WORKSPACE/household-evidence/engineering.json"
+          fi
+          exit "$status"
+      - name: Verify dense warehouse evidence storage from the installed wheel
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/robot-worlds-clean"
+          "$RUNNER_TEMP/robot-worlds-wheel/bin/robot-worlds" prepare-warehouse --output "$RUNNER_TEMP/warehouse-library" --timeout 120 \
+            > "$GITHUB_WORKSPACE/household-evidence/warehouse-preparation.log" 2>&1
+          status=0
+          /usr/bin/time -v -o "$GITHUB_WORKSPACE/household-evidence/warehouse-resources.txt" \
+            timeout --signal=TERM 240s xvfb-run -a "$RUNNER_TEMP/robot-worlds-wheel/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/offline_warehouse.py" \
+            --output "$RUNNER_TEMP/warehouse-storage" --library "$RUNNER_TEMP/warehouse-library" \
+            --fixture "$GITHUB_WORKSPACE/tests/fixtures/warehouse" \
+            > "$GITHUB_WORKSPACE/household-evidence/warehouse.log" 2>&1 || status=$?
+          if [[ -f "$RUNNER_TEMP/warehouse-storage/acceptance.json" ]]; then
+            cp "$RUNNER_TEMP/warehouse-storage/acceptance.json" "$GITHUB_WORKSPACE/household-evidence/warehouse.json"
+          fi
+          exit "$status"
       - name: Retain current-run evidence
         if: always()
         uses: actions/upload-artifact@v7.0.2

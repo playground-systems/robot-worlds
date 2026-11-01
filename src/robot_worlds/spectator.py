@@ -4,6 +4,19 @@ import math
 import numpy as np
 
 
+def near_plane_clearance(near, vertical_fov, aspect=4/3):
+    """Cover the actual near-plane diagonal plus 1 cm of clearance.
+
+    A fixed 25 cm camera radius cannot inspect an appliance cavity. This is a
+    spectator-only geometric margin; actor camera calibration is unchanged.
+    """
+    if (not all(math.isfinite(v) for v in (near, vertical_fov, aspect))
+            or near <= 0 or not 0 < vertical_fov < 180 or aspect <= 0):
+        raise ValueError("Camera frustum must have positive near/aspect and FOV in (0, 180)")
+    diagonal = near*math.tan(math.radians(vertical_fov)/2)*math.sqrt(1+aspect*aspect)
+    return max(.02, diagonal+.01)
+
+
 def clear_camera(lookat, distance, azimuth, elevation, obstruction, *, clearance=.25):
     """Sweep a small camera volume from the subject toward each candidate eye.
 

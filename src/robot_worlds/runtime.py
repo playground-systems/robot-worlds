@@ -1156,9 +1156,9 @@ class Runtime:
             camera = mujoco.MjvCamera()
             camera.type = mujoco.mjtCamera.mjCAMERA_FREE
             camera.lookat[:] = lookat if lookat is not None else [*self.data.qpos[:2], 0.8]
-            from .spectator import clear_camera
+            from .spectator import clear_camera, near_plane_clearance
             near = self.model.vis.map.znear * self.model.stat.extent
-            clearance = max(.25, near*math.tan(math.radians(self.model.vis.global_.fovy)/2)*5/3)
+            clearance = near_plane_clearance(near, self.model.vis.global_.fovy)
             camera.azimuth, camera.elevation, camera.distance = clear_camera(
                 camera.lookat, distance, azimuth, elevation, self._spectator_obstruction,
                 clearance=clearance)
