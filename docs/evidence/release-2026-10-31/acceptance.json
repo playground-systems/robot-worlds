@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "scope": "native household SDK integration, concavity and pre-placed support",
+  "status": "passed",
+  "full_release_accepted": false,
+  "does_not_establish": [
+    "Successful robot grasp, door opening, transport, insertion and release",
+    "Live model generation or autonomous policy success",
+    "Generated warehouse visual acceptance or current application screenshots",
+    "Clean package installation or macOS execution"
+  ],
+  "checks": [
+    {
+      "module": "test_household_sdk_flow",
+      "name": "test_household_cancel_between_actions_preserves_partial_report",
+      "status": "passed"
+    },
+    {
+      "module": "test_household_sdk_flow",
+      "name": "test_household_remote_failure_preserves_evidence_without_task_verdict[disconnect]",
+      "status": "passed"
+    },
+    {
+      "module": "test_household_sdk_flow",
+      "name": "test_household_remote_failure_preserves_evidence_without_task_verdict[invalid_action]",
+      "status": "passed"
+    },
+    {
+      "module": "test_household_sdk_flow",
+      "name": "test_household_remote_failure_preserves_evidence_without_task_verdict[timeout]",
+      "status": "passed"
+    },
+    {
+      "module": "test_household_sdk_flow",
+      "name": "test_household_sensor_action_report_and_portable_reload[http]",
+      "status": "passed"
+    },
+    {
+      "module": "test_household_sdk_flow",
+      "name": "test_household_sensor_action_report_and_portable_reload[in_process]",
+      "status": "passed"
+    },
+    {
+      "module": "test_sourced_household_physics",
+      "name": "test_original_bowl_fits_and_stays_supported_inside_original_appliance",
+      "status": "passed"
+    },
+    {
+      "module": "test_sourced_household_physics",
+      "name": "test_sdk_runs_original_assets_from_mocked_generation_through_export",
+      "status": "passed"
+    },
+    {
+      "module": "test_sourced_household_physics",
+      "name": "test_sphere_settles_in_scanned_bowl_not_on_a_filled_collision_hull",
+      "status": "passed"
+    }
+  ],
+  "case_count": 77,
+  "failed_or_error_count": 0
+}

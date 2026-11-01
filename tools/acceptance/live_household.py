@@ -1,6 +1,6 @@
 """Bounded live prompt → sensors/actions → report → portable reload acceptance.
 
-Run explicitly with an authorized OPENAI_API_KEY. A completed workflow does not
+Run explicitly with an authorized OPENAI_API_KEY or existing Codex sign-in. A completed workflow does not
 imply the policy succeeded at the physical task; both outcomes are recorded.
 """
 import argparse
@@ -33,17 +33,37 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--max-cost-usd", type=float, default=5)
+    parser.add_argument("--transport", choices=("api", "codex"), default="api")
+    parser.add_argument("--codex-executable", default="codex")
+    parser.add_argument("--prompt-file", type=Path)
+    parser.add_argument("--asset-library", type=Path)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     started = time.monotonic()
-    record = {"workflow_completed": False, "autonomous_manipulation_success": False,
-              "model": "gpt-6-astra", "prompt": PROMPT, "events": []}
-    client = ResponsesClient(model="gpt-6-astra", reasoning="medium", max_cost_usd=args.max_cost_usd,
-                             max_calls=20, max_seconds=600, timeout=90,
-                             max_output_tokens=8192, max_total_output_tokens=40000)
+    prompt = args.prompt_file.read_text() if args.prompt_file else PROMPT
+    record = {"workflow_completed": False, "task_success": False,
+              "model": "gpt-6-astra", "transport": args.transport, "prompt": prompt, "events": []}
+
+    def make_client(phase):
+        generation = phase == "generation"
+        if args.transport == "codex":
+            from robot_worlds.codex_client import CodexClient
+            return CodexClient(model="gpt-6-astra", reasoning="medium", executable=args.codex_executable,
+                               max_calls=3 if generation else 12, max_seconds=540 if generation else 420,
+                               timeout=180, max_total_tokens=150000 if generation else 450000)
+        return ResponsesClient(model="gpt-6-astra", reasoning="medium",
+                               max_cost_usd=args.max_cost_usd*(.4 if generation else .6),
+                               max_calls=3 if generation else 12, max_seconds=300 if generation else 420,
+                               timeout=90, max_output_tokens=8192, max_total_output_tokens=40000)
+
+    # LLMAgent resets its client for each episode. Separate clients keep the
+    # generation ledger intact and partition the full API spending cap.
+    clients = {phase: make_client(phase) for phase in ("generation", "policy")}
+    record["budgets"] = {phase: client.budget for phase, client in clients.items()}
 
     def save():
-        record.update(elapsed_seconds=time.monotonic()-started, model_usage=audit_value(client.usage))
+        record.update(elapsed_seconds=time.monotonic()-started,
+                      model_usage={phase: audit_value(client.usage) for phase, client in clients.items()})
         (args.output / "acceptance.json").write_text(json.dumps(record, indent=2)+"\n")
 
     def event(value):
@@ -54,17 +74,19 @@ def main():
             save()
 
     try:
-        world = generate(PROMPT, client=client, max_repairs=2, output=args.output / "worlds",
-                         online_assets=False, on_event=event)
+        world = generate(prompt, client=clients["generation"], max_repairs=2, output=args.output / "worlds",
+                         online_assets=False, on_event=event, asset_library=args.asset_library)
         record.update(world_id=world.id, validation=world.manifest["validation"])
         save()
         if world.manifest["validation"]["status"] != "ready":
             raise RuntimeError("Generated environment did not pass physical validation")
-        policy = LLMAgent(client=client, max_steps=12, max_seconds=420)
+        policy = LLMAgent(client=clients["policy"], max_steps=12, max_seconds=420)
         report = world.evaluate(policy, max_steps=12, max_sim_seconds=90,
                                 output=args.output / "runs", max_replay_frames=12, on_event=event)
         record.update(report_id=report.id if hasattr(report, "id") else report.path.name,
-                      summary=report.summary, autonomous_manipulation_success=report.summary["successes"] > 0)
+                      summary=report.summary, task_success=report.summary["successes"] > 0,
+                      termination=report.result["episodes"][0]["termination"],
+                      executed_steps=len(report.result["episodes"][0]["steps"]))
         archives = [(world.export(args.output / "world.zip"), "restored-world"),
                     (report.export(args.output / "report.zip"), "restored-report")]
         for path, directory in archives:
@@ -85,7 +107,7 @@ def main():
     finally:
         save()
         print(json.dumps({key: record.get(key) for key in
-                          ("workflow_completed", "autonomous_manipulation_success", "elapsed_seconds", "error")}), flush=True)
+                          ("workflow_completed", "task_success", "elapsed_seconds", "error")}), flush=True)
     return 0 if record["workflow_completed"] else 1
 
 

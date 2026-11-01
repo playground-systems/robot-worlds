@@ -932,7 +932,12 @@ class Runtime:
         vids = np.array([self.model.jnt_dofadr[j] for j in joints])
         scratch = self._ik_data
         scratch.qpos[:] = self.data.qpos
-        mujoco.mj_forward(self.model, scratch)
+        # IK needs transforms and motion axes, not contact dynamics. Random
+        # candidate poses can intersect many convex pieces and overflow the
+        # solver arena even though no such pose is executed. MuJoCo's minimal
+        # Jacobian pipeline is mj_kinematics followed by mj_comPos.
+        mujoco.mj_kinematics(self.model, scratch)
+        mujoco.mj_comPos(self.model, scratch)
         site = self._sites[hand]
         start_orientation = scratch.site_xmat[site].reshape(3, 3).copy()
         start_orientation = self._orientation_target(hand, approach, start_orientation)
@@ -949,7 +954,8 @@ class Runtime:
             else:
                 scratch.qpos[qids] = rng.uniform(low, high)
             for _ in range(240):
-                mujoco.mj_forward(self.model, scratch)
+                mujoco.mj_kinematics(self.model, scratch)
+                mujoco.mj_comPos(self.model, scratch)
                 error = target - scratch.site_xpos[site]
                 mujoco.mj_jacSite(self.model, scratch, jp, jr, site)
                 rotation = scratch.site_xmat[site].reshape(3, 3)
@@ -981,7 +987,8 @@ class Runtime:
             if best[2] < 0.012 and best[3] < 0.08:
                 break
         scratch.qpos[qids] = best[1]
-        mujoco.mj_forward(self.model, scratch)
+        mujoco.mj_kinematics(self.model, scratch)
+        mujoco.mj_comPos(self.model, scratch)
         predicted_error = best[2]
         if predicted_error > 0.04 or best[3] > 0.2:
             return {

@@ -179,6 +179,9 @@ def test_disabled_resolution_records_terminal_sdk_error_without_model_retry(tmp_
     record = json.loads(next((tmp_path / "worlds").glob("generation-*.json")).read_text())
     assert record["status"] == "incomplete" and not record["versions"]
     assert "disabled" in str(record["errors"])
+    assert request().asset_id in str(record["errors"])
+    requested = [event for event in record["events"] if event["type"] == "asset_requests"]
+    assert requested[0]["requests"][0]["query"] == request().query
     assert len(client.prompts) == 1
 
 

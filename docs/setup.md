@@ -19,6 +19,18 @@ Open http://127.0.0.1:8765. Describe a place, robot and task; inspect validation
 
 `doctor --json` produces a shareable offline report. It does not make API calls, import native simulator libraries, create a graphics context or write probe files. An offline pass establishes prerequisite presence; model access, dependency compatibility, native loading and rendering remain separate checks.
 
+For a bounded SDK check without model charges, run:
+
+```sh
+uv run python tools/acceptance/offline_household.py --output /tmp/robot-worlds-sdk-check
+```
+
+Choose a new output directory. This uses an explicitly mocked generator with the
+original bowl and microwave, then runs native sensor/action execution, reports,
+export/reload and regrading. The probe deliberately leaves the task incomplete;
+it checks the software connection rather than demonstrating bowl placement.
+Python 3.11+ is required; the older Python supplied by macOS is insufficient.
+
 To add reusable warehouse assets, install Node.js 20+ for the first mesh decode,
 then run:
 

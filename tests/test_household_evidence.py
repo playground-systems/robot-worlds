@@ -25,7 +25,7 @@ def junit(tmp_path, change=lambda _: None):
 def test_complete_native_subset_is_not_full_release_acceptance(tmp_path):
     result = evidence.audit(junit(tmp_path))
     assert result['status'] == 'passed'
-    assert len(result['checks']) == 9
+    assert len(result['checks']) == 10
     assert result['full_release_accepted'] is False
     assert any('Successful robot grasp' in claim for claim in result['does_not_establish'])
 

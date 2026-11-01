@@ -24,6 +24,33 @@ class Client:
         return copy.deepcopy(next(self.responses))
 
 
+def test_model_failure_keeps_actionable_diagnostic_without_secret(monkeypatch):
+    from robot_worlds.llm import LLMError
+    monkeypatch.setenv("OPENAI_API_KEY", "test-private-key")
+
+    class Unfunded:
+        def complete_json(self, *args):
+            raise LLMError("HTTP 429 [credit_balance_exhausted] Restore credits. test-private-key")
+
+    with pytest.raises(GenerationError) as caught:
+        generate_spec("Kitchen", client=Unfunded())
+    assert "Restore credits" in str(caught.value)
+    assert "credit_balance_exhausted" in caught.value.errors[0]
+    assert "test-private-key" not in str(caught.value)
+    assert "test-private-key" not in str(caught.value.errors)
+
+
+def test_unexpected_model_failure_does_not_copy_provider_payload():
+    class Broken:
+        def complete_json(self, *args):
+            raise RuntimeError("private provider request body")
+
+    with pytest.raises(GenerationError) as caught:
+        generate_spec("Kitchen", client=Broken())
+    assert caught.value.errors == ["RuntimeError"]
+    assert "private provider" not in str(caught.value)
+
+
 def test_repairs_preserve_original_request_and_emit_preview_before_validation():
     bad = valid()
     bad["objects"][0]["position"] = [20, 0, .1]

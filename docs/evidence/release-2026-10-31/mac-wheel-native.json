@@ -1,0 +1,67 @@
+{
+  "status": "passed",
+  "scope": "mocked generation, native sensors/actions, report, export/reload and regrade",
+  "manipulation_success": false,
+  "model_calls": 0,
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "python": "3.13.14",
+  "package_path": "/private/tmp/robot-worlds-mac313-wheel-e5b9d6a/lib/python3.13/site-packages/robot_worlds/__init__.py",
+  "world_id": "0a3c8a91119cb8f84c2f05bc4e6fe03dd99a644cc1f455ac6acbf426c5f11bd0",
+  "summary": {
+    "attempted": 1,
+    "valid": 1,
+    "successes": 0,
+    "invalid_or_interrupted": 0,
+    "success_rate": 0.0,
+    "success_interval_95": [
+      0,
+      0.7934506856227626
+    ]
+  },
+  "tool_feedback": [
+    {
+      "tool": "query_depth",
+      "status": "measured",
+      "pixel": [
+        10,
+        310
+      ],
+      "depth_m": 1.9399,
+      "frame": "base",
+      "surface_position": [
+        1.7614,
+        1.9196,
+        0.0014
+      ],
+      "simulated_seconds": 0.0
+    },
+    {
+      "tool": "drive",
+      "status": "executed",
+      "translation_feedback": "wheel_odometry",
+      "estimated_distance_m": 0.06906658335994474,
+      "measured_turn_rad": 0.002473237815524438,
+      "encoder_distance_m": 0.06906666770264636,
+      "simulated_seconds": 3.199999999999869
+    },
+    {
+      "tool": "gripper",
+      "status": "executed",
+      "finger_positions": [
+        0.035593937008383134,
+        0.038396406929674255
+      ],
+      "simulated_seconds": 0.7999999999999119
+    },
+    {
+      "tool": "wait",
+      "status": "executed",
+      "simulated_seconds": 0.19999999999997842
+    },
+    {
+      "ended": true,
+      "success": "determined_by_rubric"
+    }
+  ],
+  "elapsed_seconds": 9.432478958999127
+}

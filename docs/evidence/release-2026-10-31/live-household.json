@@ -1,0 +1,52 @@
+{
+  "workflow_completed": true,
+  "world_id": "f02c3581d6e3fa54e481c67bf525936d650767af2b9d48bf2b781c9766a6aea2",
+  "report_id": "b55d68a790824665b945c2071b6fd18c",
+  "summary": {
+    "attempted": 1,
+    "valid": 1,
+    "successes": 0,
+    "invalid_or_interrupted": 0,
+    "success_rate": 0.0,
+    "success_interval_95": [
+      0,
+      0.7934506856227626
+    ]
+  },
+  "elapsed_seconds": 167.5245632920014,
+  "prompt": "Create a compact accessible kitchen workspace for TIAGo++.\nTask: put the original white porcelain bowl inside the original microwave and\nleave it supported and released. Use the installed google-porcelain-bowl and\nnvidia-microwave079 prepared assets, their original geometry and articulated door.\nEstimate bowl mass as 0.6 kg. Include stable shallow counters, room for approaching\nthe bowl and microwave front, and an unobstructed door sweep. Keep the original\ndoor mechanism; the robot must interact physically if opening is needed. No\nheating or door closure requirement. The bowl must start outside the appliance.\nRequire full bowl containment, support on the source tray and release for at\nleast 0.2 seconds. Do not replace contact with proximity. Use no additional\nobject assets. The operator task must not expose coordinates or privileged state.\n",
+  "transport": "codex",
+  "task_success": false,
+  "termination": "policy_budget",
+  "executed_steps": 9,
+  "generation_usage": [
+    {
+      "calls": 1,
+      "input_tokens": 23239,
+      "output_tokens": 2398,
+      "total_tokens": 25637,
+      "transport": "codex_cli",
+      "cost": {
+        "mode": "codex_plan",
+        "charged_usd": null
+      }
+    }
+  ],
+  "policy_usage": {
+    "calls": 9,
+    "input_tokens": 333294,
+    "output_tokens": 762,
+    "total_tokens": 334056,
+    "transport": "codex_cli",
+    "cost": {
+      "mode": "codex_plan",
+      "charged_usd": null
+    }
+  },
+  "validation_status": "ready",
+  "portable_reload_and_regrade": true,
+  "limitations": [
+    "Policy reached its token budget after nine executed actions; no successful grasp or placement.",
+    "Codex plan usage has no API dollar accounting."
+  ]
+}

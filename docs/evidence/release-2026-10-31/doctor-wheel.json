@@ -1,0 +1,81 @@
+{
+  "schema_version": "1",
+  "mode": "offline",
+  "offline_ready": true,
+  "model_verified": false,
+  "physics_verified": false,
+  "graphics_verified": false,
+  "checks": [
+    {
+      "id": "dependencies",
+      "status": "ok",
+      "message": "Required distribution metadata is present.",
+      "versions": {
+        "robot-worlds": "0.1.0a1",
+        "mujoco": "3.17.0",
+        "numpy": "2.5.4",
+        "onnxruntime": "1.31.1",
+        "pydantic": "2.14.2",
+        "openai": "2.54.0",
+        "pillow": "12.3.0",
+        "fastapi": "0.162.0",
+        "uvicorn": "0.54.0",
+        "typer": "0.27.3",
+        "httpx": "0.28.1"
+      },
+      "limit": "Presence does not validate version constraints or native library loading; run pip check and native tests."
+    },
+    {
+      "id": "python",
+      "status": "ok",
+      "message": "Python 3.11 or later is required.",
+      "version": "3.13.17"
+    },
+    {
+      "id": "platform",
+      "status": "ok",
+      "message": "macOS and Linux are the documented platforms; Windows is not validated and the server uses POSIX locking.",
+      "system": "Linux",
+      "machine": "x86_64"
+    },
+    {
+      "id": "package_resources",
+      "status": "ok",
+      "message": "Required robot, license and browser files are present.",
+      "missing": [],
+      "limit": "Checks file presence only; asset content hashes are verified when worlds are loaded/evaluated."
+    },
+    {
+      "id": "api_key",
+      "status": "warning",
+      "configured": false,
+      "message": "Set OPENAI_API_KEY before generation or LLM evaluation. Offline inspection and local policies do not need it."
+    },
+    {
+      "id": "model",
+      "status": "unverified",
+      "model": "gpt-6-astra",
+      "message": "No API call was made. Verify this account's Responses, structured-output, image/function and input-token-counting access with an explicit bounded live smoke test.",
+      "pricing": "The default Astra price profile is pinned in code; alternate models require explicit verified rates or explicit SDK token-only mode."
+    },
+    {
+      "id": "graphics",
+      "status": "unverified",
+      "backend": "default",
+      "message": "EGL is supported by this project on compatible Linux hosts; macOS uses automatic local graphics. No graphics context, driver or GPU physics probe was run."
+    },
+    {
+      "id": "storage",
+      "status": "ok",
+      "message": "The nearest existing data-directory ancestor appears writable.",
+      "limit": "Advisory permission check only; no directory or probe file was created."
+    },
+    {
+      "id": "warehouse_preparation",
+      "status": "ok",
+      "node_available": true,
+      "message": "Node is on PATH; its version was not probed. First warehouse preparation requires Node 20+.",
+      "limit": "No executable was launched. This does not verify warehouse asset compatibility or native simulation."
+    }
+  ]
+}

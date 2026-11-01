@@ -98,3 +98,39 @@ def test_execute_keeps_position_and_approach_in_one_frame_and_returns_local_feed
     assert result['actual_position'] == pytest.approx([.5, -.3, .6])
     assert result['frame'] == 'base' and result['orientation_error_rad'] == .01
     assert not {'orientation', 'world_position', 'objects', 'rubric'} & result.keys()
+
+
+def test_ik_updates_pose_and_jacobian_without_solving_hypothetical_contacts(monkeypatch):
+    import mujoco
+
+    model = mujoco.MjModel.from_xml_string('''<mujoco><worldbody><body>
+      <joint type="slide" axis="1 0 0" range="-1 1"/>
+      <joint type="slide" axis="0 1 0" range="-1 1"/>
+      <joint type="slide" axis="0 0 1" range="-1 1"/>
+      <geom type="sphere" size=".05"/><site name="hand"/>
+    </body></worldbody></mujoco>''')
+    runtime = object.__new__(Runtime)
+    runtime.model = model
+    runtime.data, runtime._ik_data = mujoco.MjData(model), mujoco.MjData(model)
+    runtime._arm_joints, runtime._sites = {'right': np.arange(3)}, {'right': 0}
+    commands = []
+    runtime._arm_controls = lambda hand: np.zeros(3)
+    runtime._command_arm = lambda hand, target: commands.append(target.copy())
+    runtime._step = lambda seconds: None  # This check isolates the IK planner.
+    runtime._arm_feedback = lambda *args: {'status': 'measured separately'}
+    full_forward = mujoco.mj_forward
+    monkeypatch.setattr(mujoco, 'mj_forward', lambda *args: pytest.fail(
+        'IK must not solve contacts on random hypothetical arm poses'))
+    target = np.array([.2, .1, .1])
+    runtime._move_arm('right', target)
+    assert np.linalg.norm(commands[-1]-target) < .006
+    assert runtime.data.qpos == pytest.approx(np.zeros(3))
+    assert runtime.data.time == 0
+    reference = mujoco.MjData(model)
+    reference.qpos[:] = runtime._ik_data.qpos
+    full_forward(model, reference)
+    assert runtime._ik_data.site_xpos == pytest.approx(reference.site_xpos)
+    expected, actual = np.zeros((3, model.nv)), np.zeros((3, model.nv))
+    mujoco.mj_jacSite(model, reference, expected, None, 0)
+    mujoco.mj_jacSite(model, runtime._ik_data, actual, None, 0)
+    assert actual == pytest.approx(expected)

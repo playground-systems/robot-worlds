@@ -8,12 +8,12 @@ not replace current native, live-model or application evidence.
 
 | Gate | Available evidence | Required work still open |
 | --- | --- | --- |
-| SDK action loop | The [focused Linux run](#one-off-hosted-household-check--passed) passed mocked generation, original assets, public RGB-D/depth observations, wheel/gripper actions, feedback, in-process and HTTP policies, timeout/disconnection/invalid actions, cancellation, replay, export/reload and regrading. | This integration scope is verified at `9273a3e`. Its policy deliberately does not insert the bowl; manipulation and live acceptance remain separate. |
+| SDK action loop | The latest focused Linux run passed 77 checks. The built wheel also passed original-asset generation with a mock, native RGB-D/action execution, reporting, export/reload and regrading in a fresh Mac environment outside the checkout. | Successful manipulation remains separate from these integration checks. |
 | Physical manipulation | The focused native run passed original-bowl concavity, pre-placed support in the microwave and the no-op failure case. Arm approach presets use the same complete base frame as position targets; feedback checks measured orientation as well as position. | Demonstrate robot approach, grasp, door interaction, transport, insertion, release and stable support with a labeled engineering policy. Run native decoy, partial insertion, held and unstable-placement cases. |
 | Trustworthy grading | Synthetic original-asset traces exercise the negative cases, full containment, duration and missing measurements. Holding/release must name a movable root. Timed-process loading accepts fixed child-piece contact while excluding decoys and separately articulated children. | Current physical evidence for these measurements and outcomes. No heating or closure requirement is added to the bowl task. |
-| Live generation and editing | Prepared assets, compact repetition, scoped edits, immutable versions and source reuse have focused analytical/persistence coverage. Catalog geometry exposes component bounds and six actual rack shelf supports. | A bounded paid prompt-to-sensor-policy-to-report/export/reload run, with actual outcome and spending; usable scene/clearance checks and a verified targeted edit. Earlier assisted factory episodes are not current sensor-only acceptance. |
+| Live generation and editing | Astra through the existing Codex sign-in generated a physically validated original-asset kitchen, then executed nine sensor-only policy actions before its token budget ended. Reporting, export/reload and regrading passed. | Successful manipulation, generated warehouse acceptance and a verified live targeted edit. API-key transport remains blocked by exhausted account credits; Codex plan usage is recorded separately. |
 | Warehouse appearance | Rack, pallet, carton, barrier and passive conveyor source adapters retain original visuals and disclose collision approximations. The conveyor retains 29 hinges; portable 0°/90° placements pass static checks. Viewer sharing/batching, texture budgets and failure recovery have CPU-only coverage. | Native contacts/materials, two genuinely generated detailed layouts, actual overview/close-up screenshots, reference comparison and viewport performance/LOD. The classic policy camera differs from browser PBR. |
-| Fresh-user journey | Installer, cache verification, subset selection, cancellation, atomic publication, CLI library selection and workbench handoff have focused checks. Historical clean-install jobs exist. | Build the versioned candidate and test documented commands in a clean environment: diagnostics, BYO key, progress/errors, policy connection, cancellation, saved-result recovery and portable artifacts. Verify supported Mac operation. |
+| Fresh-user journey | Version 0.1.0a1 wheel and source archives installed independently on Linux. The same wheel installed on Apple silicon Python 3.13, passed dependency checks and completed the offline native SDK walkthrough. | Complete the browser walkthrough and recheck any subsequently changed release artifact. |
 | Application and release | Workbench, selection, edit/progress controls, reports, replay and export are implemented. | Current application walkthrough: inspection, validation/error state, targeted edit, policy execution/cancellation, replay and evidence navigation; camera framing without obstruction. Capture warehouse, bowl/interior, interaction and report screenshots. Reconcile release docs/artifacts and reproducible walkthrough. |
 
 ## Execution constraints
@@ -51,10 +51,48 @@ journey. Those gates remain open.
   checks, including synthetic original-bowl child-piece support.
 
 Reported local timings distinguish cached preparation/static expansion from live
-customer latency. Actual model latency, successful manipulation, current native
-material behavior, browser frame rate and release-candidate installation remain
-unverified. Detailed measurements and their limits live in the linked evidence
-files rather than being repeated here.
+customer latency. Successful manipulation, current warehouse native material
+behavior and browser frame rate remain unverified. Detailed measurements and
+their limits live in the linked evidence files.
+
+## Current release checks
+
+[Run 41235518874](https://github.com/playground-systems/robot-worlds/actions/runs/41235518874)
+passed **77 tests with no failures**, built and checked both 0.1.0a1 archives,
+and installed each outside the checkout. The job took 109 seconds. The downloaded
+66.3 MB evidence archive was verified against GitHub's SHA-256. Exact commit,
+archive hashes, JUnit and installation diagnostics are in the
+[release evidence](evidence/release-2026-10-31/run.json).
+
+The built wheel then passed a fresh Apple silicon Python 3.13 installation,
+`pip check`, offline diagnostics and the [native SDK walkthrough](evidence/release-2026-10-31/mac-wheel-native.json)
+in 9.43 seconds. It rendered real sensor frames, measured depth, drove with wheel
+odometry, operated a gripper and preserved the deliberately unsuccessful task
+verdict through export/reload and regrading. The script is
+`tools/acceptance/offline_household.py`; it makes no model calls.
+
+The [live household run](evidence/release-2026-10-31/live-household.json) completed
+in 167.5 seconds using Astra through the supported Codex CLI adapter. Generation
+used one model call; the sensor-only policy executed nine actions and then reached
+its token budget. It did not grasp or insert the bowl. This establishes the live
+workflow and retained evidence, not manipulation success. Both phase ledgers are
+retained; Codex plan usage has no inferred API dollar charge. New acceptance runs
+use separate generation/policy clients so an episode reset cannot erase generation
+usage or reset the full run's API spending allowance.
+
+The current arm planner uses `mj_kinematics` and `mj_comPos` for hypothetical
+joint poses, following MuJoCo's [Jacobian pipeline](https://mujoco.readthedocs.io/en/stable/APIreference/APIfunctions.html#mj-jac).
+Running full forward dynamics during this search overflowed the contact arena
+when candidate poses intersected the original bowl's convex pieces. The same
+native fixture now returns an unreachable-target result without advancing live
+state or crashing (2.36-second focused test). Actual actuator execution still
+uses full physics. Position/Jacobian equivalence and base-frame checks pass;
+this fix does not establish a successful grasp.
+
+[Current application screenshots](images/live-household/evidence.json) show the
+live-generated kitchen, original bowl, report and containment evidence. The
+report now states its stop reason explicitly. Its displayed replay is retained
+from the original run; regrading created a new report without regenerating frames.
 
 ## One-off hosted household check — passed
 

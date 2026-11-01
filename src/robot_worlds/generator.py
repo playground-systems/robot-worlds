@@ -369,7 +369,10 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
         except Exception as exc:
             # Preserve previews on transport/model budget failure. The cause is
             # retained for callers, but no credentials/request headers are saved.
-            raise GenerationError("World generation request failed; latest candidate retained", candidate=candidate, attempts=attempt+1, history=history, errors=[type(exc).__name__]) from exc
+            from .artifacts import public_error
+            from .llm import LLMError
+            diagnostic = public_error(exc)["message"] if isinstance(exc, LLMError) else type(exc).__name__
+            raise GenerationError(f"World generation request failed: {diagnostic}; latest candidate retained", candidate=candidate, attempts=attempt+1, history=history, errors=[diagnostic]) from exc
         previous = raw
         try:
             plan = GenerationSpec.model_validate(raw)
@@ -377,12 +380,13 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
                 from .asset_resolution import AssetResolutionError, extend_asset_library
                 from .collision_preparation import CollisionPreparationCancelled
                 try:
-                    if asset_resolver is None:
-                        raise AssetResolutionError("Online asset resolution is disabled; install a source library or enable it")
-                    if source_rounds >= 2 or len(resolved_ids) + len(plan.asset_requests) > 8:
-                        raise AssetResolutionError("Online asset resolution exceeded two rounds/eight assets; no world was substituted")
                     if event_callback:
                         event_callback({"type": "asset_requests", "requests": [r.model_dump(mode="json") for r in plan.asset_requests]})
+                    if asset_resolver is None:
+                        names = ", ".join(r.asset_id for r in plan.asset_requests)
+                        raise AssetResolutionError(f"Online asset resolution is disabled for requested assets: {names}; install a matching source library or enable it")
+                    if source_rounds >= 2 or len(resolved_ids) + len(plan.asset_requests) > 8:
+                        raise AssetResolutionError("Online asset resolution exceeded two rounds/eight assets; no world was substituted")
                     with _generation_phase(event_callback, "source_assets", attempt + 1):
                         asset_library = extend_asset_library(asset_library, plan.asset_requests, asset_resolver,
                                                              [item["asset_id"] for item in json.loads(catalog)] + list(creation_evidence),

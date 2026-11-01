@@ -7,6 +7,30 @@ from robot_worlds import generate, load
 from robot_worlds.models import SceneObject
 from robot_worlds.rubric import measure_predicate
 from robot_worlds.runtime import Runtime
+from robot_worlds.sensors import local_point
+
+
+def test_original_bowl_arm_search_does_not_overflow_contact_solver():
+    # This source bowl has 158 convex pieces. Full forward dynamics during
+    # random IK candidates overflowed MuJoCo's arena on this unreachable pose.
+    spec, bowl, _ = sourced_scene()
+    spec.robot_start = (.35, .25, 0)
+    spec.objects[0].size = (.4, .5, .6)
+    for obj in bowl.objects:
+        obj.position = (obj.position[0]-.16, *obj.position[1:])
+    runtime = Runtime(spec, render=False, max_sim_seconds=15)
+    try:
+        runtime.execute({'tool': 'gripper', 'arguments': {'hand': 'right', 'opening': .045}})
+        start = float(runtime.data.time)
+        before = runtime.data.qpos.copy()
+        result = runtime.execute({'tool': 'move_arm', 'arguments': {
+            'hand': 'right', 'position': local_point([.755, 0, .85], *runtime._base_transform()),
+            'approach': 'forward'}})
+        assert result['status'] == 'unreachable'
+        assert runtime.data.time == start
+        assert runtime.data.qpos == pytest.approx(before)
+    finally:
+        runtime.close()
 
 
 def test_sphere_settles_in_scanned_bowl_not_on_a_filled_collision_hull():
