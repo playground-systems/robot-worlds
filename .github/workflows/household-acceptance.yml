@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   household:
-    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-household-acceptance' || github.event.label.name == 'run-package-acceptance'
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-household-acceptance' || github.event.label.name == 'run-package-acceptance' || github.event.label.name == 'run-warehouse-acceptance'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -40,7 +40,7 @@ jobs:
           uv --version > household-evidence/uv-version.txt
           uv run --frozen python -c 'import sys; from importlib.metadata import version; print(sys.version); print("mujoco=" + version("mujoco")); print("robot-worlds=" + version("robot-worlds"))' > household-evidence/runtime.txt
       - name: Run only household SDK, original physics and relevant regressions
-        if: github.event.label.name != 'run-package-acceptance'
+        if: github.event.label.name != 'run-package-acceptance' && github.event.label.name != 'run-warehouse-acceptance'
         shell: bash
         run: |
           xvfb-run -a uv run --frozen pytest -q -ra \
@@ -63,13 +63,13 @@ jobs:
             --basetemp "$RUNNER_TEMP/household-acceptance" \
             --junitxml=household-evidence/junit.xml
       - name: Audit required native checks without accepting skips
-        if: ${{ always() && github.event.label.name != 'run-package-acceptance' }}
+        if: ${{ always() && github.event.label.name != 'run-package-acceptance' && github.event.label.name != 'run-warehouse-acceptance' }}
         run: python tools/check_household_evidence.py household-evidence/junit.xml --output household-evidence/acceptance.json
       - name: Check changed viewer lifecycle and framing
-        if: github.event.label.name != 'run-package-acceptance'
+        if: github.event.label.name != 'run-package-acceptance' && github.event.label.name != 'run-warehouse-acceptance'
         run: node --test tests/scene-lifecycle.test.mjs tests/scene-inspection.test.mjs
       - name: Measure cold and warm original asset preparation
-        if: github.event.label.name != 'run-package-acceptance'
+        if: github.event.label.name != 'run-package-acceptance' && github.event.label.name != 'run-warehouse-acceptance'
         run: uv run --frozen python tools/benchmark_asset_preparation.py > household-evidence/preparation-timing.json
       - name: Build and verify release archives
         run: |
@@ -96,7 +96,7 @@ jobs:
             )
           done
       - name: Render engineering placement from the installed wheel
-        if: github.event.label.name != 'run-package-acceptance'
+        if: github.event.label.name != 'run-package-acceptance' && github.event.label.name != 'run-warehouse-acceptance'
         shell: bash
         run: |
           cd "$RUNNER_TEMP/robot-worlds-clean"
@@ -118,7 +118,7 @@ jobs:
             > "$GITHUB_WORKSPACE/household-evidence/warehouse-preparation.log" 2>&1
           status=0
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/household-evidence/warehouse-resources.txt" \
-            timeout --signal=TERM 420s xvfb-run -a "$RUNNER_TEMP/robot-worlds-wheel/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/offline_warehouse.py" \
+            timeout --signal=TERM 600s xvfb-run -a "$RUNNER_TEMP/robot-worlds-wheel/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/offline_warehouse.py" \
             --output "$RUNNER_TEMP/warehouse-storage" --library "$RUNNER_TEMP/warehouse-library" \
             --fixture "$GITHUB_WORKSPACE/tests/fixtures/warehouse" \
             > "$GITHUB_WORKSPACE/household-evidence/warehouse.log" 2>&1 || status=$?

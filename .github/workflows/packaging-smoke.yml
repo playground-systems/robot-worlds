@@ -9,7 +9,7 @@ permissions:
 jobs:
   clean-install:
     # A one-off household acceptance request must not start the full suite.
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'run-household-acceptance') && !contains(github.event.pull_request.labels.*.name, 'run-package-acceptance') }}
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'run-household-acceptance') && !contains(github.event.pull_request.labels.*.name, 'run-package-acceptance') && !contains(github.event.pull_request.labels.*.name, 'run-warehouse-acceptance') }}
     strategy:
       fail-fast: false
       matrix:

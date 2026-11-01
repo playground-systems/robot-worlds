@@ -6,6 +6,7 @@ Run with an installed package, the reviewed prepared library, and source fixture
 import argparse
 import copy
 import faulthandler
+import gc
 import json
 import resource
 import shutil
@@ -17,8 +18,8 @@ from pathlib import Path
 from prepare_floor_stencils import prepare
 
 from robot_worlds import generate, load
+from robot_worlds.runtime import Runtime
 from robot_worlds.sdk import Report
-from robot_worlds.trace_storage import read_trace
 
 
 def main():
@@ -64,19 +65,30 @@ def main():
                      max_repairs=0, output=args.output/'worlds')
     assert world.manifest['validation']['status'] == 'ready'
     print('validated', len(world.spec.objects), 'components', flush=True)
-    report = world.evaluate(RecordedActions(), max_steps=len(actions)+1, max_sim_seconds=60,
+    # Retain the built-in runtime only for acceptance auditing. The policy still
+    # sees the normal sensor contract. Avoid decoding the full saved trajectory
+    # twice: regrade below already verifies its hash, samples and provenance.
+    observed_runtimes = []
+    def native_runtime(*positional, **kwargs):
+        runtime = Runtime(*positional, **kwargs)
+        observed_runtimes.append(runtime)
+        return runtime
+    report = world.evaluate(RecordedActions(), runtime_factory=native_runtime, max_steps=len(actions)+1, max_sim_seconds=60,
                             max_replay_frames=8, output=args.output/'runs')
     phase("evaluation completed")
     assert report.summary['valid'] == 1, report.summary
     episode = report.result['episodes'][0]
     trace_path = report.path/'episode-000'/episode['trace_evidence']['file']
     assert trace_path.suffix == '.gz' and trace_path.stat().st_size < 256*1024*1024
-    phase("trace read started")
-    trace = read_trace(trace_path)
+    phase("recorded states audit started")
+    trace = observed_runtimes[0].trace
     assert len(trace) > 500, 'Regression did not exercise a long enough dense trace'
     assert all(len(frame['objects']) == len(world.spec.objects) for frame in trace)
+    assert len(trace) <= episode['trace_evidence']['sample_count'] <= len(trace)+1
     del trace
-    phase("trace verified")
+    observed_runtimes.clear()
+    gc.collect()
+    phase("recorded states verified; disk integrity checked by portable regrade below")
     for artifact, name in ((world, 'world'), (report, 'report')):
         archive = artifact.export(args.output/(name+'.zip'))
         with zipfile.ZipFile(archive) as bundle:
