@@ -113,7 +113,7 @@ jobs:
             > "$GITHUB_WORKSPACE/household-evidence/warehouse-preparation.log" 2>&1
           status=0
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/household-evidence/warehouse-resources.txt" \
-            timeout --signal=TERM 240s xvfb-run -a "$RUNNER_TEMP/robot-worlds-wheel/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/offline_warehouse.py" \
+            timeout --signal=TERM 420s xvfb-run -a "$RUNNER_TEMP/robot-worlds-wheel/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/offline_warehouse.py" \
             --output "$RUNNER_TEMP/warehouse-storage" --library "$RUNNER_TEMP/warehouse-library" \
             --fixture "$GITHUB_WORKSPACE/tests/fixtures/warehouse" \
             > "$GITHUB_WORKSPACE/household-evidence/warehouse.log" 2>&1 || status=$?

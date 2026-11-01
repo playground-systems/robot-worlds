@@ -37,5 +37,10 @@
   },
   "note": "Warm orbit after loading. Frame intervals include browser scheduling. CPU submission is not GPU duration. No simulation or model calls.",
   "hardware_note": "Measured in the in-app Chromium browser on this Apple silicon Mac; UA reports a compatibility Intel Mac string.",
-  "cache_note": "Previously visited assets; first-view timing is not a cold-network benchmark."
+  "cache_note": "Previously visited assets; first-view timing is not a cold-network benchmark.",
+  "hardware": {
+    "chip": "Apple M1 Pro",
+    "memory_bytes": 17179869184
+  },
+  "measurement_limits": "One short orbit; background application load was uncontrolled. Not a sustained GPU benchmark or cold-network result."
 }

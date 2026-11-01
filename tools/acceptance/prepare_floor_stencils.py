@@ -45,7 +45,8 @@ def prepare(output, labels):
     notice = output/'ATTRIBUTION.md'
     notice.write_text('# Architectural floor lettering\n\n'
                       'Original Robot Worlds layout graphics, MIT licensed under the repository LICENSE.\n'
-                      'Rendered with Pillow default Aileron font (SIL Open Font License).\n'
+                      'Rendered with Pillow default Aileron by Sora Sagano / Dot Colon.\n'
+                      'The author publishes Aileron with no rights reserved: https://dotcolon.net/fonts/aileron/\n'
                       'These are supplied architectural markings, not online-sourced object models.\n'
                       'No collision, equipment behavior or lighting is implied.\n')
     textures = {}
