@@ -1,0 +1,313 @@
+{
+  "evidence_class": {
+    "evidence_class": "privileged engineering fixture",
+    "autonomous": false,
+    "privileged_reads": [
+      "robot base transform"
+    ],
+    "object_pose_writes": false,
+    "actions": "public SDK controller actions only",
+    "initial_door": "open",
+    "task": "grasp, short carry, guided insertion, release and stable support"
+  },
+  "world_id": "7e60f826a371f8e80214c652a9f16efa29b6cb026059f4a79f0f6dd94035e892",
+  "validation": {
+    "status": "ready",
+    "checks": [
+      {
+        "check": "schema",
+        "passed": true
+      },
+      {
+        "check": "geometry_and_rubric",
+        "passed": true
+      },
+      {
+        "check": "physics_settling",
+        "passed": true
+      },
+      {
+        "check": "physics_reset",
+        "passed": true
+      },
+      {
+        "check": "initial_rubric",
+        "passed": true
+      },
+      {
+        "check": "render",
+        "passed": true
+      }
+    ]
+  },
+  "paid_model_calls": 0,
+  "run_id": "4ac9fce007354017bf982b0ebb7d8b29",
+  "summary": {
+    "attempted": 1,
+    "valid": 1,
+    "successes": 1,
+    "invalid_or_interrupted": 0,
+    "success_rate": 1.0,
+    "success_interval_95": [
+      0.20654931437723745,
+      1
+    ]
+  },
+  "validation_seconds": 2.8868750650000266,
+  "evaluation_seconds": 148.48689793900007,
+  "portable_reload_and_regrade": true,
+  "portable_seconds": 21.44825227199999,
+  "elapsed_seconds": 172.82354682800002,
+  "peak_process_memory_bytes": 2767212544,
+  "rendered": true,
+  "inspection_views": [
+    {
+      "name": "grasp",
+      "path": "episode-000/inspection-grasp.png",
+      "time": 26.199999999996358,
+      "requested_camera": {
+        "lookat": [
+          0.8,
+          0,
+          1.0
+        ],
+        "azimuth": 135,
+        "elevation": -25,
+        "distance": 1.6
+      },
+      "note": "Actual native state; camera clearance may adjust the requested eye."
+    },
+    {
+      "name": "microwave-interior",
+      "path": "episode-000/inspection-microwave-interior.png",
+      "time": 111.77999999992089,
+      "requested_camera": {
+        "lookat": [
+          1.18,
+          0,
+          0.75
+        ],
+        "azimuth": 45,
+        "elevation": -10,
+        "distance": 0.45
+      },
+      "note": "Actual native state; camera clearance may adjust the requested eye."
+    }
+  ],
+  "ci_run": "https://github.com/playground-systems/robot-worlds/actions/runs/41267484990",
+  "commit": "b670acb85bd0d45d652d5b98af51626f288fa640",
+  "job_conclusion": "failure: separate warehouse regression timed out; engineering step passed",
+  "artifact": {
+    "id": 13067469664,
+    "bytes": 165825231,
+    "sha256": "b94f6e39ee9dd4001b35847298e067feffbe364fde21bc8dd1d57208c17d0f41",
+    "whole_archive_verified": true
+  },
+  "criteria": [
+    {
+      "id": "inside",
+      "description": "Entire bowl inside cavity",
+      "status": "passed",
+      "satisfied": true,
+      "required": true,
+      "alternative_group": null,
+      "completion_time": 108.8999999999276,
+      "evidence": {
+        "predicate": "in_region",
+        "object_id": "bowl_body",
+        "target_id": "oven_interior0",
+        "mode": "final",
+        "intent": "achieve",
+        "duration_required": 0.2,
+        "after": [],
+        "decisive_failure": null,
+        "initial": {
+          "satisfied": false,
+          "measured": {
+            "position": [
+              0.8995176239593224,
+              0.0005243820546817837,
+              0.7137331004572338
+            ],
+            "containment_margins": [
+              -0.413663467087958,
+              0.0925936234599593,
+              0.006318220591128743
+            ]
+          },
+          "reason": null
+        },
+        "final": {
+          "satisfied": true,
+          "measured": {
+            "position": [
+              1.325707595416735,
+              0.044948265312763,
+              0.7083631004717084
+            ],
+            "containment_margins": [
+              0.012150657221091793,
+              0.04881665523461823,
+              0.0009502301496614463
+            ]
+          },
+          "reason": null
+        },
+        "intervals": [
+          [
+            108.69999999992807,
+            111.77999999992089
+          ]
+        ],
+        "missing_measurements": []
+      }
+    },
+    {
+      "id": "supported",
+      "description": "Bowl contacts tray",
+      "status": "passed",
+      "satisfied": true,
+      "required": true,
+      "alternative_group": null,
+      "completion_time": 47.46000000001204,
+      "evidence": {
+        "predicate": "on_top",
+        "object_id": "bowl_body",
+        "target_id": "oven_part0",
+        "mode": "final",
+        "intent": "achieve",
+        "duration_required": 0.2,
+        "after": [],
+        "decisive_failure": null,
+        "initial": {
+          "satisfied": false,
+          "measured": {
+            "vertical_gap": 0.005318216015151478,
+            "overlap": [
+              -0.20194034309272912,
+              0.20100730324509594
+            ],
+            "contact": false
+          },
+          "reason": null
+        },
+        "final": {
+          "satisfied": true,
+          "measured": {
+            "vertical_gap": -4.977442631592943e-05,
+            "overlap": [
+              0.1911600994839635,
+              0.17006118907538742
+            ],
+            "contact": true
+          },
+          "reason": null
+        },
+        "intervals": [
+          [
+            46.71000000001112,
+            46.76000000001118
+          ],
+          [
+            46.860000000011304,
+            46.910000000011365
+          ],
+          [
+            47.01000000001149,
+            47.11000000001161
+          ],
+          [
+            47.26000000001179,
+            57.27000000002403
+          ],
+          [
+            57.37000000002415,
+            58.47000000002549
+          ],
+          [
+            58.570000000025615,
+            59.17000000002635
+          ],
+          [
+            59.32000000002653,
+            107.0999999999318
+          ],
+          [
+            107.19999999993156,
+            107.24999999993145
+          ],
+          [
+            107.34999999993121,
+            107.34999999993121
+          ],
+          [
+            107.44999999993098,
+            107.44999999993098
+          ],
+          [
+            107.54999999993075,
+            107.9999999999297
+          ],
+          [
+            108.09999999992947,
+            108.24999999992912
+          ],
+          [
+            108.39999999992877,
+            108.69999999992807
+          ],
+          [
+            108.79999999992783,
+            111.77999999992089
+          ]
+        ],
+        "missing_measurements": []
+      }
+    },
+    {
+      "id": "released",
+      "description": "No gripper holding",
+      "status": "passed",
+      "satisfied": true,
+      "required": true,
+      "alternative_group": null,
+      "completion_time": 0.20000000000000015,
+      "evidence": {
+        "predicate": "released",
+        "object_id": "bowl_body",
+        "target_id": null,
+        "mode": "final",
+        "intent": "maintain",
+        "duration_required": 0.2,
+        "after": [],
+        "decisive_failure": null,
+        "initial": {
+          "satisfied": true,
+          "measured": null,
+          "reason": null
+        },
+        "final": {
+          "satisfied": true,
+          "measured": null,
+          "reason": null
+        },
+        "intervals": [
+          [
+            0.0,
+            16.620000000001667
+          ],
+          [
+            54.35000000002046,
+            111.77999999992089
+          ]
+        ],
+        "missing_measurements": []
+      }
+    }
+  ],
+  "limitations": [
+    "Privileged engineering controller, initially open door, short carry and guided insertion; not sensor-only autonomous manipulation.",
+    "Native software-rendered shadows show speckling; browser warehouse uses a separate visual renderer.",
+    "Camera captures are supplemental views of this run, not regenerated historical replays."
+  ]
+}

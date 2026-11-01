@@ -33,7 +33,11 @@ uv run robot-worlds prepare-warehouse --data-dir .robot-worlds
 The workbench discovers this library automatically. [This prompt](../tools/acceptance/prompts/warehouse-dense.txt)
 requests a stocked facility with receiving, storage, manual packing and dispatch.
 The roller conveyors are passive. Generating a layout does not create warehouse
-automation. Preparation caches downloads and conversions; repeated scenes reuse them.
+automation. Preparation caches downloads and conversions; repeated scenes reuse them. For
+wall panels, roof beams, loading bays and named lanes, use the
+[architectural prompt](../tools/acceptance/prompts/warehouse-presentation.txt) with
+graphics produced by `tools/acceptance/prepare_floor_stencils.py`. The graphics
+manifest supplies local paths to include in the prompt; equipment remains sourced.
 
 ## Connect a policy
 

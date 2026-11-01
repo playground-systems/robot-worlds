@@ -4,10 +4,10 @@ Describe a place and a task. Generate a physical robot world and editable rubric
 
 Robot Worlds is an early self-hosted robotics project. Simulation runs locally with MuJoCo; generation and the default robot agent use your OpenAI API key. A factory is the first reference setting. The scene format also supports workshops, homes, labs, warehouses and other arrangements of rigid objects and articulated mechanisms.
 
-![Live-generated warehouse with original NVIDIA racks, cartons and pallets](docs/images/dense-warehouse/rack-detail.png)
+![Live-generated warehouse with original NVIDIA racks, cartons and pallets](docs/images/presentation-warehouse/overview.png)
 
-*Actual workbench capture. This generated scene passed a short navigation evaluation;
-it does not demonstrate autonomous warehouse logistics.*
+*Actual workbench capture. Live-generated layout with original source assets and a validated texture-mapping edit.
+It does not demonstrate autonomous warehouse logistics.*
 
 ## Run locally
 

@@ -28,3 +28,6 @@ dialog{border:1px solid #555;border-radius:10px;background:#2c2c2c;color:#eee;pa
 #live-progress{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:7px;border-top:1px solid #454545}#live-progress-bar{appearance:none;width:44px;height:3px;border:0;border-radius:2px;background:#454545}#live-progress-bar::-webkit-progress-bar{background:#454545;border-radius:2px}#live-progress-bar::-webkit-progress-value{background:var(--accent);border-radius:2px}#live-progress-bar::-moz-progress-bar{background:var(--accent);border-radius:2px}#live-progress-label{font-size:9px;color:#aaa}
 
 .scope-overflow{width:100%;font-size:10px}.scope-overflow summary{cursor:pointer;padding:3px 0}.scope-overflow[open]{max-height:140px;overflow:auto}.scope-overflow .scope-chip{display:inline-block;margin:2px 3px 2px 0}
+
+/* Keep long inspectors inside the window and projected labels from scrolling the canvas. */
+.app-shell{grid-template-rows:minmax(0,1fr)}.inspector{min-height:0}.viewport{overflow:clip}

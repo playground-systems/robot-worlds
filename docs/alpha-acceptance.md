@@ -1,18 +1,18 @@
 # Alpha acceptance evidence
 
 The release target is install → text generation → physical policy execution →
-inspect evidence → export/reload. **The candidate is not yet accepted:** final
-rendered package verification and warehouse presentation measurements remain open.
+inspect evidence → export/reload. **The candidate is not yet accepted:** the dense warehouse storage regression and final package refresh remain open.
+Rendered physical placement, camera views, and browser presentation are verified.
 
 | Gate | Verified evidence | Remaining work |
 | --- | --- | --- |
 | SDK and HTTP | Mocked generation with original assets, native sensors/actions, remote policy errors, cancellation, reporting and portable regrading pass focused checks. | Check the final built artifacts after the latest runtime changes. |
-| Physical manipulation | The original bowl was grasped, lifted, carried a short distance, guided into the original microwave, released and supported. All three criteria passed through public SDK actions and after export/reload/regrading. | Capture the rendered installed-wheel run. This engineering controller knows the fixture; the door starts open. It is not autonomous manipulation or a door-opening demonstration. |
-| Grading | Native decoy, partial insertion, continued holding and brief recontact checks reject false success. Actual compiled collision vertices avoid rotated-bounds false failures without changing tolerances. | Include the current native cases in the final hosted audit. |
+| Physical manipulation | The original bowl was grasped, lifted, carried a short distance, guided into the original microwave, released and supported. All three criteria passed through public SDK actions and after export/reload/regrading. | Installed-wheel placement and both inspection views passed in run 41267484990. This engineering controller knows the fixture; the door starts open. It is not autonomous manipulation or a door-opening demonstration. |
+| Grading | Native decoy, partial insertion, continued holding and brief recontact checks reject false success. Actual compiled collision vertices avoid rotated-bounds false failures without changing tolerances. | All 16 required native cases passed without skips; the focused run passed 235 tests. |
 | Live model workflow | Astra via supported Codex sign-in generated a kitchen and two warehouses. One dense warehouse and a scoped edit passed short navigation, reporting and portable regrading. | Sensor-only household manipulation failed within its token budget. API-key account credits remain exhausted; Codex plan usage is separate. |
-| Browser | Actual walkthrough covered invalid-key recovery, generation cancellation, preview-to-ready rendering, scoped edit and parent navigation, policy execution/cancellation and evidence. | Capture final manipulation report and interior views. |
+| Browser | Actual walkthrough covered invalid-key recovery, generation cancellation, preview-to-ready rendering, scoped edit and parent navigation, policy execution/cancellation and evidence. | Report, criterion evidence, grasp and unobstructed interior captures are retained below. Long-object inspectors now scroll within the sidebar. |
 | Installation | Earlier 0.1.0a1 wheel/source archives installed outside the checkout on Linux. The wheel also passed a fresh Apple silicon installation and offline native SDK walkthrough. | Repeat against the final candidate artifacts. |
-| Presentation | Actual generated NVIDIA warehouse overview, detail and report images are retained. | Improve reference-level architecture/presentation; measure viewport performance and finalize the reproducible walkthrough. |
+| Presentation | Actual generated NVIDIA warehouse overview, detail and report images are retained. | The new generated 3,427-component facility adds beams, panel walls, loading openings and named lanes. Cached viewer performance and the walkthrough are recorded below. |
 
 ## Physical placement
 
@@ -35,6 +35,20 @@ excludes appearance-only geometry and empty corners of rotated bounding boxes.
 The recorder retains these measurements in private evaluator traces; policies
 still receive only the documented sensor contract. Old traces retain conservative
 bounds. Historical worlds, replays and scores are unchanged.
+
+The [rendered installed-wheel record](evidence/release-2026-10-31/rendered-engineering.json)
+verified the same physical task and portable regrading in 172.82 seconds, with
+2.77 GB peak process memory on a hosted Linux runner. It retains two native camera
+views of the actual run. The complete artifact SHA-256 was verified. The job's
+separate warehouse regression timed out, so this is a passing engineering step,
+not a claim that the entire job passed.
+
+Actual application captures: [report](images/engineering-household/report.png),
+[criterion evidence](images/engineering-household/criterion-evidence.png),
+[grasp](images/engineering-household/grasp.png), and
+[original bowl inside the microwave](images/engineering-household/microwave-interior.png).
+The software-rendered native frames show shadow speckling; no image retouching or
+historical replay regeneration was used.
 
 ## Live generation and editing
 
@@ -65,6 +79,38 @@ Actual application captures: [warehouse overview](images/dense-warehouse/overvie
 [targeted edit](images/dense-warehouse/targeted-edit.png), and
 [household inspection](images/live-household/evidence.json).
 
+## Warehouse presentation and performance
+
+The [presentation record](images/presentation-warehouse/evidence.json) identifies
+the live-generated 20 × 16 m, 3,427-component facility and the exact five-entity
+UV repair. Both versions passed strict creation-time validation. Its later live
+evaluation was interrupted by local storage/resource pressure before a final
+report; it is not counted as a completed autonomous run. The other completed live
+warehouse workflows above remain separate evidence.
+
+- [Overview](images/presentation-warehouse/overview.png): stocked source racks,
+  floor lanes and named receiving, storage, packing and shipping areas.
+- [Structure](images/presentation-warehouse/structure.png): panel walls, beams
+  and loading openings; normal cutaway inspection hides near walls and overhead structure.
+- [Rack detail](images/presentation-warehouse/rack-detail.png) and
+  [conveyor detail](images/presentation-warehouse/conveyor-detail.png): original
+  source geometry/textures, cross-braces, metal rollers and safety barriers.
+
+The reference has denser pallet loading and stronger cinematic reflections.
+This alpha uses estimated materials and studio illumination; its passive rollers
+do not implement powered transport or a facility logistics system.
+
+A [90-frame cached orbit](evidence/release-2026-10-31/viewer-dense.json) of the
+3,046-component alternative on an M1 Pro / 16 GiB Mac measured 16.7 ms median and
+17.5 ms p95 frame intervals, 145 draw calls and 1.95 million triangles. First view
+took 2.20 seconds with cached assets. This short run is not a cold-network,
+sustained GPU or universal performance claim.
+
+[Aggregate model usage](evidence/release-2026-10-31/model-usage.json) records 41
+Codex calls attempted and 1,431,223 reported tokens. One timed-out call has no
+reported usage, so this total is incomplete. No dollar invoice is available;
+API budget reservations are not confirmed charges. No new paid compute was started.
+
 ## Browser recovery
 
 The [browser record](evidence/release-2026-10-31/browser-flow.json) uses an isolated
@@ -90,7 +136,10 @@ asset, arm and viewer paths, requires 16 native cases without skips, benchmarks
 asset preparation, builds both archives, and runs rendered engineering placement
 from a clean installed wheel. It uses one Ubuntu runner with a 15-minute cap,
 single-threaded numeric libraries and no model key. Current focused local checks
-include 69 SDK/rubric/checkpoint tests; changed files pass Ruff.
+include 97 SDK, trace-integrity and spectator cases plus 33 viewer checks; changed
+Python files pass Ruff. The dense trace path retains every sample and object while
+using lossless gzip checkpoints and exact repeated-state pooling. Its full-size
+installed-package regression remains a separate release gate.
 
 Normal commits use `[skip ci]`. The dedicated `run-household-acceptance` label
 suppresses the existing full-suite and packaging jobs. The unmerged workflow runs

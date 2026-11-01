@@ -11,7 +11,13 @@ This procedure prepares artifacts for review. It does not publish to a package i
 5. Exercise native loading, reset, tools and rendering from the installed artifact on the declared target platforms. Record exact dependencies and graphics backend. A driver being installed or `MUJOCO_GL=egl` being set does not establish an actual NVIDIA context.
 6. Separately opt into bounded live API verification using an ordinary BYO account. Check the selected model's JSON, image/function and exact-counting capabilities. Record model/reasoning, price profile, usage and errors without credentials. A successful internal Astra request does not establish access for every user.
 
-The packaging workflow installs freshly built wheel and source archives on Linux with Python 3.11, Linux with Python 3.13, and macOS with Python 3.13. It runs offline diagnostics and dependency checks without a model key, simulation or server. It uploads the artifacts for review and has no publishing step. Workflow definitions become evidence only after their actual runs pass.
+After a presentation-only change, the opt-in `run-package-acceptance` label builds
+and clean-installs both archives on one Linux runner without repeating simulation
+or model calls. Preserve the earlier native/runtime evidence and identify both
+commits; this package-only check does not certify changed physics. Remove opt-in
+labels after recording their results.
+
+The full packaging workflow installs freshly built wheel and source archives on Linux with Python 3.11, Linux with Python 3.13, and macOS with Python 3.13. It runs offline diagnostics and dependency checks without a model key, simulation or server. It uploads the artifacts for review and has no publishing step. Workflow definitions become evidence only after their actual runs pass.
 
 ## Review evidence and user flow
 
