@@ -1,22 +1,21 @@
-# Release acceptance
+# OSS alpha release acceptance
 
-This is the launch checklist, not a claim that the alpha is complete. A checkbox requires saved execution evidence or a reviewable release artifact. The implementation remains on the draft PR until explicitly approved for merge.
+The release scope is install → generate → connect a policy → evaluate → inspect
+evidence → export/reload. [Detailed evidence and remaining work](alpha-acceptance.md)
+is the acceptance record. Implementation and partial demonstrations do not close a gate.
 
-| Workstream | Current state | Evidence needed to close |
+| Gate | Verified | Remaining |
 | --- | --- | --- |
-| Autonomous factory mission | In progress | Generated scene and task; sensor-only LLM retrieval, loaded inspection, transfer and stable delivery across multiple layouts/seeds |
-| Generated visual fidelity | Open | Newly generated detailed facility with useful workcells and physical geometry, not a source-reference import |
-| Progressive refinement | Partial | Useful quick preview followed by richer immutable version preserving task and entity identity |
-| Interactive edit/repair | Partial | Several substantial live edits and controlled physical failures, independent diffs, unchanged unrelated state and task constraints |
-| Ten environment/task scenarios | In progress | Independently checked generation/repair results and declared unsupported requirements for each scenario |
-| Rubric trustworthiness | Partial | Intended task coverage plus wrong-object/order/stability/process and edit-weakening counterexamples |
-| Robots and policy integration | Partial | Supported TIAGo/G1 envelopes, practical policy examples and real integrated mission evidence |
-| Mac and NVIDIA usability | Partial | Bounded resources, cleanup and measured large-scene performance without overstating GPU physics |
-| Workbench completion | In progress | Camera framing, cutaway/selection, progress/failure handling, scoped edits and evidence-linked replay verified in browser |
-| Fresh installation/model access | In progress | Clean packaged installs, offline diagnostics, paid BYO model setup and first real result |
-| OSS release preparation | In progress | Attribution inventory, contribution/support docs, packaging checks and reviewed versioned release artifacts |
-| Demo and launch materials | Open | Honest recorded prompt→scene→edit/repair→robot→rubric workflow with reproducible artifacts and stated speedups/costs |
+| SDK and API | Original assets; native sensor/action loops; in-process and HTTP policies; cancellation, malformed actions, timeout/disconnection; reports, replay, portable export/reload and regrading. | Recheck the final versioned candidate after current controller and validation changes. |
+| Bowl and microwave physics | Original concave bowl and articulated appliance; native cavity/support checks; two-hand physical lift through public torso actuation; engineering carry probe. | Successful insertion, release and stable support; native wrong-object, partial-insertion, held and unstable-placement counterexamples. |
+| Live generation | Astra generated a kitchen and a sourced warehouse; sensor-only episodes and portable reports completed with honest failed outcomes. | Complete the dense alternative warehouse and a verified targeted edit preserving unrelated state and task/rubric requirements. |
+| Fresh-user experience | Clean wheel and source installs on Linux; fresh Mac wheel, diagnostics and native SDK walkthrough. | Final candidate walkthrough, actionable browser recovery/cancellation, cold/warm timings and bounded resource measurements. |
+| UI, visual demo and release | Figma-style shell; actual scene selection, replay and rubric-evidence inspection; original bowl and generated warehouse screenshots; source attribution and package checks. | Reference-level warehouse detail/presentation, equipment close-up, microwave interior and robot-interaction captures; final documentation, package and reproducible walkthrough. |
 
-The remote demonstration harness keeps model credentials on the initiating machine and sends only bounded requests and returned outputs through an SSH subprocess. Its custom transport and source identity are recorded; it does not certify an arbitrary remote policy service. Internal prompts and engineering fixtures are not bundled scripted onboarding controllers.
+TIAGo++ is primary. G1 remains experimental. Facility-wide logistics, new forklift
+controllers, broad GPU scaling and a ten-scenario campaign are outside this alpha.
 
-Heavy simulations run on authorized remote compute while the development Mac is under memory pressure. Temporary compute uses an independent hard deadline, process leases, backups and verified cleanup within the approved spending cap.
+Use focused checks and bounded full live runs. Preserve historical worlds/results;
+keep mocked, privileged engineering and autonomous evidence separate. New runtime
+versions require fresh validation. Work stays on draft PR #1; do not merge or publish
+without the user's instruction.

@@ -53,5 +53,16 @@ export function isInspectionShell(object, bounds = [6, 6, 3]) {
   const namedWall = /(?:^|[\s_-])(wall|partition)(?:$|[\s_\d-])/.test(name);
   const roofShape = z <= .6 && x >= 2 && y >= 2 && position[2] >= 1.5;
   const namedRoof = /(?:^|[\s_-])(roof|ceiling)(?:$|[\s_\d-])/.test(name);
-  return (wallShape && (boundary || namedWall)) || (roofShape && namedRoof);
+  const overheadBeam = /(?:^|[\s_-])(beam|joist)(?:$|[\s_\d-])/.test(name)
+    && position[2] >= Math.max(2.2, bounds[2]*.65) && z <= .6
+    && Math.max(x, y) >= Math.max(bounds[0], bounds[1])*.35;
+  return (wallShape && (boundary || namedWall)) || (roofShape && namedRoof) || overheadBeam;
+}
+
+/** Start enclosed scenes with their interior visible; the user can restore walls. */
+export function initialCutaway(spec) {
+  return (spec.objects || []).some(object => object.visible !== false
+    && isInspectionShell(object, spec.bounds)
+    && (object.size?.[0] || 0) >= 2 && (object.size?.[1] || 0) >= 2
+    && (object.size?.[2] || 0) <= .6);
 }

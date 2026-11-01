@@ -25,6 +25,14 @@ class BrokenExecutor(IdleExecutor):
         raise BrokenProcessPool("Worker process is unavailable")
 
 
+def test_workbench_html_revalidates_to_pick_up_new_bundle_versions(tmp_path):
+    app = create_app(tmp_path, executor_factory=IdleExecutor)
+    with TestClient(app) as client:
+        response = client.get('/')
+    assert response.status_code == 200
+    assert response.headers['cache-control'] == 'no-cache'
+
+
 def test_rejected_worker_submission_never_leaves_a_queued_orphan(tmp_path):
     with TestClient(
         create_app(tmp_path, executor_factory=BrokenExecutor), raise_server_exceptions=False

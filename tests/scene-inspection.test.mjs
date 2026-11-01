@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const source = await readFile(new URL('../src/robot_worlds/static/scene-inspection.js', import.meta.url));
-const { boundsCorners, objectBounds, perspectiveFit, sceneBounds, isInspectionShell } = await import(`data:text/javascript;base64,${source.toString('base64')}`);
+const { boundsCorners, objectBounds, perspectiveFit, sceneBounds, isInspectionShell, initialCutaway } = await import(`data:text/javascript;base64,${source.toString('base64')}`);
 const dot = (a, b) => a.reduce((sum, value, i) => sum+value*b[i], 0);
 
 for (const aspect of [.22, .5, 1, 1.8, 3.5]) {
@@ -53,4 +53,17 @@ test('cutaway identifies shell candidates but excludes machines, moving or artic
 test('invalid viewport parameters fail explicitly rather than moving the camera to NaN', () => {
   assert.throws(() => perspectiveFit({ min: [0, 0, 0], max: [1, 1, 1] }, 0));
   assert.throws(() => perspectiveFit({ min: [0, 0, 0], max: [1, 1, 1] }, 1, 180));
+});
+
+test('roofed scenes open to their interior without hiding ordinary table or machine geometry', () => {
+  const roof = { id: 'roof', kind: 'box', size: [20, 16, .2], position: [0, 0, 5] };
+  const spec = { bounds: [20, 16, 5], objects: [roof] }, before = structuredClone(spec);
+  assert.equal(initialCutaway(spec), true);
+  assert.deepEqual(spec, before);
+  assert.equal(initialCutaway({ ...spec, objects: [{ ...roof, id: 'table', position: [0, 0, 1.5] }] }), false);
+  assert.equal(initialCutaway({ ...spec, objects: [{ ...roof, visible: false }] }), false);
+  const beam = { id: 'roof_beam_1', kind: 'box', size: [19, .2, .2], position: [0, 0, 4.7] };
+  assert.equal(isInspectionShell(beam, spec.bounds), true);
+  assert.equal(isInspectionShell({ ...beam, position: [0, 0, 1] }, spec.bounds), false);
+  assert.equal(isInspectionShell({ ...beam, parent_id: 'machine' }, spec.bounds), false);
 });

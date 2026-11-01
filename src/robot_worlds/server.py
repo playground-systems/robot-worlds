@@ -518,6 +518,6 @@ def create_app(data_dir: str | Path = ".robot-worlds", *, executor_factory=None)
 
     @app.get("/")
     def index():
-        return FileResponse(static / "index.html")
+        return FileResponse(static / "index.html", headers={"Cache-Control": "no-cache"})
 
     return app

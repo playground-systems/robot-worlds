@@ -3,7 +3,7 @@ import { OrbitControls } from './vendor/OrbitControls.js';
 import { SceneAssets } from './scene-assets.js';
 import { batchSourceMeshes } from './scene-batching.js';
 import { disposeTree } from './scene-resources.js';
-import { isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js';
+import { initialCutaway, isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js?v=viz3d-2';
 import { APPEARANCE_NOTICE, estimatedAppearance, studioEnvironmentPixels } from './scene-appearance.js';
 import { geometryKey, revolvedGeometry } from './scene-shapes.js';
 
@@ -232,7 +232,7 @@ export class WorldViewer {
     marker.position.set(start[0], start[1], 0.025); this.group.add(marker);
     const arrow = new THREE.ArrowHelper(new THREE.Vector3(Math.cos(start[2]), Math.sin(start[2]), 0), new THREE.Vector3(start[0], start[1], 0.03), 0.45, 0xaab8ee, 0.1, 0.08);
     this.group.add(arrow); this.label('Robot start', new THREE.Vector3(start[0], start[1], 0.17));
-    this.setCutaway(false); this.fit(); this.pumpLoads();
+    this.setCutaway(initialCutaway(spec)); this.fit(); this.pumpLoads();
   }
 
   pumpLoads() {
