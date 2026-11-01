@@ -5,7 +5,7 @@ This procedure prepares artifacts for review. It does not publish to a package i
 ## Build and clean-install gates
 
 1. Choose the reviewed commit and version. Merge the current main branch into the implementation branch; keep local worlds, credentials and unrelated work outside the change.
-2. Require the `checks` workflow and `packaging-smoke` workflow to pass for that commit. Native physical tests and browser resource tests serve different boundaries; retain both results.
+2. Record which checks ran against the candidate. This alpha uses the explicitly authorized focused household acceptance workflow instead of repeatedly running the full matrix. It includes native SDK/physics, affected rubric and viewer checks, archive inspection and clean wheel/source installation. Do not describe that selection as a full-suite pass. Native physical tests and browser resource tests serve different boundaries; retain both results.
 3. Build wheel and source archive with `uv build`. Run `python tools/check_distribution.py dist`; inspect the package metadata, licenses, robot/controller assets and local browser modules. The checker rejects local run/world directories, environment files and bytecode in either archive.
 4. Install each artifact into its own clean virtual environment outside the checkout. Run `uv pip check --python PATH_TO_ENV_PYTHON`, `robot-worlds doctor --json` and `robot-worlds --help`. An editable install or `PYTHONPATH=src` does not establish wheel completeness.
 5. Exercise native loading, reset, tools and rendering from the installed artifact on the declared target platforms. Record exact dependencies and graphics backend. A driver being installed or `MUJOCO_GL=egl` being set does not establish an actual NVIDIA context.

@@ -14,6 +14,7 @@ import robot_worlds
 from robot_worlds import generate, load
 from robot_worlds.sdk import Report
 
+
 def prepared_plan():
     return dict(name="Sourced appliance task", description="Original assets in a generated layout",
                 task="Put the white porcelain bowl in the microwave and leave it resting there.", bounds=[8, 6, 3],

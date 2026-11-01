@@ -25,3 +25,25 @@ def test_spectator_failure_disables_preview_without_raising_into_physics():
     view.publish(1, force=True)
     assert view.sequence == 0 and view.error["type"] == "OSError"
     assert "private" not in str(view.error)
+
+
+def test_slow_preview_reserves_wall_time_for_physics_between_frames():
+    now = [0.0]
+    frames = []
+    def slow_render():
+        now[0] += .8  # Software rendering exceeds the nominal 250 ms interval.
+        return b"pixels"
+    view = LiveView(slow_render, frames.append, clock=lambda: now[0])
+    view.publish(0)
+    # Rendering itself must not immediately make the next frame due.
+    view.publish(.05)
+    assert len(frames) == 1
+    now[0] = 3.19
+    view.publish(.1)
+    assert len(frames) == 1
+    now[0] = 3.21
+    view.publish(.15)
+    assert len(frames) == 2
+    # Action boundaries may still explicitly request a fresh image.
+    view.publish(.2, force=True)
+    assert len(frames) == 3

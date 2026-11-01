@@ -49,6 +49,7 @@ jobs:
             tests/test_llm_policy.py \
             tests/test_asset_import_physics.py \
             tests/test_trace_checkpoints.py \
+            tests/test_live.py \
             tests/test_rubric.py \
             tests/test_sdk.py \
             --basetemp "$RUNNER_TEMP/household-acceptance" \
@@ -82,7 +83,7 @@ jobs:
               "$environment/bin/robot-worlds" --help > "$GITHUB_WORKSPACE/household-evidence/help-$kind.txt"
               if [[ "$kind" == wheel ]]; then
                 /usr/bin/time -v -o "$GITHUB_WORKSPACE/household-evidence/engineering-resources.txt" \
-                  xvfb-run -a "$environment/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/engineering_household.py" \
+                  timeout --signal=TERM 600s xvfb-run -a "$environment/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/engineering_household.py" \
                   --output "$RUNNER_TEMP/household-engineering" --render \
                   > "$GITHUB_WORKSPACE/household-evidence/engineering.log" 2>&1
                 cp "$RUNNER_TEMP/household-engineering/acceptance.json" "$GITHUB_WORKSPACE/household-evidence/engineering.json"

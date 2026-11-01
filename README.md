@@ -23,7 +23,7 @@ uv run robot-worlds serve
 
 Open **http://127.0.0.1:8765**. Enter a scene and task, inspect the generated geometry and rubric, then start an evaluation. The workbench stores worlds, job progress and reports under `.robot-worlds/`. A failed validation preserves its candidate and explains the failed checks.
 
-See the [SDK and sensor contract](docs/sdk.md) for custom policies and appliance environments. See [setup and model access](docs/setup.md) for offline `doctor` checks, API requirements, the optional Codex SDK transport, and clean installation.
+Follow the [end-to-end walkthrough](docs/walkthrough.md), or see the [SDK and sensor contract](docs/sdk.md) for custom policies and appliance environments. See [setup and model access](docs/setup.md) for offline `doctor` checks, API requirements, the optional Codex SDK transport, and clean installation.
 
 For reusable warehouse models, install the reviewed rack, pallet, carton,
 barrier and passive conveyor into the workbench's asset library:

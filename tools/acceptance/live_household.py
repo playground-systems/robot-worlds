@@ -37,6 +37,10 @@ def main():
     parser.add_argument("--codex-executable", default="codex")
     parser.add_argument("--prompt-file", type=Path)
     parser.add_argument("--asset-library", type=Path)
+    parser.add_argument("--scene-profile", choices=("standard", "large"), default="standard")
+    parser.add_argument("--generation-input-chars", type=int, default=120000)
+    parser.add_argument("--generation-token-limit", type=int, default=150000)
+    parser.add_argument("--generation-timeout", type=float, default=180)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     started = time.monotonic()
@@ -49,8 +53,9 @@ def main():
         if args.transport == "codex":
             from robot_worlds.codex_client import CodexClient
             return CodexClient(model="gpt-6-astra", reasoning="medium", executable=args.codex_executable,
-                               max_calls=3 if generation else 12, max_seconds=540 if generation else 420,
-                               timeout=180, max_total_tokens=150000 if generation else 450000)
+                               max_calls=3 if generation else 12, max_seconds=2*args.generation_timeout+180 if generation else 420,
+                               timeout=args.generation_timeout if generation else 180, max_input_chars=args.generation_input_chars if generation else 120000,
+                               max_total_tokens=args.generation_token_limit if generation else 450000)
         return ResponsesClient(model="gpt-6-astra", reasoning="medium",
                                max_cost_usd=args.max_cost_usd*(.4 if generation else .6),
                                max_calls=3 if generation else 12, max_seconds=300 if generation else 420,
@@ -60,6 +65,17 @@ def main():
     # generation ledger intact and partition the full API spending cap.
     clients = {phase: make_client(phase) for phase in ("generation", "policy")}
     record["budgets"] = {phase: client.budget for phase, client in clients.items()}
+    # Keep invalid raw plans for diagnosis as well as validated previews. No
+    # credentials, request headers or hidden model reasoning are recorded.
+    generation_complete = clients['generation'].complete_json
+    plan_number = 0
+    def record_plan(*params):
+        nonlocal plan_number
+        plan = generation_complete(*params)
+        plan_number += 1
+        (args.output/f'generation-plan-{plan_number}.json').write_text(json.dumps(plan, indent=2)+'\n')
+        return plan
+    clients['generation'].complete_json = record_plan
 
     def save():
         record.update(elapsed_seconds=time.monotonic()-started,
@@ -75,7 +91,7 @@ def main():
 
     try:
         world = generate(prompt, client=clients["generation"], max_repairs=2, output=args.output / "worlds",
-                         online_assets=False, on_event=event, asset_library=args.asset_library)
+                         online_assets=False, on_event=event, asset_library=args.asset_library, scene_profile=args.scene_profile)
         record.update(world_id=world.id, validation=world.manifest["validation"])
         save()
         if world.manifest["validation"]["status"] != "ready":
