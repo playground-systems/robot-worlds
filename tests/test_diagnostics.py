@@ -44,6 +44,15 @@ def test_missing_asset_or_distribution_is_an_actionable_error(monkeypatch, tmp_p
     assert "assets/robots/g1/CONTROLLER_LICENSE" in json.dumps(report)
 
 
+def test_missing_bundled_starter_is_an_incomplete_installation(monkeypatch, tmp_path):
+    prepared(monkeypatch, tmp_path)
+    missing = "assets/starters/hospital/world.zip"
+    (tmp_path / missing).unlink()
+    report = diagnostics.collect_diagnostics(data_dir=tmp_path)
+    assert not report["offline_ready"]
+    assert missing in json.dumps(report)
+
+
 def test_shareable_report_never_echoes_credentials_paths_or_arbitrary_env(monkeypatch, tmp_path):
     prepared(monkeypatch, tmp_path)
     secret = "sensitive-value-never-echo"

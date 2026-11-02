@@ -274,15 +274,28 @@ class Adapter:
         self.layout_repairs = []
 
     def repair_known_source_pose(self, instance, first_object):
-        """Repair one corrupt pinned save pose, retaining its original evidence."""
-        if self.entry["id"] != "bookstore" or instance.get("name") != "BookE_01_009":
+        """Repair only reviewed corrupt pinned save poses, retaining evidence."""
+        environment, name = self.entry["id"], instance.get("name")
+        if environment == "bookstore" and name == "BookE_01_009":
+            revision = "f5a2aaacd5418f9ecfa30f79e788856417f17c13"
+            pose_element, expected_height, expected_uri = "pose", 343582.718718, None
+        elif environment == "hospital" and name in {
+            "StorageRack_1", "WhiteChipChair_1", "TrolleyBed_1"
+        }:
+            revision = "7161eb8448f5cba6a469da7a79ae5d660b0b7f58"
+            pose_element, expected_height = "include/pose", -757769000.0
+            expected_uri = "model://" + name.rsplit("_", 1)[0]
+        else:
             return
-        original = np.fromstring(instance.findtext("pose"), sep=" ")
+        original = np.fromstring(instance.findtext(pose_element, ""), sep=" ")
         if (
-            self.entry["revision"] != "f5a2aaacd5418f9ecfa30f79e788856417f17c13"
-            or abs(original[2] - 343582.718718) > 1e-6
+            self.entry["revision"] != revision
+            or original.shape != (6,)
+            or not np.isfinite(original).all()
+            or abs(original[2] - expected_height) > 1e-6
+            or (expected_uri is not None and instance.findtext("include/uri") != expected_uri)
         ):
-            raise ValueError("Reviewed corrupt bookstore pose changed; re-review the source repair")
+            raise ValueError(f"Reviewed corrupt {environment} pose changed; re-review the source repair")
         members = self.objects[first_object:]
         if not members:
             raise ValueError("Cannot repair an empty source assembly")
@@ -291,11 +304,13 @@ class Adapter:
         for obj in members:
             obj["position"][2] += translation
         repair = {
-            "source_model": instance.get("name"),
+            "source_model": name,
+            "source_uri": instance.findtext("include/uri"),
+            "pose_element": pose_element,
             "original_pose": original.tolist(),
             "translation_metres": [0, 0, translation],
             "destination_minimum_z": 0.001,
-            "reason": "Pinned upstream save places this book 343582.718718 m above the floor; lower the unchanged rigid assembly onto the floor, preserving XY and orientation.",
+            "reason": f"Pinned upstream save places {name} at Z={original[2]:g} m; place the unchanged rigid assembly onto the floor, preserving XY, orientation and relative part poses.",
         }
         self.layout_repairs.append(repair)
         self.disclosures.append(repair["reason"])
@@ -572,6 +587,8 @@ class Adapter:
         high = np.max(
             [np.array(o["position"]) + np.array(o["size"]) / 2 for o in self.objects], axis=0
         )
+        if low[2] < -100:
+            raise ValueError("Starter source contains geometry below -100 m; review its saved poses")
         if high[2] > 100:
             raise ValueError("Starter source contains geometry above 100 m; review its saved poses")
         offset = (low + high) / 2
@@ -702,6 +719,7 @@ class Adapter:
                     "Hospital scanned props and disconnected curtain hardware use conservative component envelopes that can fill concavities and spaces under furniture. These fixed navigation props are not manipulation-certified; their original visual meshes remain intact.",
                     "Gazebo plugins, ROS launch code, source lights and dynamic actors are not executed. Robot Worlds supplies robot, ground and lighting. Source ODE-specific contact parameters are replaced by the runtime default isotropic friction 0.7.",
                     "A robot spawn and a short navigation task are added; the arrival volume allows 5 mm for compliant ground contact. Creation checks do not prove task solvability.",
+                    *(repair["reason"] for repair in self.layout_repairs),
                     *([
                         f"The warehouse source walking surface originally reaches Z={offset[2]:.8f} m. Every source object is translated vertically by {-offset[2]:.8f} m to align that surface with runtime Z=0; relative source poses are unchanged."
                     ] if walk_plane_alignment else []),

@@ -79,8 +79,9 @@ def render_native_overview(runtime):
     """Render an intentional aerial inspection view without orbit collision repair.
 
     Only the thumbnail uses this cutaway. Source bodies, contact settings,
-    simulator state and policy cameras are retained. Temporary display changes
-    are restored before the SDK records the native runtime manifest.
+    simulator state and policy cameras are retained. The runtime background
+    ground is hidden to expose the original source flooring. Every temporary
+    display change is restored before returning, including on renderer failure.
     """
     import mujoco
 
@@ -103,6 +104,10 @@ def render_native_overview(runtime):
     camera.azimuth, camera.elevation = 135, -65
     hidden = set(cutaway_object_ids(runtime.spec))
     geom_ids = [gid for gid, oid in runtime._geom_objects.items() if oid in hidden]
+    # Both supported robot builders name their added ground geom "floor".
+    # Source floors have their own geom_<object_id> names and remain visible.
+    geom_ids.append(int(runtime.model.geom("floor").id))
+    geom_ids = sorted(set(geom_ids))
     original = runtime.model.geom_rgba[geom_ids].copy()
     try:
         runtime.model.geom_rgba[geom_ids, 3] = 0
@@ -136,6 +141,7 @@ def freeze_one(entry: dict, source: Path, output: Path, evidence: Path) -> dict:
     hidden_ids = cutaway_object_ids(spec)
     thumbnail_view = (f"Native MuJoCo aerial cutaway at reset; {len(hidden_ids)} explicitly named source ceiling/roof visual objects hidden for the thumbnail only."
                       if hidden_ids else "Native MuJoCo aerial inspection at reset; all source visible geometry retained.")
+    thumbnail_view += " Runtime background ground hidden to show the original source flooring."
     spec.assumptions.append(thumbnail_view + " All saved source geometry, collision physics and policy-camera visibility are unchanged.")
     evidence.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -170,6 +176,7 @@ def freeze_one(entry: dict, source: Path, output: Path, evidence: Path) -> dict:
                   "source_instances": provenance["instances"],
                   "native_engine_version": world.manifest["runtime"]["engine_version"],
                   "thumbnail_view": thumbnail_view, "thumbnail_hidden_object_ids": hidden_ids,
+                  "thumbnail_hidden_runtime_geoms": ["floor"],
                   "bundle_bytes": archive.stat().st_size}
         write_json(destination / "release.json", result)
         final = output / identifier

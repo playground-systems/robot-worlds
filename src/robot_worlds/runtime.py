@@ -144,7 +144,10 @@ class RobotPhysicalFailure(Exception):
 
 
 _MIB = 1024 * 1024
-_MAX_ARENA_BYTES = 512 * _MIB
+# The 10,000-object scene budget plus robot bodies can require ~816 MiB.
+# Keep allocation proportional (the hospital uses 688 MiB), with a hard ceiling
+# per simulator state. Adding/viewing a packaged scene does not create mjData.
+_MAX_ARENA_BYTES = 1024 * _MIB
 
 
 def _scene_arena_bytes(body_count: int, *, revolved: bool = False) -> int | None:
@@ -1315,7 +1318,8 @@ class Runtime:
             "implementation_fingerprint": self._implementation_fingerprint,
             "arena": {"allocated_bytes": int(self.data.narena),
                       "peak_used_bytes": int(self.data.maxuse_arena),
-                      "model_bodies": int(self.model.nbody)},
+                      "model_bodies": int(self.model.nbody),
+                      "limit_bytes": _MAX_ARENA_BYTES},
         }
 
     def restore_snapshot(self, snapshot):

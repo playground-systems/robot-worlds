@@ -17,7 +17,8 @@ Requires Python 3.11 or later and [uv](https://docs.astral.sh/uv/getting-started
 git clone https://github.com/playground-systems/robot-worlds.git
 cd robot-worlds
 uv sync
-export OPENAI_API_KEY="your-key"
+# Optional: generation and model-driven evaluation require a key.
+# export OPENAI_API_KEY="your-key"
 uv run robot-worlds serve
 ```
 

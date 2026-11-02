@@ -484,3 +484,75 @@ def test_warehouse_walking_plane_alignment_rejects_unreviewed_source_height(adap
                         "collision": True, "visible": True}]
     with pytest.raises(ValueError, match="walking-plane height changed"):
         adapter.finish()
+
+
+@pytest.mark.parametrize("name,uri,source_pose", [
+    ("StorageRack_1", "StorageRack", [9.07005, -10.3582, -757769000., -.000002, 0., 0.]),
+    ("WhiteChipChair_1", "WhiteChipChair", [-8.87142, 9.15707, -757769000., 0., -.152685, 0.]),
+    ("TrolleyBed_1", "TrolleyBed", [4.85934, -4.87229, -757769000., 0., -.000001, 0.]),
+])
+def test_reviewed_hospital_underground_assembly_is_repaired_as_a_whole(adapter, name, uri, source_pose):
+    import copy
+
+    adapter.entry.update(id="hospital", revision="7161eb8448f5cba6a469da7a79ae5d660b0b7f58")
+    instance = ET.fromstring(f'<model name="{name}"><include><uri>model://{uri}</uri><pose>'
+                             + ' '.join(map(str, source_pose)) + '</pose></include></model>')
+    original_xml = ET.tostring(instance)
+    untouched = {"id": "unrelated", "position": [0, 0, 1], "size": [1, 1, 1]}
+    adapter.objects.append(copy.deepcopy(untouched))
+    vertices, faces = cube()
+    transform = prepare.pose(instance.find("include")) @ np.diag([.5, .7, 1.5, 1])
+    parent = adapter.add_mesh(vertices, faces, transform, "Original source collision", physical=True)
+    adapter.add_mesh(vertices, faces, transform, "Original source visual", parent=parent)
+    before = copy.deepcopy(adapter.objects[1:])
+    original_meshes = {o["mesh_path"]: (adapter.output / o["mesh_path"]).read_bytes() for o in before}
+    adapter.repair_known_source_pose(instance, 1)
+    assert adapter.objects[0] == untouched and ET.tostring(instance) == original_xml
+    repaired = adapter.objects[1:]
+    # The original 7.6e8m position has ~0.1 micrometre float resolution.
+    assert min(o["position"][2] - o["size"][2] / 2 for o in repaired) == pytest.approx(.001, abs=2e-7)
+    for prior, current in zip(before, repaired):
+        np.testing.assert_array_equal(current["position"][:2], prior["position"][:2])
+        assert {key: value for key, value in current.items() if key != "position"} == {
+            key: value for key, value in prior.items() if key != "position"}
+        assert (adapter.output / current["mesh_path"]).read_bytes() == original_meshes[current["mesh_path"]]
+    np.testing.assert_allclose(np.array(repaired[0]["position"]) - repaired[1]["position"],
+                               np.array(before[0]["position"]) - before[1]["position"])
+    repair = adapter.layout_repairs[0]
+    assert repair["source_model"] == name and repair["source_uri"] == "model://" + uri
+    assert repair["pose_element"] == "include/pose" and repair["original_pose"] == source_pose
+    assert repair["translation_metres"][:2] == [0, 0] and repair["translation_metres"][2] > 757768999
+
+
+@pytest.mark.parametrize("change", ["revision", "height", "uri", "malformed"])
+def test_hospital_pose_repair_rejects_changed_source_evidence(adapter, change):
+    adapter.entry.update(id="hospital", revision="7161eb8448f5cba6a469da7a79ae5d660b0b7f58")
+    instance = ET.fromstring('<model name="StorageRack_1"><include><uri>model://StorageRack</uri>'
+                             '<pose>9.07005 -10.3582 -7.57769e8 -2e-6 0 0</pose></include></model>')
+    adapter.objects.append({"position": [9.07005, -10.3582, -757769000.], "size": [.5, .7, 1.5]})
+    if change == "revision":
+        adapter.entry["revision"] = "0" * 40
+    elif change == "height":
+        instance.find("include/pose").text = "9.07005 -10.3582 0 -2e-6 0 0"
+    elif change == "uri":
+        instance.find("include/uri").text = "model://AnotherAsset"
+    else:
+        instance.find("include/pose").text = "9.07005 -10.3582"
+    with pytest.raises(ValueError, match="re-review the source repair"):
+        adapter.repair_known_source_pose(instance, 0)
+    assert adapter.objects[0]["position"][2] == -757769000.
+    assert not adapter.layout_repairs
+
+
+def test_unknown_underground_geometry_fails_import_instead_of_disappearing(adapter):
+    adapter.entry.update(id="hospital", revision="7161eb8448f5cba6a469da7a79ae5d660b0b7f58")
+    vertices, faces = cube()
+    transform = np.eye(4)
+    transform[2, 3] = -101
+    adapter.add_mesh(vertices, faces, transform, "Unknown underground object", physical=True)
+    instance = ET.fromstring('<model name="Unreviewed_1"><include><uri>model://Unreviewed</uri>'
+                             '<pose>0 0 -101 0 0 0</pose></include></model>')
+    adapter.repair_known_source_pose(instance, 0)
+    assert not adapter.layout_repairs
+    with pytest.raises(ValueError, match="geometry below -100 m"):
+        adapter.finish()

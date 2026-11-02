@@ -30,6 +30,10 @@ REQUIRED_RESOURCES = (
     "assets/robots/g1/CONTROLLER_LICENSE", "assets/robots/g1/DEX1_LICENSE",
     "assets/robots/g1/DEX1_UPSTREAM_LICENSE", "assets/robots/g1/DEX1_NOTICE",
     "assets/robots/g1/PROVENANCE.md",
+    "starter_environments.py", "assets/starters/catalog.json",
+    *(f"assets/starters/{identifier}/{filename}"
+      for identifier in ("warehouse", "house", "hospital", "bookstore")
+      for filename in ("world.zip", "thumbnail.png")),
 )
 
 

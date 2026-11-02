@@ -234,9 +234,11 @@ def test_thumbnail_cutaway_only_selects_explicit_source_roofs_not_fixtures():
 def test_aerial_thumbnail_restores_native_display_and_fits_bounds(monkeypatch, fail_render):
     plan = cutaway_spec()
     original_spec = plan.model_dump()
-    rgba = np.array([[.2, .3, .4, .8], [.3, .2, .4, 1], [.5, .6, .7, .9], [.8, .5, .4, 1]])
+    rgba = np.array([[.2, .3, .4, .8], [.3, .2, .4, 1], [.5, .6, .7, .9], [.8, .5, .4, 1],
+                     [.4, .2, .1, .75], [.1, .9, .8, .6]])
     original_rgba = rgba.copy()
-    model = SimpleNamespace(geom_rgba=rgba, vis=SimpleNamespace(global_=SimpleNamespace(fovy=45)))
+    model = SimpleNamespace(geom_rgba=rgba, vis=SimpleNamespace(global_=SimpleNamespace(fovy=45)),
+                            geom=lambda name: SimpleNamespace(id=4) if name == "floor" else pytest.fail("Only the named runtime background floor may be hidden"))
     updates = []
 
     class Camera:
@@ -251,7 +253,9 @@ def test_aerial_thumbnail_restores_native_display_and_fits_bounds(monkeypatch, f
         def update_scene(self, data, *, camera):
             updates.append(camera)
             assert camera.type == 7 and camera.azimuth == 135 and camera.elevation == -65
-            assert model.geom_rgba[:, 3].tolist() == [0, 0, .9, 1]
+            # Runtime ground (index4) is hidden; the source floor (index5),
+            # source fixtures and remaining geometry are retained.
+            assert model.geom_rgba[:, 3].tolist() == [0, 0, .9, 1, 0, .6]
         def render(self):
             if fail_render:
                 raise RuntimeError("Mock native renderer failure")
@@ -260,7 +264,7 @@ def test_aerial_thumbnail_restores_native_display_and_fits_bounds(monkeypatch, f
     monkeypatch.setitem(sys.modules, "mujoco", SimpleNamespace(MjvCamera=Camera,
                                                             mjtCamera=SimpleNamespace(mjCAMERA_FREE=7)))
     runtime = SimpleNamespace(spec=plan, model=model, data=object(),
-                              _geom_objects={0: "ceiling", 1: "roof", 2: "ceiling_light", 3: "table"},
+                              _geom_objects={0: "ceiling", 1: "roof", 2: "ceiling_light", 3: "table", 5: "foundation"},
                               _get_renderer=lambda *, overview: Renderer() if overview else pytest.fail("Aerial renderer required"))
     if fail_render:
         with pytest.raises(RuntimeError, match="Mock native renderer failure"):

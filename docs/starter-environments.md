@@ -43,9 +43,14 @@ isotropic friction of 0.7. One corrupt upstream bookstore save placed a book
 343,582 metres above the floor. Its original pose is recorded; the unchanged
 assembly is lowered to the floor at its original XY position. The warehouse's
 original raised walking surface is aligned to Z=0 using one recorded translation
-of the entire scene. Native previews
-hide explicitly named roofs and ceilings for inspection, with hidden IDs
-recorded. The saved world retains that geometry.
+of the entire scene. Native previews hide explicitly named roofs and ceilings
+for inspection, plus the runtime's background ground plane so it does not
+overlap the source flooring. Hidden IDs are recorded. Saved geometry, physics
+and policy cameras are unchanged.
+
+Three corrupt hospital poses also placed a rack, chair and bed far underground.
+Their unchanged assemblies are raised to the floor at their original XY
+positions. Original poses and adjustments remain in each world's provenance.
 
 All imported equipment is fixed. Source doors, appliances and furniture are not
 certified manipulation assets. Each scene adds TIAGo++ and a short task: drive
