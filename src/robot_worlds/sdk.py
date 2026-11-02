@@ -149,11 +149,20 @@ class World:
 
         ``fixed_reference`` permits overlap only between bodies whose complete
         ancestry is fixed to the world. It records each skipped pair and keeps
-        robot clearance, dynamic geometry, bounds, rubric and native reset checks.
+        robot clearance, dynamic geometry, XY/ceiling bounds, rubric and native
+        reset checks. Entirely world-welded source foundations may extend below
+        ground, with their IDs recorded in the validation evidence.
+        Source ground backing at most 1 mm above Z=0 is excluded from the
+        conservative initial standing-obstacle envelope, with its IDs recorded.
         This opt-in import profile does not certify source process behavior or
         exact concave collision geometry; generation always uses strict checks.
         """
-        from robot_worlds.generator import validate_spec
+        from robot_worlds.generator import (
+            FIXED_REFERENCE_GROUND_TOLERANCE_M,
+            _fixed_reference_ground,
+            _world_welded,
+            validate_spec,
+        )
         from robot_worlds.rubric import _extents, measure_predicate
         if validation_profile not in {"strict", "fixed_reference"}:
             raise ValueError("validation_profile must be strict or fixed_reference")
@@ -164,6 +173,11 @@ class World:
             spec = expand_assemblies(spec)
         except ValueError as exc:
             assembly_errors.append(str(exc))
+        objects = {obj.id: obj for obj in spec.objects}
+        fixed_reference_ids = {obj.id for obj in spec.objects if validation_profile == "fixed_reference"
+                               and _world_welded(obj, objects)}
+        below_floor_ids = sorted(obj.id for obj in spec.objects if obj.id in fixed_reference_ids
+                                 and obj.position[2]-obj.size[2]/2 < -1e-5)
         if any(obj.surface is not None for obj in spec.objects):
             from robot_worlds.appearance import PBR_RENDERER_NOTICE
             if PBR_RENDERER_NOTICE not in spec.assumptions:
@@ -240,8 +254,14 @@ class World:
                 if manifest["edit"].get("parent_world_id") != parent_id:
                     raise ValueError("Edit metadata must identify the immutable parent world")
             if validation_profile == "fixed_reference":
+                manifest["validation"]["below_floor_fixed_object_ids"] = below_floor_ids
+                manifest["validation"]["initial_ground_clearance_tolerance_m"] = FIXED_REFERENCE_GROUND_TOLERANCE_M
+                manifest["validation"]["initial_ground_clearance_exempt_object_ids"] = sorted(
+                    obj.id for obj in spec.objects if _fixed_reference_ground(obj, objects))
                 manifest["validation"]["limitations"].extend([
                     "Fixed-reference profile allows overlapping geometry only where both complete body ancestries are world-welded; robot and movable/articulated collision checks remain enabled.",
+                    "Entirely world-welded source foundations may extend below Z=0; their IDs are recorded in below_floor_fixed_object_ids. Regions, moving bodies, XY and ceiling bounds are not exempt.",
+                    "Entirely world-welded source ground backing whose highest point is at most 1 mm above Z=0 is excluded from the conservative standing-obstacle envelope; exact IDs and tolerance are recorded. Native contact/reset checks still run.",
                     "Static reference geometry does not reproduce source animation or manufacturing processes. Native mesh colliders are convex hulls per part, which may fill concave openings."])
             if validate and not errors:
                 runtime = None
@@ -267,7 +287,8 @@ class World:
                             half = _extents(obj, actual)
                             if (not isinstance(position, (tuple, list)) or len(position) != 3
                                     or any(abs(position[i])+half[i] > spec.bounds[i]/2 + .01 for i in (0, 1))
-                                    or position[2]-half[2] < -.01 or position[2]+half[2] > spec.bounds[2]+.01):
+                                    or (position[2]-half[2] < -.01 and obj.id not in fixed_reference_ids)
+                                    or position[2]+half[2] > spec.bounds[2]+.01):
                                 reset_errors.append(f"{obj.id}: settled physical geometry leaves world bounds")
                         except (TypeError, ValueError) as exc:
                             reset_errors.append(f"{obj.id}: cannot measure settled physical bounds: {exc}")

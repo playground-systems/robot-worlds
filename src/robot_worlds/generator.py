@@ -16,6 +16,7 @@ from .revolved import MAX_SCENE_COLLIDERS, collision_count, intersects_box
 from .rubric import measure_predicate, rigid_members, validate_rubric
 
 PHYSICAL_DEFAULTS = "Unspecified masses, friction coefficients and material appearance are estimates, not measured properties."
+FIXED_REFERENCE_GROUND_TOLERANCE_M = .001
 INSTRUCTIONS = """Generate a runnable robot world and executable physical rubric matching the user's complete request. Return only the supplied JSON schema. Preserve every requested setting, layout constraint, task stage, object identity and robot requirement during repair. Do not replace a difficult request with an easier task or claim unsupported physical processes are simulated.
 The task field is an ordinary operator instruction, separate from the privileged world definition. Never put simulator object IDs, world/map coordinates, robot approach poses, hidden object state, semantic-detection assumptions, or an action script into task. Describe visible identifying features and the desired outcome. The actor receives RGB-D measurements and proprioception only, not simulator segmentation or object labels. Make referenced stations distinguishable from their actual visible geometry/color; a SceneObject.label is metadata, not a rendered sign.
 Appliances and containers must have real hollow interiors: separate floor, side, back and top geometry with physical clearances. Use hinged/slide joints for doors and drawers, accessible handles attached to the moving panel, and clear opening paths. For curved bowls/cups/funnels without a compatible sourced asset use kind=revolved with a closed material cross-section profile of normalized (radius,height) points: radius 0..0.5 and height -0.5..0.5, touching all those outer extrema. The profile includes outer wall, rim, inner wall and bottom; do not repeat its first point. Set equal XY sizes for diameter and Z size for total height. Segments (12..64, multiple of4, default32) control both surface and physical wedge fidelity. Concave material profiles are triangulated into convex collision wedges preserving the empty cavity. The object mass is distributed across its wedges. A hollow bowl can alternatively use attached rim/wall components; do not replace a bowl by a solid cylinder or a concave mesh's convex collision hull. A movable compound has ONE movable root and fixed parented components. Declare cavity regions with interior_of referencing the physical appliance/container root. Placement rubrics need full-object containment in the cavity, physical support and release for a stable interval; nearby is not inside. Door closure, heating or other operations are required only when requested. Heating is a disclosed timed process, never thermal physics. Do not claim validation has run; the validation record reports actual checks.
@@ -76,6 +77,12 @@ def _world_welded(obj, objects) -> bool:
     return False  # A missing parent is not evidence of a fixed body.
 
 
+def _fixed_reference_ground(obj, objects) -> bool:
+    """A source floor's sub-millimetre backing is not a standing obstacle."""
+    return (obj.collision and _world_welded(obj, objects)
+            and obj.position[2] + obj.size[2] / 2 <= FIXED_REFERENCE_GROUND_TOLERANCE_M)
+
+
 def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
                   validation_profile: str = "strict", skipped_fixed_pairs: list | None = None,
                   connectivity_diagnostics: dict | None = None) -> list[str]:
@@ -109,6 +116,7 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
         root_id = welded_roots.get(current.id, current.id)
         for oid in chain:
             welded_roots[oid] = root_id
+    visible_rigid_roots = {welded_roots[obj.id] for obj in spec.objects if obj.visible}
     for region in spec.regions:
         if region.interior_of is None:
             continue
@@ -129,8 +137,14 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
                            max(region.position[i] - region.size[i]/2, part.position[i] - part.size[i]/2) for i in range(3)]
             if all(p > .0051 for p in penetration):
                 errors.append(f"{region.id}: usable cavity intersects solid component {oid}; build hollow walls, not a filled appliance")
+    fixed = {obj.id: _world_welded(obj, objects) for obj in spec.objects}
     for item in [*spec.objects, *spec.regions]:
-        if any(abs(item.position[i])+item.size[i]/2 > spec.bounds[i]/2 + 1e-5 for i in (0, 1)) or item.position[2]-item.size[2]/2 < -1e-5 or item.position[2]+item.size[2]/2 > spec.bounds[2] + 1e-5:
+        # Imported floors/foundations can extend below the source ground plane.
+        # Only entirely world-welded reference bodies may do so; task volumes,
+        # moving descendants, strict generation, XY and ceiling stay bounded.
+        fixed_foundation = (validation_profile == "fixed_reference" and item is objects.get(item.id)
+                            and fixed.get(item.id, False))
+        if any(abs(item.position[i])+item.size[i]/2 > spec.bounds[i]/2 + 1e-5 for i in (0, 1)) or (item.position[2]-item.size[2]/2 < -1e-5 and not fixed_foundation) or item.position[2]+item.size[2]/2 > spec.bounds[2] + 1e-5:
             errors.append(f"{item.id}: geometry/region extends outside world bounds")
     x, y, _ = spec.robot_start
     if abs(x)+.4 > spec.bounds[0]/2 or abs(y)+.4 > spec.bounds[1]/2 or spec.bounds[2] < 1.6:
@@ -188,16 +202,16 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
             if checked_metadata[path] is not None:
                 errors.append(f"{obj.id}: {checked_metadata[path]}")
         if not obj.visible:
-            if not any(objects[oid].visible for oid in rigid_members(objects, welded_roots[obj.id])):
+            if welded_roots[obj.id] not in visible_rigid_roots:
                 errors.append(f"{obj.id}: hidden collision geometry needs a visible member of its rigid assembly")
         # Conservative initial robot envelope, not a reachability certificate.
-        if obj.collision and obj.position[2]-obj.size[2]/2 < 1.6 and obj.position[2]+obj.size[2]/2 > 0:
+        source_ground = validation_profile == "fixed_reference" and _fixed_reference_ground(obj, objects)
+        if obj.collision and not source_ground and obj.position[2]-obj.size[2]/2 < 1.6 and obj.position[2]+obj.size[2]/2 > 0:
             dx = max(0, abs(x-obj.position[0])-obj.size[0]/2)
             dy = max(0, abs(y-obj.position[1])-obj.size[1]/2)
             if math.hypot(dx, dy) < .4-1e-5:
                 errors.append(f"{obj.id}: intersects initial robot clearance envelope")
     overlaps = 0
-    fixed = {obj.id: _world_welded(obj, objects) for obj in spec.objects}
     for a, b in candidate_pairs(spec.objects):
         if welded_roots[a.id] == welded_roots[b.id]:
             continue

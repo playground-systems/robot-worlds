@@ -127,6 +127,10 @@ def _job_worker(root_string: str, job_id: str, kind: str, payload: dict) -> None
             payload["asset_library"] = str(library)
         if cancelled():
             job["status"] = "cancelled"
+        elif kind == "starter":
+            from robot_worlds.starter_environments import add_starter
+            world = add_starter(payload['starter_id'], root/'worlds', on_event=event, cancelled=cancelled)
+            job.update(world_id=world.id, status='completed', validation=world.manifest['validation'])
         elif kind == "generate":
             world = generate(**payload, output=root / "worlds", on_event=event, cancelled=cancelled)
             job.update(world_id=world.id, status="completed",
@@ -347,6 +351,29 @@ def create_app(data_dir: str | Path = ".robot-worlds", *, executor_factory=None)
             except (OSError, ValueError, KeyError):
                 continue
         return items
+
+    @app.get("/api/starters")
+    def starters():
+        from robot_worlds.starter_environments import starter_catalog
+        return starter_catalog()
+
+    @app.get("/api/starters/{starter_id}/preview")
+    def preview_starter(starter_id: str):
+        from robot_worlds.starter_environments import starter_preview
+        try:
+            return FileResponse(starter_preview(starter_id), media_type='image/png')
+        except (ValueError, FileNotFoundError) as error:
+            raise HTTPException(404, str(error)) from error
+
+    @app.post("/api/starters/{starter_id}/add", status_code=202)
+    def import_starter(starter_id: str):
+        from robot_worlds.starter_environments import starter_catalog
+        entry = next((e for e in starter_catalog() if e['id'] == starter_id), None)
+        if entry is None:
+            raise HTTPException(404, "Starter environment not found")
+        if not entry['available']:
+            raise HTTPException(503, "Starter data is missing; install the complete package")
+        return submit('starter', {'starter_id': starter_id})
 
     @app.get("/api/references")
     def references():

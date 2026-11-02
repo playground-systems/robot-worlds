@@ -41,6 +41,22 @@ def prepare_warehouse(data_dir: Path = Path(".robot-worlds"), output: Path | Non
 
 
 @app.command()
+def starters():
+    """List the four bundled source environments; no model key is needed."""
+    from robot_worlds.starter_environments import starter_catalog
+    for entry in starter_catalog():
+        typer.echo(f"{entry['id']:12} {entry['name']} · {entry['license']}")
+
+
+@app.command('add-starter')
+def add_starter_command(identifier: str, output: Path = Path('.robot-worlds/worlds')):
+    """Add a reviewed source environment to your workspace without model calls."""
+    from robot_worlds.starter_environments import add_starter
+    world = add_starter(identifier, output, on_event=lambda e: typer.echo(e.get('message', e['type'])))
+    typer.echo(f"{world.id}  {world.path}")
+
+
+@app.command()
 def doctor(json_output: bool = typer.Option(False, "--json"),
            model: str = "gpt-6-astra", data_dir: Path = Path(".robot-worlds")):
     """Check installation offline without starting physics or calling a model."""

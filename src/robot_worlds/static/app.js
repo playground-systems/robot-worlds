@@ -23,17 +23,50 @@ function controls() {
   $('refine-button').disabled = busy || !state.worldId || !state.key || !$('report-area').hidden;
   $('repair-button').disabled = $('refine-button').disabled;
   $('new-world').disabled = busy;
+  $('open-starters').disabled = busy; $('empty-starters').disabled = busy;
+  document.querySelectorAll('.starter-add').forEach(button => { button.disabled = busy || button.dataset.available !== 'true'; });
   for (const id of ['scope-input', 'add-scope', 'allow-task-changes', 'allow-physics-changes', 'leave-edit']) $(id).disabled = busy;
   document.querySelectorAll('.item-list button, .scope-chip button, .version-card button, .parent-actions button, .edit-actions button, .agent-history button').forEach(button => { button.disabled = busy; });
   $('prompt').disabled = busy; $('asset-files').disabled = busy;
 }
 async function refreshLists() {
-  const [worlds, runs, references] = await Promise.all([api('/api/worlds'), api('/api/runs'), api('/api/references')]);
+  const [worlds, runs, references, starters] = await Promise.all([api('/api/worlds'), api('/api/runs'), api('/api/references'), api('/api/starters')]);
+  state.starters = starters; renderStarters();
   state.references = references;
   state.worlds = Array.isArray(worlds) ? worlds : worlds.worlds || [];
   state.runs = Array.isArray(runs) ? runs : runs.runs || [];
   renderLists();
 }
+function renderStarters() {
+  const root = $('starter-cards'); root.replaceChildren();
+  for (const starter of state.starters || []) {
+    const card = el('article', 'starter-card');
+    if (starter.preview_available) { const image = el('img', 'starter-thumbnail'); image.src = `/api/starters/${encodeURIComponent(starter.id)}/preview`; image.alt = `${starter.name} source environment`; image.loading = 'lazy'; card.append(image); }
+    else { const placeholder = el('div', 'starter-thumbnail starter-placeholder', '◇'); placeholder.setAttribute('aria-hidden', 'true'); card.append(placeholder); }
+    const body = el('div', 'starter-card-body'); body.append(el('h3', '', starter.name), el('p', '', starter.description));
+    const details = starter.bounds ? `${starter.bounds[0].toFixed(0)} × ${starter.bounds[1].toFixed(0)} m · ${starter.components} components` : 'Source scene';
+    body.append(el('small', 'muted', details));
+    const footer = el('div', 'starter-card-footer'), source = el('a', 'text-button', `Source · ${starter.license}`);
+    source.href = starter.source_url; source.target = '_blank'; source.rel = 'noopener noreferrer';
+    const button = el('button', 'button primary starter-add', starter.available ? 'Add to workspace' : 'Not installed'); button.dataset.available = String(starter.available); button.disabled = !starter.available;
+    button.setAttribute('aria-label', `Add ${starter.name} to workspace`);
+    button.onclick = async () => {
+      if (state.jobId || state.submitting) return;
+      state.submitting = true; controls(); $('starter-error').hidden = true;
+      try {
+        const job = await post(`/api/starters/${encodeURIComponent(starter.id)}/add`, {});
+        $('starter-dialog').close(); notice(''); state.submitting = false; state.jobContext = null;
+        trackJob(job, `Adding ${starter.name}`);
+      } catch (error) { if ($('starter-dialog').open) { $('starter-error').textContent = message(error); $('starter-error').hidden = false; } else notice(message(error)); }
+      finally { state.submitting = false; controls(); }
+    };
+    footer.append(source, button); body.append(footer); card.append(body); root.append(card);
+  }
+}
+function showStarters() { if (!state.jobId && !state.submitting) { $('starter-error').hidden = true; $('starter-dialog').showModal(); } }
+$('open-starters').onclick = showStarters; $('empty-starters').onclick = showStarters;
+$('close-starters').onclick = () => $('starter-dialog').close();
+
 function renderLists() {
   $('world-count').textContent = state.worlds.length; $('run-count').textContent = state.runs.length;
   $('world-list').replaceChildren(); $('run-list').replaceChildren();
@@ -594,7 +627,7 @@ $('evaluate-form').onsubmit = async event => {
   catch (error) { notice(error.message); }
 };
 async function start() {
-  try { const health = await api('/api/health'); state.key = !!health.key_configured; $('connection').textContent = state.key ? 'Key configured' : 'Key required'; $('connection').title = state.key ? 'Local runtime · model key configured' : 'Configure OPENAI_API_KEY on the server'; $('connection').classList.toggle('error', !state.key); if (!state.key) notice('Set OPENAI_API_KEY in the server environment, then restart the local server to generate worlds or run the agent. Saved worlds and reports remain available.'); if (health.model) $('model').value = health.model; await refreshLists(); const params = new URLSearchParams(location.search); if (params.get('reference')) await openReference(params.get('reference'));
+  try { const health = await api('/api/health'); state.key = !!health.key_configured; $('connection').textContent = state.key ? 'Key configured' : 'No model key'; $('connection').title = state.key ? 'Local runtime · model key configured' : 'Starter environments are available; configure a model key for generation and agent runs'; $('connection').classList.remove('error'); if (!state.key) notice('Set OPENAI_API_KEY in the server environment, then restart the local server to generate worlds or run the agent. Starter environments, saved worlds and reports are available without a key.'); if (health.model) $('model').value = health.model; await refreshLists(); const params = new URLSearchParams(location.search); if (params.get('reference')) await openReference(params.get('reference'));
     else if (params.get('job')) { notice(''); const job = await api(`/api/jobs/${encodeURIComponent(params.get('job'))}`); trackJob(job, 'Live robot mission'); }
     else if (params.get('run')) openReport(params.get('run')); else if (params.get('world')) await openWorld(params.get('world')); }
   catch (error) { notice(error.message); $('connection').textContent = 'Local server unavailable'; $('connection').classList.add('error'); }

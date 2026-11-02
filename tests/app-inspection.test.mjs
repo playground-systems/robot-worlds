@@ -165,7 +165,7 @@ test('cutaway state is disclosed and selection focus is disabled outside the lay
   run("setView('layout');selectObject(currentSpec().objects[0]);");
   nodes.get('cutaway-view').onclick();
   assert.equal(nodes.get('cutaway-view').attrs['aria-pressed'], 'true');
-  assert.match(nodes.get('viewport-caption').textContent, /2 inferred wall\/roof objects hidden/);
+  assert.match(nodes.get('viewport-caption').textContent, /Cutaway inspection · near walls and overhead structure hidden/);
   assert.equal(nodes.get('focus-object').disabled, false); nodes.get('focus-object').onclick();
   assert.deepEqual(calls.at(-1), ['fit', 'part', undefined]);
   run("setView('physical');"); assert.equal(nodes.get('focus-object').disabled, true);

@@ -1,6 +1,6 @@
 # Install and check your setup
 
-Robot Worlds runs simulation and grading on your computer. The browser uses your own model API access. The Python SDK also accepts an optional Codex transport using an existing supported sign-in. The browser opens an empty workbench; no factory or controller demo is bundled into onboarding.
+Robot Worlds runs simulation and grading on your computer. The browser uses your own model API access. The Python SDK also accepts an optional Codex transport using an existing supported sign-in. The browser opens a workbench with four optional source environments. Choose **Browse starter environments** to add a warehouse, house, hospital or bookstore without a model key. These are static scenes with a navigation task, not recorded policy demonstrations.
 
 ## Install from source
 
