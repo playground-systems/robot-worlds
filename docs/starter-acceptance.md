@@ -15,14 +15,15 @@ run a robot policy.
 
 Import times measure local API submission through completed unpacking on the
 review Mac. They exclude browser mesh loading and native validation. No network,
-key, conversion or simulation is required to add a starter. The Linux worker
-measured 0.49–2.44 seconds per import.
+key, conversion or simulation is required to add a starter. Linux verification
+runs measured 0.49–4.81 seconds per import.
 
 The [machine-readable evidence](evidence/starter-environments-2026-11-02.json)
 records source revisions, bundle hashes, native checks, simulator memory and
 Linux/Mac API and SDK results. The [native preparation run](https://github.com/playground-systems/robot-worlds/actions/runs/41492179245)
-contains the full validation records. Its native and offline import stages
-passed; packaging is verified separately after excluding preparation folders.
+contains the full validation records. The [package-only check](https://github.com/playground-systems/robot-worlds/actions/runs/41511111605)
+passed offline imports on the matching installation and verified complete
+wheel/source archives with preparation folders excluded. It ran no simulation.
 
 The images below are native reset renders. The hospital ceiling is hidden for
 inspection; the runtime's background plane is hidden in every thumbnail so it

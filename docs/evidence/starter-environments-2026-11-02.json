@@ -259,5 +259,77 @@
     "all_four_bundle_sha256_match_catalog": true,
     "thumbnails_match_frozen_bundle_previews": true,
     "public_sdk_asset_integrity": "passed"
+  },
+  "package_verification": {
+    "run": "https://github.com/playground-systems/robot-worlds/actions/runs/41511111605",
+    "checked_commit": "d802b9f16cd4a8c41653c2d56649c6488da6481a",
+    "distribution_check": {
+      "status": "passed",
+      "version": "0.1.0a1",
+      "package_files": 359,
+      "controller_license_sha256": "ff28cacaef7b9919a0fb905136cf4ccffba5191522bf5d024c4339932c0edc28",
+      "artifacts": [
+        {
+          "name": "robot_worlds-0.1.0a1-py3-none-any.whl",
+          "sha256": "1519678ac73081dd1a8a5f67a994c4d222fc2d98719fc1f7ce4ac53fda604f81",
+          "bytes": 152897626
+        },
+        {
+          "name": "robot_worlds-0.1.0a1.tar.gz",
+          "sha256": "672413db9d8d71ed0538c2810d53587f58edf5d4217e5d8eec087614d0605fd1",
+          "bytes": 155598221
+        }
+      ],
+      "limit": "Archive completeness and pinned notice checks only; not native execution, model compatibility or a legal opinion."
+    },
+    "offline_api_sdk": {
+      "status": "passed",
+      "model_calls": 0,
+      "native_runs": 0,
+      "worker": "production spawned process",
+      "application_reopen": "passed",
+      "environments": [
+        {
+          "id": "warehouse",
+          "world_id": "4e6234d57fff0ba655c7dc90263c30012212261f25e880d217edc0f44046d802",
+          "components": 692,
+          "bundle_bytes": 4804839,
+          "api_add_seconds": 0.894,
+          "sdk_reopen_seconds": 0.216,
+          "native_validation": "ready",
+          "requires_native_revalidation": false
+        },
+        {
+          "id": "house",
+          "world_id": "a4ff3917b725bf2fc90075db836230dea5363183c39aa4fcf87d9bfdf3e208e4",
+          "components": 1545,
+          "bundle_bytes": 43107616,
+          "api_add_seconds": 1.164,
+          "sdk_reopen_seconds": 0.668,
+          "native_validation": "ready",
+          "requires_native_revalidation": false
+        },
+        {
+          "id": "hospital",
+          "world_id": "a6fd9818da89d15f78ba19249152785bc2aff52613c715ad587ea04423bf3e93",
+          "components": 9198,
+          "bundle_bytes": 64864241,
+          "api_add_seconds": 4.811,
+          "sdk_reopen_seconds": 3.061,
+          "native_validation": "ready",
+          "requires_native_revalidation": false
+        },
+        {
+          "id": "bookstore",
+          "world_id": "0b8aa71026346c45f118d3d757ac378646d351ea15d33366681237501aec02d8",
+          "components": 3243,
+          "bundle_bytes": 15895888,
+          "api_add_seconds": 1.516,
+          "sdk_reopen_seconds": 1.016,
+          "native_validation": "ready",
+          "requires_native_revalidation": false
+        }
+      ]
+    }
   }
 }

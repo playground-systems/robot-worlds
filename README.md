@@ -26,7 +26,7 @@ Open **http://127.0.0.1:8765**. Choose **Browse starter environments** to add a 
 
 Follow the [end-to-end walkthrough](docs/walkthrough.md), or see the [SDK and sensor contract](docs/sdk.md) for custom policies and appliance environments. See [setup and model access](docs/setup.md) for offline `doctor` checks, API requirements, the optional Codex SDK transport, and clean installation.
 
-The [starter environment guide](docs/starter-environments.md) covers source layouts, offline SDK use and adaptation limits.
+The [starter environment guide](docs/starter-environments.md) covers source layouts, offline SDK use and adaptation limits. See the [rendered scenes and import checks](docs/starter-acceptance.md).
 
 For reusable warehouse models, install the reviewed rack, pallet, carton,
 barrier and passive conveyor into the workbench's asset library:

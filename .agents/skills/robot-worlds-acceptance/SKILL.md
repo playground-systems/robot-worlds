@@ -30,6 +30,8 @@ This is historical evidence for the procedure, not certification of later code.
    evidence record. A running job, partial log or earlier green build cannot
    certify the current candidate.
 
+Starters: for bundled source scenes, offline import acceptance or starter package checks, read [references/starters.md](references/starters.md).
+
 ## Choose one bounded workflow
 
 Read the selected script and its CLI options before execution. Use a fresh output
