@@ -12,6 +12,7 @@ const catalog = ['warehouse', 'house', 'hospital', 'bookstore', 'fixture-kitchen
   id, name: `Fixture ${id}`, description: 'Explicitly fake UI fixture', available: true,
   preview_available: true, license: 'MIT-0', source_url: `https://example.invalid/${id}`,
   bounds: [24, 18, 5], components: 2,
+  task_count: { 'fixture-kitchen': 16, 'fixture-factory': 15, 'fixture-living-room': 13 }[id],
 }));
 
 class Element {
@@ -123,6 +124,15 @@ async function settle() {
   // Drain that Promise chain without advancing fake polling timers.
   for (let index = 0; index < 25; index++) await Promise.resolve();
 }
+
+test('starter cards distinguish manipulation task suites from static references', () => {
+  const { nodes } = fixture();
+  const text = node => [node.textContent || '', ...node.children.map(text)].join(' ');
+  for (const [index, card] of nodes.get('starter-cards').children.entries()) {
+    const expected = catalog[index].task_count;
+    assert(text(card).includes(expected ? `${expected} task variants` : 'Static reference'));
+  }
+});
 
 test('additive starter cards can all be chosen without a key or a generation form', async () => {
   const { nodes, buttons, requests, run } = fixture({ status: 'queued' });

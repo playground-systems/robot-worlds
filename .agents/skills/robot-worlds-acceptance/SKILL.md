@@ -32,6 +32,8 @@ This is historical evidence for the procedure, not certification of later code.
 
 Starters: for bundled source scenes, offline import acceptance or starter package checks, read [references/starters.md](references/starters.md).
 
+Manipulation presets: for SimReady scene authoring, task catalogs, source-joint physics or preset freezing, read [references/manipulation-presets.md](references/manipulation-presets.md).
+
 ## Choose one bounded workflow
 
 Read the selected script and its CLI options before execution. Use a fresh output

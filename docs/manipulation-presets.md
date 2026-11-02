@@ -44,7 +44,8 @@ checks do not prove that every grasp, drawer sweep or task is feasible for TIAGo
 The [dated acceptance record](evidence/manipulation-presets-2026-11-02.json)
 identifies all three frozen worlds. Computer use also verified kitchen task
 selection followed by real local native validation; geometry and physical
-identity stayed unchanged. [Task-selector screenshot](images/manipulation-presets/task-selection.png).
+identity stayed unchanged. [Task selector](images/manipulation-presets/task-selection.png)
+and [factory canvas](images/manipulation-presets/factory-app.png) show the app.
 
 The rubrics measure physical holding, sampled carry distance, contact-supported
 placement, release, actual joint positions and ordered events. Drawer placements
