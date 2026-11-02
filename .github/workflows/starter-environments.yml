@@ -53,5 +53,6 @@ jobs:
             starter-output/*/provenance.json
             starter-output/*/manifest.json
             starter-output/*/NOTICE.txt
+            starter-output/failures.json
             starter-evidence/
           if-no-files-found: warn

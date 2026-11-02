@@ -13,6 +13,7 @@ import json
 import math
 import tarfile
 import time
+import traceback
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.parse import unquote
@@ -122,7 +123,7 @@ def acquire(entry, cache):
     return target
 
 
-def primitives(path):
+def primitives(path, disclosures=None):
     document = collada.Collada(str(path))
     if document.assetInfo.upaxis not in (None, "Z_UP"):
         raise ValueError(f"Unreviewed source up-axis: {path}")
@@ -137,6 +138,33 @@ def primitives(path):
                 primitive = primitive.triangleset()
             if not hasattr(primitive, "vertex_index"):
                 raise ValueError(f"Unsupported COLLADA primitive in {path}")
+            vertices, indices = primitive.vertex, primitive.vertex_index
+            if len(primitive) == 0:
+                # Some original AWS exports contain an unused material group:
+                # <triangles count="0"><p/></triangles>. Pycollada correctly
+                # exposes it with no position/index arrays. Verify that exact
+                # source condition; a nonempty unsupported group must fail.
+                original = getattr(primitive, "original", primitive)
+                node = getattr(original, "xmlnode", None)
+                empty = (
+                    node is not None
+                    and node.tag.rsplit("}", 1)[-1] == "triangles"
+                    and node.get("count") == "0"
+                    and all(not (child.text or "").strip() for child in node
+                            if child.tag.rsplit("}", 1)[-1] == "p")
+                    and (indices is None or not np.asarray(indices).size)
+                )
+                if not empty:
+                    raise ValueError(f"Unreviewed empty COLLADA primitive in {path}")
+                if disclosures is not None:
+                    disclosures.append(
+                        f"{path.name}: skipped explicitly empty COLLADA triangle material group "
+                        "(source count=0, no face indices); no source surface removed"
+                    )
+                continue
+            if (vertices is None or indices is None or np.asarray(indices).ndim != 2
+                    or np.asarray(indices).shape[1] != 3):
+                raise ValueError(f"Unsupported or incomplete COLLADA triangles in {path}")
             yield primitive, unit
 
 
@@ -286,7 +314,7 @@ class Adapter:
         if key in self.collision_cache:
             return self.collision_cache[key]
         parts = []
-        for primitive, unit in primitives(mesh):
+        for primitive, unit in primitives(mesh, self.disclosures):
             prepared = prepare_static_collision(
                 primitive.vertex * unit * scale, primitive.vertex_index
             )
@@ -383,7 +411,7 @@ class Adapter:
                     match.update(visible=True, color=color[:3].tolist(), opacity=float(color[3]))
                     continue
                 path, scale = self.geometry(visual)
-                for primitive, unit in primitives(path):
+                for primitive, unit in primitives(path, self.disclosures):
                     uv = (
                         primitive.texcoordset[0][primitive.texcoord_indexset[0]]
                         if primitive.texcoordset
@@ -572,6 +600,7 @@ def main():
     parser.add_argument("--only")
     args = parser.parse_args()
     args.cache.mkdir(parents=True, exist_ok=True)
+    failures = []
     for entry in json.loads(CATALOG.read_text())["environments"]:
         if args.only and entry["id"] != args.only:
             continue
@@ -579,6 +608,7 @@ def main():
         source = acquire(entry, args.cache)
         output = args.output / entry["id"]
         adapter = Adapter(entry, source, output, args.cache)
+        (output / "manifest.json").unlink(missing_ok=True)
         world = xml(source / entry["world"]).find("world")
         adapter.input(source / "LICENSE")
         adapter.input(source / entry["world"])
@@ -587,8 +617,30 @@ def main():
                 f"{entry['id']} {index + 1}/{len(world.findall('model'))} {model.get('name')}",
                 flush=True,
             )
-            adapter.model(model, np.eye(4), model.get("name", "Source object"))
-        adapter.finish()
+            try:
+                adapter.model(model, np.eye(4), model.get("name", "Source object"))
+            except Exception as error:
+                failure = {
+                    "environment": entry["id"],
+                    "source_model": model.get("name"),
+                    "error": str(error),
+                }
+                failures.append(failure)
+                print(json.dumps({"conversion_failure": failure}), flush=True)
+                traceback.print_exc()
+        if not any(f["environment"] == entry["id"] for f in failures):
+            try:
+                adapter.finish()
+            except Exception as error:
+                failure = {"environment": entry["id"], "source_model": None, "error": str(error)}
+                failures.append(failure)
+                print(json.dumps({"conversion_failure": failure}), flush=True)
+                traceback.print_exc()
+    if failures:
+        (args.output / "failures.json").write_text(json.dumps(failures, indent=2) + "\n")
+        raise RuntimeError(
+            f"{len(failures)} source conversion failures; no partial scene is release-ready"
+        )
 
 
 if __name__ == "__main__":

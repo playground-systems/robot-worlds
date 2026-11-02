@@ -186,3 +186,28 @@ def test_physical_parts_and_visuals_keep_first_assembly_parent_across_links(adap
     assert second["collision"] and second["parent_id"] == first["id"]
     assert not visual["collision"] and visual["parent_id"] == first["id"]
     assert len(adapter.collision_cache) == 1
+
+
+def test_explicit_empty_collada_material_group_is_disclosed_without_losing_faces(adapter):
+    import copy
+
+    dae = adapter.source / "models/unit_cube/original.dae"
+    write_cube_dae(dae)
+    tree = ET.parse(dae)
+    ns = {"c": "http://www.collada.org/2005/11/COLLADASchema"}
+    mesh = tree.getroot().find(".//c:mesh", ns)
+    source_triangles = mesh.find("c:triangles", ns)
+    empty = copy.deepcopy(source_triangles)
+    empty.set("count", "0")
+    empty.find("c:p", ns).text = None
+    mesh.insert(list(mesh).index(source_triangles) + 1, empty)
+    tree.write(dae, encoding="utf-8", xml_declaration=True)
+    disclosures = []
+    primitives = list(prepare.primitives(dae, disclosures))
+    assert len(primitives) == 1 and len(primitives[0][0].vertex_index) == 12
+    assert len(disclosures) == 1 and "source count=0" in disclosures[0]
+    assert "no source surface removed" in disclosures[0]
+    parts = adapter.collisions(dae, np.ones(3))
+    assert len(parts) == 1
+    assert convex_volume(parts[0][0], parts[0][1]) == pytest.approx(1)
+    assert any("source count=0" in item for item in adapter.disclosures)
