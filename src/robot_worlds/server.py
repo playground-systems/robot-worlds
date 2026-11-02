@@ -39,7 +39,7 @@ class RequestModel(BaseModel):
 class GenerateRequest(RequestModel):
     prompt: str = Field(min_length=1, max_length=32000)
     model: str = Field(default="gpt-6-astra", min_length=1, max_length=100)
-    reasoning: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
+    reasoning: Literal["low", "medium", "high", "xhigh", "max"] = "high"
     max_repairs: int = Field(default=2, ge=0, le=10)
     scene_profile: Literal["standard", "large"] = "standard"
     max_objects: int = Field(default=5000, ge=1, le=10000)

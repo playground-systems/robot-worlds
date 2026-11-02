@@ -2,7 +2,9 @@
 
 Checked **2026-11-02** against publisher documentation, source code, dataset cards and distributed license files. This is source research, not a successful import or simulation test. No packages, models or large datasets were installed/downloaded.
 
-**Current build selection: three Astra-authored scenes using only NVIDIA SimReady props and furniture.** The user narrowed the asset source after this comparison. RoboCasa, MolmoSpaces and the other datasets below remain research alternatives; they are not sources for the new kitchen, factory or living room.
+**Accepted source policy:** reuse existing simulation-ready environments and supplement them with NVIDIA SimReady assets. The requirement covers usable physics and articulation, not a single asset brand. RoboCasa and MolmoSpaces are approved source families; their import and interaction checks remain to be completed. All modeling, layout and placement decisions follow [the repository's authoring rule](../AGENTS.md).
+
+**Current installed builds:** the three presets below use only NVIDIA SimReady props and furniture. They predate the expanded source policy and are preserved while richer source scenes are integrated.
 
 ## Selected scenes
 
@@ -72,4 +74,4 @@ Rechecked **2026-11-02** after the request to consider modifying existing enviro
 
 Isaac Lab **Factory** adds contact-rich peg insertion, gear meshing and nut threading cells. NVIDIA's full warehouse scenes supply buildings and furnishings, but their catalog does not establish working mechanisms or movable stock throughout. None is a verified Mac/MuJoCo import. Isaac Sim requires supported Linux/Windows NVIDIA GPU hardware; its code licenses do not automatically cover referenced assets. Default NVIDIA asset terms restrict modification/redistribution unless separate terms grant permission, so these samples cannot be treated as our already-vetted CC BY SimReady collection. [Factory task configurations](https://github.com/isaac-sim/IsaacLab/blob/v2.3.0/source/isaaclab_tasks/isaaclab_tasks/direct/factory/factory_tasks_cfg.py), [environment catalog](https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_environments.html), [requirements](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/requirements.html), [code versus asset terms](https://docs.isaacsim.omniverse.nvidia.com/6.2.0/common/license-faq.html), [asset agreement](https://docs.isaacsim.omniverse.nvidia.com/latest/common/license-isaac-sim-additional.html).
 
-The recommended household candidates require broadening the earlier **NVIDIA SimReady-only** source rule. They are not installed replacements. For an unrestricted Mac-first factory bundle under the existing rule, retain vetted SimReady assets and compose/test explicit workcells within a dense factory layout. A separately licensed Isaac backend is another integration path, not an existing capability.
+The user approved the recommended household source families and NVIDIA supplementation after this comparison. They are not installed replacements. For a Mac-first factory bundle, retain vetted SimReady assets and compose/test explicit workcells within a dense factory layout. A separately licensed Isaac backend is another integration path, not an existing capability.

@@ -853,7 +853,7 @@ def load(path: str | Path) -> World:
 
 
 def generate(prompt: str, *, output: str | Path = "worlds", model: str = "gpt-6-astra",
-             reasoning: str = "medium", client=None, max_repairs: int = 2,
+             reasoning: str = "high", client=None, max_repairs: int = 2,
              asset_root: str | Path | None = None, parent_id: str | None = None,
              on_event: Callable | None = None, runtime_factory: Callable | None = None,
              cancelled: Callable | None = None, client_options: dict | None = None,

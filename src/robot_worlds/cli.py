@@ -92,7 +92,7 @@ def _progress(event: dict):
 
 @app.command()
 def generate(prompt: str, output: Path = Path("worlds"), model: str = "gpt-6-astra",
-             reasoning: str = "medium", max_repairs: int = 2,
+             reasoning: str = "high", max_repairs: int = 2,
              max_cost_usd: float = 5, max_model_seconds: float = 600,
              scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0,
              asset_library: Path | None = typer.Option(None, exists=True, file_okay=False, help="Portable source asset library directory.")):

@@ -1,3 +1,17 @@
+# Scene authoring
+
+Delegate all modeling, asset selection, material, physical-property inference,
+layout and placement decisions to GPT-6 Astra with high reasoning or Claude
+Opus 5.5. Record the configured model and reasoning effort with the authored
+plan. Other agents handle imports, provenance, SDK wiring and validation;
+return geometry or placement repairs to an authorized scene author.
+
+Reuse existing simulation-ready environments and supplement them with NVIDIA
+SimReady assets where useful. Simulation-ready is a capability requirement,
+not an NVIDIA-only source restriction. Preserve source visual meshes,
+materials, rigid bodies, collision geometry and articulation; validate the
+combined scene in our runtime and retain each source's license and notices.
+
 # Asset sourcing
 
 Before creating a new object asset, search for an existing asset online. Reuse or

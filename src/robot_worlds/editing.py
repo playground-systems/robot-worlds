@@ -512,7 +512,7 @@ def compact_context(spec: WorldSpec, prompt: str, scope: list[str] | None, error
 
 def edit_world(world, prompt: str | None, *, kind="refine", scope=None,
                allow_task_changes=False, allow_physics_changes=False, output=None,
-               model="gpt-6-astra", reasoning="medium", client=None, max_repairs=2,
+               model="gpt-6-astra", reasoning="high", client=None, max_repairs=2,
                client_options=None, runtime_factory=None, on_event=None, cancelled=None,
                scene_profile="standard", max_objects=MAX_EXPANDED_OBJECTS, min_objects=0,
                asset_root=None, asset_library=None):

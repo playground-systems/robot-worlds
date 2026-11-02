@@ -81,7 +81,7 @@ Generation accepts the same client through `generate(prompt, client=CodexClient(
 
 ## Verify API model access explicitly
 
-The code defaults to `gpt-6-astra`, reasoning `medium`. The development team's successful Astra calls establish access for that account, not yours. Astra requires supported paid API access; a ChatGPT subscription does not establish that API access. A configured key, a model name or a model-list response does not establish compatibility with the actual workload.
+Scene generation, refinement and repair default to `gpt-6-astra` with `high` reasoning. The robot policy's SDK default remains `medium`. The development team's successful Astra calls establish access for that account, not yours. Astra requires supported paid API access; a ChatGPT subscription does not establish that API access. A configured key, a model name or a model-list response does not establish compatibility with the actual workload.
 
 The selected model must support the Responses API, strict structured JSON for generation/editing, and image input with function selection for the robot policy. Cost-limited calls also require the input-token-counting endpoint for the same payload. The [official Astra model page](https://developers.openai.com/api/docs/models/gpt-6-astra) documents capabilities; [the model guide](https://developers.openai.com/api/docs/guides/latest-model) specifies Responses for tool use. Check current account access and pricing rather than relying on a development account's results.
 

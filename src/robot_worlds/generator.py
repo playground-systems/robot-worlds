@@ -325,7 +325,7 @@ def _generation_phase(emit, phase: str, attempt: int):
                   "status": "failed" if error_type else "finished", "error_type": error_type})
 
 
-def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", client=None, max_repairs=2, on_candidate: Callable | None = None, event_callback: Callable | None = None, validator: Callable | None = None, asset_root=None,
+def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="high", client=None, max_repairs=2, on_candidate: Callable | None = None, event_callback: Callable | None = None, validator: Callable | None = None, asset_root=None,
                   cancelled: Callable | None = None, client_options: dict | None = None,
                   scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0, asset_library=None,
                   online_asset_cache=None, asset_resolver=None, online_assets=True,
