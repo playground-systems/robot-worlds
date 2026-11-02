@@ -2,7 +2,27 @@
 
 Checked **2026-11-02** against publisher documentation, source code, dataset cards and distributed license files. This is source research, not a successful import or simulation test. No packages, models or large datasets were installed/downloaded.
 
-**Start with selected RoboCasa365 kitchens and MolmoSpaces' converted iTHOR scenes.** Both supply complete environments in the MuJoCo ecosystem, including articulated fixtures and movable props. They fit Robot Worlds' existing MuJoCo physics and Three.js viewer more closely than importing another simulator. ReplicaCAD Interactive is a useful apartment alternative, but contradictory first-party license files currently prevent treating it as an unrestricted redistributable default.
+**The minimum is one manipulation-ready kitchen and one manipulation-ready factory.** Use a RoboCasa365 kitchen and compose our own factory from selected NVIDIA SimReady assets. This replaces the earlier household-only starter recommendation. MolmoSpaces remains an additional indoor source; ReplicaCAD remains conditional on resolving its conflicting licenses.
+
+## Selected starter pair
+
+These are selected integration targets, not additions already available in the starter catalog.
+
+| Preset | Source and layout | Required interaction |
+| --- | --- | --- |
+| **Kitchen** | RoboCasa365 **One Wall / Industrial, layout 1 + style 1**. Preserve the furnished layout and articulated cabinets/appliances. [Source scenes](https://robocasa.ai/docs/build/html/assets/scenes.html). | Movable bowls and utensils; physical cabinet/drawer motion; an openable microwave with usable interior. The bowl-to-microwave mission must establish reachability, cavity clearance and stable placement before it is advertised. |
+| **Factory** | **Our authored assembly-and-inspection floor**, composed from individually licensed [NVIDIA SimReady assets](https://huggingface.co/datasets/nvidia/simready-assets). Connect parts storage, a loading/assembly fixture, inspection and dispatch with navigable aisles and accessible transfer surfaces. | Loose parts and kit containers can be grasped, carried, seated in a fixture, released for inspection, regrasped and delivered. Internal inspection uses the declared process-cycle abstraction; no material deformation is implied. |
+
+The factory starts from the existing reviewed [source catalog](../src/robot_worlds/assets/simready/catalog.json) and [portable library adapters](../src/robot_worlds/warehouse_library.py):
+
+- `rack_large_empty_a02`: fixed rack with open shelf regions.
+- `pallet_a01` and `box_corrugated_brown_b20`: movable rigid assemblies. Cartons remain sealed; pallet movement is not a TIAGo++ lifting requirement.
+- `barrier_fence_metal_a02`: fixed guarding placed beside actual hazards, with access left clear.
+- `conveyor_belt_a05`: fixed frame with **29 passive roller hinges**. Include it only at a meaningful loading/unloading station; powered transport requires a separately implemented and verified drive.
+
+Workbench, grasp-sized industrial parts, fixture and tray choices still need source selection and adaptation. Search existing models before authoring geometry; the five existing adapters do not cover those assets. Keep original appearance, source notices and package-specific licenses. NVIDIA's [physics guidance](https://docs.omniverse.nvidia.com/simready/latest/simready-asset-creation/physics-best-practices.html) defines USDPhysics metadata; converting it into MuJoCo dynamics and implementing interactions remains our work. [SimReady Central](https://docs.omniverse.nvidia.com/simready/latest/simready-central.html) also requires checking each asset's profile, validation evidence and license.
+
+**Ready means:** both presets install as prepared packages, open through the app and SDK without generation/model calls, reset reproducibly, retain separate movable objects/joints and have verified collisions, supports and robot access. A scripted physical demonstration must exercise each promised interaction and an SDK run must produce its rubric report and replay. Mock model responses where possible while keeping the manipulation proof in real physics. Record scripted/privileged control as engineering evidence, separately from autonomous policy success. Scene composition, preparation and these checks have not been performed in this research task.
 
 ## Candidate comparison
 
@@ -15,7 +35,7 @@ Checked **2026-11-02** against publisher documentation, source code, dataset car
 | **HSSD-Hab v0.3 — research-only alternative** | Unlike the older navigation-only interpretation, v0.3 introduces **202 articulated scenes, 161 public**, with 2,000+ furniture URDFs replacing rigid cabinets, drawers and appliances. Receptacles and colliders support rearrangement. [Publisher dataset card](https://huggingface.co/datasets/hssd/hssd-hab). | Habitat assets need GLB/URDF/scene conversion to MuJoCo, as with ReplicaCAD. Full repository is listed at **12.1 GB**; choose a small subset for any trial. No Robot Worlds import or native Mac performance was verified. [Card and file structure](https://huggingface.co/datasets/hssd/hssd-hab/tree/4369cb9876214c7fbebcf552eb532380e4d287e4). | Dataset is **CC BY-NC 4.0**. Suitable for an explicitly restricted research integration, not an unrestricted default asset pack. [Publisher terms](https://huggingface.co/datasets/hssd/hssd-hab). |
 | **BEHAVIOR / OmniGibson — exclude from this asset pipeline** | Full household activity environments are relevant conceptually, but their content cannot be treated as an exportable mesh library. | Its installer targets Linux and the NVIDIA/Isaac stack. A separate backend would be required; MuJoCo extraction is disallowed by the data agreement. [Official setup](https://github.com/StanfordVL/BEHAVIOR-1K/blob/main/setup.sh). | **MIT software is separate from the data EULA**: noncommercial academic use only, within OmniGibson; extraction/reverse engineering and redistribution are prohibited. This rules out importing its data into Robot Worlds. [Actual agreement in installer](https://github.com/StanfordVL/BEHAVIOR-1K/blob/main/setup.sh#L158). |
 
-## Three concrete starter scenes
+## Additional household scene details
 
 1. **RoboCasa One Wall / Industrial, layout 1 + style 1.** The source layout already assembles sink, stove, fridge, cabinets, drawer stacks, dishwasher and microwave. Style 1 resolves actual fixtures such as `Microwave066` and `Dishwasher042`. Add a fixed, small task-object set through RoboCasa's existing placement definitions. Start with cabinet open/close and counter-to-cabinet transfer. [Layout](https://github.com/robocasa/robocasa/blob/3443cdf3dd20f9ae8ed41adba442059b506891d0/robocasa/models/assets/scenes/kitchen_layouts/test/layout001.yaml), [style](https://github.com/robocasa/robocasa/blob/3443cdf3dd20f9ae8ed41adba442059b506891d0/robocasa/models/assets/scenes/kitchen_styles/test/style001.yaml).
 2. **MolmoSpaces iTHOR `FloorPlan1_physics.xml`.** Use the publisher's existing MuJoCo scene and dependency resolver. This gives a second source family without first rebuilding a Unity importer. Pin its scene/object resource versions and inspect the included articulated bodies before selecting tasks. The guide explicitly demonstrates this file; no claim is made that every visible prop is movable. [Exact quick start](https://github.com/allenai/molmospaces/blob/22ee21c0fb1d6f2bbccd4a7d5ee6f6dccc488bf1/docs/assets.md#assets-quick-start).
