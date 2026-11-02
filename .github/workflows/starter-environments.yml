@@ -1,0 +1,41 @@
+name: starter-environments
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prepare:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'prepare-starter-environments'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      OPENAI_API_KEY: ''
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Install isolated scene-data conversion tools
+        run: |
+          python -m pip install uv==0.11.28
+          uv sync --frozen --extra preparation --dev
+          uv pip install --python .venv/bin/python pycollada==0.9.3 trimesh==4.7.4 scipy==1.16.3
+      - name: Convert pinned source scenes without model calls
+        run: |
+          mkdir -p starter-evidence
+          git rev-parse HEAD > starter-evidence/commit.txt
+          .venv/bin/python tools/starters/prepare.py --output starter-output --cache "$RUNNER_TEMP/starter-sources" 2>&1 | tee starter-evidence/conversion.log
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: starter-environments-${{ github.run_id }}
+          retention-days: 7
+          path: |
+            starter-output/
+            starter-evidence/
+          if-no-files-found: warn

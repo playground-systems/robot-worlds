@@ -1,0 +1,327 @@
+"""Offline release preparation for four pinned AWS scene-data imports.
+
+Run on a hosted worker, never during a customer click. No ROS packages, Gazebo
+plugins, source launch scripts or model inference are executed. Output is data.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import io
+import json
+import math
+import tarfile
+import time
+import xml.etree.ElementTree as ET
+from pathlib import Path
+from urllib.parse import unquote
+
+import collada
+import httpx
+import numpy as np
+import trimesh
+from PIL import Image
+
+from robot_worlds.collision_preparation import prepare_collision_mesh
+from robot_worlds.mesh_assets import read_triangle_obj
+from robot_worlds.models import WorldSpec
+
+CATALOG = Path(__file__).resolve().parents[2]/'src/robot_worlds/assets/starters/catalog.json'
+
+
+def xml(path):
+    data = path.read_bytes()
+    if b'<!DOCTYPE' in data.upper() or b'<!ENTITY' in data.upper():
+        raise ValueError('XML entity declarations are not scene data')
+    return ET.fromstring(data)
+
+
+def pose(node):
+    values = np.fromstring(node.findtext('pose', '0 0 0 0 0 0'), sep=' ')
+    if values.shape != (6,) or not np.isfinite(values).all():
+        raise ValueError('Invalid source pose')
+    x, y, z, roll, pitch, yaw = values
+    cr, sr, cp, sp, cy, sy = math.cos(roll), math.sin(roll), math.cos(pitch), math.sin(pitch), math.cos(yaw), math.sin(yaw)
+    matrix = np.eye(4)
+    matrix[:3, :3] = np.array([[cy, -sy, 0], [sy, cy, 0], [0, 0, 1]]) @ np.array([[cp, 0, sp], [0, 1, 0], [-sp, 0, cp]]) @ np.array([[1, 0, 0], [0, cr, -sr], [0, sr, cr]])
+    matrix[:3, 3] = [x, y, z]
+    return matrix
+
+
+def resolve(uri, source, base):
+    uri = unquote(uri)
+    if uri.startswith('model://'):
+        path = source/'models'/uri.removeprefix('model://')
+    elif uri.startswith('file://'):
+        path = source/uri.removeprefix('file://')
+    else:
+        path = base/uri
+    path = path.resolve()
+    if not path.is_relative_to(source.resolve()) or not path.is_file():
+        raise ValueError(f'Unresolved source resource: {uri}')
+    return path
+
+
+def acquire(entry, cache):
+    target = cache/entry['id']
+    if (target/'LICENSE').exists():
+        return target
+    target.mkdir(parents=True, exist_ok=True)
+    url = f"https://codeload.github.com/{entry['repo']}/tar.gz/{entry['revision']}"
+    archive = cache/(entry['id']+'.tar.gz')
+    for attempt in range(3):
+        try:
+            count = 0
+            with httpx.stream('GET', url, timeout=60, follow_redirects=True) as response:
+                response.raise_for_status()
+                with archive.open('wb') as output:
+                    for chunk in response.iter_bytes(1024*1024):
+                        count += len(chunk)
+                        if count > 160*1024*1024:
+                            raise ValueError('Source archive exceeds acquisition budget')
+                        output.write(chunk)
+            break
+        except httpx.HTTPError:
+            if attempt == 2:
+                raise
+            time.sleep(2)
+    total = 0
+    with tarfile.open(archive) as bundle:
+        for member in bundle:
+            relative = Path(*Path(member.name).parts[1:])
+            if not relative.parts or relative.parts[0] not in {'models', 'worlds', 'LICENSE'}:
+                continue
+            if member.issym() or member.islnk() or '..' in relative.parts or relative.is_absolute():
+                raise ValueError('Unsafe source archive member')
+            if member.isfile():
+                total += member.size
+                if total > 250*1024*1024 or member.size > 32*1024*1024:
+                    raise ValueError('Expanded source exceeds budget')
+                path = target/relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(bundle.extractfile(member).read())
+    (target/'acquisition.json').write_text(json.dumps({'url': url, 'archive_sha256': hashlib.sha256(archive.read_bytes()).hexdigest(), 'bytes': archive.stat().st_size}))
+    return target
+
+
+def primitives(path):
+    document = collada.Collada(str(path))
+    if document.assetInfo.upaxis not in (None, 'Z_UP') or document.assetInfo.unitmeter not in (None, 1.0):
+        raise ValueError(f'Unreviewed source axes/units: {path}')
+    if document.scene is None:
+        raise ValueError('COLLADA scene is missing')
+    for geometry in document.scene.objects('geometry'):
+        for primitive in geometry.primitives():
+            if hasattr(primitive, 'triangleset'):
+                primitive = primitive.triangleset()
+            if not hasattr(primitive, 'vertex_index'):
+                raise ValueError(f'Unsupported COLLADA primitive in {path}')
+            yield primitive
+
+
+def obj_bytes(vertices, faces, uv=None, normals=None):
+    # Expanded triangle vertices preserve separate UV seams and source normals.
+    points = vertices[faces].reshape(-1, 3)
+    text = ''.join('v '+' '.join(f'{x:.8g}' for x in row)+'\n' for row in points)
+    if uv is not None:
+        text += ''.join('vt '+' '.join(f'{x:.8g}' for x in row)+'\n' for row in uv.reshape(-1, 2))
+    if normals is not None:
+        text += ''.join('vn '+' '.join(f'{x:.8g}' for x in row)+'\n' for row in normals.reshape(-1, 3))
+    def ref(i):
+        return str(i)+(f'/{i}' if uv is not None else '/' if normals is not None else '')+(f'/{i}' if normals is not None else '')
+    text += ''.join('f '+' '.join(ref(i+j+1) for j in range(3))+'\n' for i in range(0, len(points), 3))
+    return text.encode()
+
+
+class Adapter:
+    def __init__(self, entry, source, output, cache):
+        self.entry, self.source, self.output, self.cache = entry, source, output, cache
+        self.files = output/'files'
+        self.files.mkdir(parents=True, exist_ok=True)
+        self.objects, self.inputs, self.disclosures = [], {}, []
+        self.collision_cache = {}
+        self.texture_cache = {}
+
+    def store(self, data, suffix):
+        name = hashlib.sha256(data).hexdigest()+suffix
+        path = self.files/name
+        if not path.exists():
+            path.write_bytes(data)
+        return 'files/'+name
+
+    def input(self, path):
+        self.inputs[str(path.relative_to(self.source))] = hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def geometry(self, node):
+        mesh = node.find('geometry/mesh')
+        if mesh is None:
+            raise ValueError('Starter source currently requires reviewed mesh geometry')
+        path = resolve(mesh.findtext('uri'), self.source, self.source)
+        self.input(path)
+        scale = np.fromstring(mesh.findtext('scale', '1 1 1'), sep=' ')
+        if scale.shape != (3,) or np.any(scale <= 0):
+            raise ValueError('Invalid source mesh scale')
+        return path, scale
+
+    def texture(self, primitive, mesh):
+        color, texture, opacity = [0.65, 0.65, 0.65], None, 1.0
+        if primitive.material is not None:
+            diffuse = primitive.material.effect.diffuse
+            if isinstance(diffuse, collada.material.Map):
+                path = resolve(diffuse.sampler.surface.image.path, self.source, mesh.parent)
+                self.input(path)
+                if str(path) not in self.texture_cache:
+                    with Image.open(path) as image:
+                        image = image.convert('RGBA' if 'A' in image.getbands() else 'RGB')
+                        image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+                        data = io.BytesIO(); image.save(data, format='PNG', optimize=True)
+                    self.texture_cache[str(path)] = self.store(data.getvalue(), '.png')
+                texture, color = self.texture_cache[str(path)], [1, 1, 1]
+            elif diffuse is not None:
+                color = list(diffuse[:3]); opacity = float(diffuse[3]) if len(diffuse) == 4 else 1.0
+        return color, texture, opacity
+
+    def add_mesh(self, vertices, faces, transform, label, *, parent=None, uv=None, normals=None, material=None):
+        transformed = vertices @ transform[:3, :3].T + transform[:3, 3]
+        low, high = transformed.min(axis=0), transformed.max(axis=0)
+        if np.any(high-low < 1e-7):
+            raise ValueError(f'Planar source needs explicit conversion: {label}')
+        center, extent = (low+high)/2, high-low
+        local = transformed-center
+        if normals is not None:
+            normals = normals @ np.linalg.inv(transform[:3, :3])
+            normals /= np.maximum(np.linalg.norm(normals, axis=-1, keepdims=True), 1e-12)
+        mesh = self.store(obj_bytes(local, faces, uv, normals), '.obj')
+        obj = dict(id=f"source_{len(self.objects)}", label=label, kind='mesh', mesh_path=mesh,
+                   position=center.tolist(), size=extent.tolist(), visible=parent is not None,
+                   collision=parent is None, parent_id=parent, source_notice='NOTICE.txt', source_metadata='provenance.json')
+        if material:
+            color, texture, opacity = material
+            obj.update(color=color, texture_path=texture, opacity=opacity,
+                       surface={'metallic':0, 'roughness':.7, 'double_sided':True,
+                                'alpha_mode':'BLEND' if opacity < 1 else 'OPAQUE'})
+        self.objects.append(obj)
+        return obj['id']
+
+    def collisions(self, mesh, scale):
+        key = (str(mesh), tuple(scale))
+        if key in self.collision_cache:
+            return self.collision_cache[key]
+        parts = []
+        for primitive in primitives(mesh):
+            raw = trimesh.Trimesh(vertices=primitive.vertex*scale, faces=primitive.vertex_index, process=True)
+            for component in raw.split(only_watertight=False):
+                if component.is_convex and component.is_watertight:
+                    parts.append((np.asarray(component.vertices), np.asarray(component.faces)))
+                else:
+                    data = obj_bytes(np.asarray(component.vertices), np.asarray(component.faces))
+                    source = self.cache/(hashlib.sha256(data).hexdigest()+'.obj');source.write_bytes(data)
+                    prepared = prepare_collision_mesh(source, self.cache/'collision', timeout=120)
+                    manifest = json.loads(prepared.manifest_path.read_text())
+                    parts.extend(read_triangle_obj(prepared.manifest_path.parent/part['file']) for part in manifest['parts'])
+                    self.disclosures.append(f'{mesh.relative_to(self.source)}: bounded approximate convex decomposition; original visual mesh retained')
+        if not parts:
+            raise ValueError(f'Missing collision surface: {mesh}')
+        self.collision_cache[key] = parts
+        return parts
+
+    def model(self, instance, transform, label):
+        transform = transform @ pose(instance)
+        include = instance.find('include')
+        if include is not None:
+            uri = include.findtext('uri')
+            if uri in ('model://sun', 'model://ground_plane'):
+                return
+            path = self.source/'models'/uri.removeprefix('model://')/'model.sdf'
+            self.input(path)
+            model = xml(path).find('model')
+            return self.model(model, transform @ pose(include), label)
+        if instance.findall('joint'):
+            raise ValueError(f'Articulated source needs a dedicated importer: {label}')
+        for nested in instance.findall('model'):
+            self.model(nested, transform, label+' / '+nested.get('name', 'part'))
+        for link in instance.findall('link'):
+            frame = transform @ pose(link)
+            parent = None
+            for collision in link.findall('collision'):
+                path, scale = self.geometry(collision)
+                for vertices, faces in self.collisions(path, scale):
+                    oid = self.add_mesh(vertices, faces, frame @ pose(collision), label+' · source collision')
+                    parent = parent or oid
+            if parent is None:
+                raise ValueError(f'Visual-only source has no physical parent: {label}')
+            for visual in link.findall('visual'):
+                path, scale = self.geometry(visual)
+                for primitive in primitives(path):
+                    uv = primitive.texcoordset[0][primitive.texcoord_indexset[0]] if primitive.texcoordset else None
+                    normals = primitive.normal[primitive.normal_index] if primitive.normal is not None else None
+                    scaled = frame @ pose(visual) @ np.diag([*scale, 1.])
+                    self.add_mesh(primitive.vertex, primitive.vertex_index, scaled, label,
+                                  parent=parent, uv=uv, normals=normals, material=self.texture(primitive, path))
+
+    def finish(self):
+        low = np.min([np.array(o['position'])-np.array(o['size'])/2 for o in self.objects], axis=0)
+        high = np.max([np.array(o['position'])+np.array(o['size'])/2 for o in self.objects], axis=0)
+        offset = (low+high)/2;offset[2] = 0
+        for obj in self.objects:
+            obj['position'] = (np.array(obj['position'])-offset).tolist()
+        bounds = np.ceil(high-low+2);bounds[2] = max(3., high[2]+1)
+        blockers = [(np.array(o['position'])-np.array(o['size'])/2, np.array(o['position'])+np.array(o['size'])/2)
+                    for o in self.objects if o['collision'] and o['position'][2]+o['size'][2]/2 > .04 and o['position'][2]-o['size'][2]/2 < 1.8]
+        def free(point):
+            return all(not np.all((point >= a[:2]-.85) & (point <= b[:2]+.85)) for a,b in blockers)
+        candidates = [np.array([x,y]) for x in np.arange(-bounds[0]/2+2,bounds[0]/2-2,.5)
+                      for y in np.arange(-bounds[1]/2+2,bounds[1]/2-2,.5)]
+        candidates.sort(key=lambda p: np.linalg.norm(p))
+        route = None
+        for start in candidates:
+            for direction in [np.array([1.,0]),np.array([0,1.]),np.array([-1.,0]),np.array([0,-1.])]:
+                if all(free(start+direction*d) for d in np.linspace(0,2,9)):
+                    route = start, start+direction*2, math.atan2(direction[1],direction[0]);break
+            if route:break
+        if route is None:
+            raise ValueError('No verified clear starter corridor; choose spawn manually')
+        start,target,yaw = route
+        for index,(dx,dy,sx,sy) in enumerate([(0,-.5,1.,.03),(0,.5,1.,.03),(-.5,0,.03,1.),(.5,0,.03,1.)]):
+            self.objects.append(dict(id=f'arrival_mark_{index}',label='Blue arrival zone',kind='box',position=[float(target[0]+dx),float(target[1]+dy),.001],size=[sx,sy,.002],color=[.1,.5,.9],collision=False))
+        spec = WorldSpec.model_validate(dict(name=self.entry['name'], description=self.entry['description']+' Original AWS scene layout.',
+            task='Drive into the blue arrival zone two metres ahead and remain there for one second.', robot='tiago++', bounds=bounds.tolist(),
+            robot_start=[*start.tolist(),yaw], objects=self.objects,
+            regions=[dict(id='arrival',position=[*target.tolist(),.5],size=[1.,1.,1.])],
+            rubric=[dict(id='arrive',description='Reach the arrival zone',predicate='robot_in_region',target_id='arrival',duration=1)],
+            assumptions=['Imported source scene, not model-generated. All source equipment is static; manipulation is not certified.',
+                         'Original layout/visual meshes retained. Textures limited to 1024px; Phong materials mapped to estimated rough dielectric appearance.',
+                         'Source collision meshes are split into convex components; concave components use disclosed approximate decomposition.',
+                         'Gazebo plugins, ROS launch code, source lights and dynamic actors are not executed. Robot Worlds supplies robot, ground and lighting.',
+                         'A robot spawn and a short navigation task are added; creation checks do not prove task solvability.'],
+            source_prompt='Imported from '+self.entry['source_url']))
+        (self.output/'spec.json').write_text(spec.model_dump_json(indent=2))
+        record = dict(self.entry, search={'query':'open source complete robot simulation environments warehouse house hospital bookstore',
+            'catalogs':['AWS Robotics official GitHub scene collection'], 'selected':'Original complete scene layout, source visuals, textures and collision geometry',
+            'alternatives':[{'source':'NVIDIA SimReady','reason':'Reusable objects rather than four complete environments'},
+                            {'source':'RoboCasa','reason':'Kitchen-focused collection; selected four varied indoor spaces for these presets'}]},
+            source_files=self.inputs, acquisition=json.loads((self.source/'acquisition.json').read_text()),
+            disclosures=sorted(set(self.disclosures)), instances=len(xml(self.source/self.entry['world']).find('world').findall('model')),
+            components=len(self.objects), bounds=spec.bounds, robot_start=spec.robot_start)
+        (self.output/'provenance.json').write_text(json.dumps(record,indent=2)+'\n')
+        (self.output/'NOTICE.txt').write_text((self.source/'LICENSE').read_text()+'\n\nSource: '+self.entry['source_url']+'\n\n'+ '\n'.join(spec.assumptions))
+        files={str(p.relative_to(self.output)):hashlib.sha256(p.read_bytes()).hexdigest() for p in self.output.rglob('*') if p.is_file()}
+        (self.output/'manifest.json').write_text(json.dumps({'id':self.entry['id'],'files':files},indent=2)+'\n')
+        print(json.dumps({'environment':self.entry['id'],'components':len(self.objects),'files':len(files),'bytes':sum(p.stat().st_size for p in self.output.rglob('*') if p.is_file()),'bounds':spec.bounds,'minimum_z':float(low[2])}),flush=True)
+
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--cache',type=Path,required=True);parser.add_argument('--only');args=parser.parse_args()
+    args.cache.mkdir(parents=True,exist_ok=True)
+    for entry in json.loads(CATALOG.read_text())['environments']:
+        if args.only and entry['id'] != args.only:continue
+        print('Preparing '+entry['id'],flush=True)
+        source=acquire(entry,args.cache);output=args.output/entry['id'];adapter=Adapter(entry,source,output,args.cache)
+        world=xml(source/entry['world']).find('world');adapter.input(source/'LICENSE');adapter.input(source/entry['world'])
+        for index,model in enumerate(world.findall('model')):
+            print(f"{entry['id']} {index+1}/{len(world.findall('model'))} {model.get('name')}",flush=True)
+            adapter.model(model,np.eye(4),model.get('name','Source object'))
+        adapter.finish()
+
+
+if __name__=='__main__':main()
