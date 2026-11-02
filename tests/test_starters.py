@@ -15,7 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from robot_worlds import starter_environments as starters
-from robot_worlds.artifacts import file_digest, read_json, write_json
+from robot_worlds.artifacts import digest, file_digest, read_json, write_json
 from robot_worlds.generator import GenerationCancelled
 from robot_worlds.sdk import World, load
 from robot_worlds.server import create_app
@@ -356,3 +356,98 @@ def test_starter_api_corrupt_bundle_is_inspectable_failure(packaged, tmp_path):
         assert record["status"] == "failed"
         assert "checksum mismatch" in record["error"]["message"]
         assert not client.get("/api/worlds").json()
+
+
+@pytest.mark.parametrize("matches", [True, False])
+def test_world_api_reports_local_runtime_compatibility_without_probing(packaged, tmp_path, monkeypatch, matches):
+    """Synthetic manifest parser case; no actual MuJoCo scene is constructed."""
+    _, worlds = packaged
+    current = {"fixture": "FAKE implementation identity, not native evidence"}
+    calls = []
+
+    class CompatibilityFixture(FakeStarterRuntime):
+        def __init__(self, spec, **kwargs):
+            super().__init__(spec, **kwargs)
+            # Deliberately synthetic metadata exercises the engine-specific
+            # comparison branch. This fixture cannot pass the release gate.
+            self.manifest.update(engine="mujoco", synthetic_fixture=True,
+                                 implementation_fingerprint=digest(current) if matches else "0" * 64)
+
+    workspace = tmp_path / "api"
+    original = worlds["warehouse"]
+    world = World.from_spec(original.spec, workspace / "worlds", asset_root=original.path,
+                            runtime_factory=CompatibilityFixture)
+
+    def identity(robot, action_contract):
+        calls.append((robot, action_contract))
+        return current
+
+    monkeypatch.setattr("robot_worlds.runtime.runtime_implementation_identity", identity)
+    with TestClient(create_app(workspace, executor_factory=Queue)) as client:
+        record = client.get(f"/api/worlds/{world.id}").json()
+        assert record["runtime_compatibility"] == {"requires_native_revalidation": not matches}
+        assert record["manifest"]["id"] == world.id
+    assert calls == [(world.spec.robot, world.manifest["runtime"]["action_contract"])]
+
+
+def test_api_revalidation_worker_creates_and_reopens_child_without_model_key(packaged, tmp_path, monkeypatch):
+    _, worlds = packaged
+    queue, workspace, invocations = Queue(), tmp_path / "api", []
+    parent = starters.add_starter("warehouse", workspace / "worlds")
+    before = (parent.path / "manifest.json").read_bytes()
+
+    class UpdatedFixture(FakeStarterRuntime):
+        def __init__(self, spec, **kwargs):
+            super().__init__(spec, **kwargs)
+            self.manifest["implementation_fingerprint"] = "3" * 64
+
+    def fixture_revalidation(world, *, output):
+        invocations.append((world.id, output))
+        return World.from_spec(world.spec, output, asset_root=world.path, parent_id=world.id,
+                               runtime_factory=UpdatedFixture)
+
+    monkeypatch.setattr(World, "revalidate", fixture_revalidation)
+    with TestClient(create_app(workspace, executor_factory=lambda: queue)) as client:
+        assert client.get("/api/health").json()["key_configured"] is False
+        response = client.post(f"/api/worlds/{parent.id}/revalidate")
+        assert response.status_code == 202
+        job = response.json()
+        assert job["kind"] == "revalidate" and job["status"] == "queued"
+        assert invocations == []  # HTTP request queues work; it never probes inline.
+        queue.finish()
+        record = client.get(f"/api/jobs/{job['id']}").json()
+        assert record["status"] == "completed", record
+        assert record["world_id"] != parent.id
+        assert invocations == [(parent.id, workspace / "worlds")]
+        child = client.get(f"/api/worlds/{record['world_id']}").json()
+        assert child["manifest"]["parent_id"] == parent.id
+        assert child["spec"] == worlds["warehouse"].spec.model_dump(mode="json")
+        assert child["manifest"]["validation"]["status"] == "ready"
+        assert [event["type"] for event in record["events"]] == ["validation_started", "world_created"]
+        assert (parent.path / "manifest.json").read_bytes() == before
+        assert client.post(f"/api/worlds/{parent.id}/revalidate", headers={"Origin": "https://external.example"}).status_code == 403
+        assert client.post(f"/api/worlds/{'f' * 64}/revalidate").status_code == 404
+
+
+def test_api_revalidation_can_be_cancelled_before_worker_or_fail_without_replacing_parent(packaged, tmp_path, monkeypatch):
+    queue, workspace = Queue(), tmp_path / "api"
+    parent = starters.add_starter("warehouse", workspace / "worlds")
+    calls = []
+
+    def failed_revalidation(world, *, output):
+        calls.append(world.id)
+        raise RuntimeError("Explicitly mocked native validation failure")
+
+    monkeypatch.setattr(World, "revalidate", failed_revalidation)
+    with TestClient(create_app(workspace, executor_factory=lambda: queue)) as client:
+        job = client.post(f"/api/worlds/{parent.id}/revalidate").json()
+        assert client.post(f"/api/jobs/{job['id']}/cancel").json()["status"] == "cancelled"
+        assert calls == []
+        failed = client.post(f"/api/worlds/{parent.id}/revalidate").json()
+        queue.finish()
+        record = client.get(f"/api/jobs/{failed['id']}").json()
+        assert record["status"] == "failed"
+        assert "mocked native validation failure" in record["error"]["message"]
+        assert calls == [parent.id]
+        assert client.get(f"/api/worlds/{parent.id}").json()["manifest"]["id"] == parent.id
+        assert len(client.get("/api/worlds").json()) == 1

@@ -137,3 +137,66 @@ def test_small_source_hole_is_not_filled_by_submesh_repair_or_convexification():
     for points, _ in result.parts:
         planes = geometry.ConvexHull(points).equations
         assert np.max(planes[:, :3] @ [1.5, 1.5, 0] + planes[:, 3]) > 1e-8
+
+
+def l_solid():
+    polygon = [(0, 0), (2, 0), (2, 1), (1, 1), (1, 2), (0, 2)]
+    vertices = np.array([(float(x), float(y), float(z)) for z in (0, 1) for x, y in polygon])
+    flat = [(0, 1, 3), (1, 2, 3), (0, 3, 5), (3, 4, 5)]
+    faces = [tuple(reversed(face)) for face in flat] + [tuple(i + 6 for i in face) for face in flat]
+    for i in range(6):
+        j = (i + 1) % 6
+        faces.extend([(i, j, j + 6), (i, j + 6, i + 6)])
+    return vertices, np.array(faces)
+
+
+def test_navigation_envelope_is_conservative_and_keeps_original_component_bounds():
+    vertices, faces = l_solid()
+    result = geometry.prepare_static_envelopes(vertices, faces)
+    assert len(result.parts) == 1 and result.envelope_components == 1
+    points, triangles = result.parts[0]
+    assert convex_volume(points, triangles) == pytest.approx(3.5)
+    np.testing.assert_array_equal(points.min(axis=0), vertices.min(axis=0))
+    np.testing.assert_array_equal(points.max(axis=0), vertices.max(axis=0))
+    assert all(tuple(point) in {tuple(v) for v in vertices} for point in points)
+    # All original surfaces lie in the conservative hull, including the reentrant
+    # corner. Physics can block the filled notch; the disclosure states that cost.
+    planes = geometry.ConvexHull(points).equations
+    assert np.max(vertices @ planes[:, :3].T + planes[:, 3]) < 1e-8
+    tri = points[triangles]
+    assert np.einsum("ij,ij->i", tri[:, 0], np.cross(tri[:, 1], tri[:, 2])).sum() > 0
+    assert "fill source concavities" in result.disclosure
+    assert "navigation-only" in result.disclosure and "Original visual" in result.disclosure
+
+
+def test_navigation_envelopes_do_not_bridge_disconnected_source_components():
+    vertices, faces = l_solid()
+    result = geometry.prepare_static_envelopes(
+        np.vstack((vertices, vertices + [5, 0, 0])), np.vstack((faces, faces + len(vertices))))
+    assert result.envelope_components == 2 and len(result.parts) == 2
+    assert all(np.ptp(points[:, 0]) <= 2 for points, _ in result.parts)
+    for points, _ in result.parts:
+        planes = geometry.ConvexHull(points).equations
+        assert np.max(planes[:, :3] @ [3.5, 1, .5] + planes[:, 3]) > 1e-8
+
+
+def test_navigation_envelope_exception_preserves_source_cloth_opening():
+    vertices, faces = l_solid()
+    result = geometry.prepare_static_envelopes(vertices, faces,
+                                              preserve_surfaces=lambda points, _: np.ptp(points[:, 2]) > .5)
+    assert result.envelope_components == 0 and result.preserved_surface_components == 1
+    assert result.surface_prisms > 1
+    for points, _ in result.parts:
+        planes = geometry.ConvexHull(points).equations
+        assert np.max(planes[:, :3] @ [1.5, 1.5, .5] + planes[:, 3]) > 1e-8
+
+
+def test_navigation_envelope_planar_hole_remains_open_and_budget_is_enforced():
+    vertices = np.array([[0., 0., 0.], [2, 0, 0], [2, 1, 0],
+                         [1, 1, 0], [1, 2, 0], [0, 2, 0]])
+    faces = np.array([[0, 1, 3], [1, 2, 3], [0, 3, 5], [3, 4, 5]])
+    result = geometry.prepare_static_envelopes(vertices, faces)
+    assert result.envelope_components == 0 and result.preserved_surface_components == 1
+    assert sum(convex_volume(v, f) for v, f in result.parts) == pytest.approx(3 * .0005)
+    with pytest.raises(ValueError, match="more than 1"):
+        geometry.prepare_static_envelopes(vertices, faces, max_parts=1)

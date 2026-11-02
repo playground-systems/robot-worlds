@@ -57,6 +57,17 @@ def add_starter_command(identifier: str, output: Path = Path('.robot-worlds/worl
 
 
 @app.command()
+def revalidate(world: Path, output: Path | None = None):
+    """Run native checks for this installation, without model calls or scene edits."""
+    from robot_worlds.sdk import load
+    revised = load(world).revalidate(output=output)
+    typer.echo(str(revised.path))
+    typer.echo(json.dumps(revised.manifest['validation'], indent=2))
+    if revised.manifest['validation']['status'] != 'ready':
+        raise typer.Exit(2)
+
+
+@app.command()
 def doctor(json_output: bool = typer.Option(False, "--json"),
            model: str = "gpt-6-astra", data_dir: Path = Path(".robot-worlds")):
     """Check installation offline without starting physics or calling a model."""

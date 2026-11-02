@@ -36,6 +36,11 @@ REQUIRED_PACKAGE_FILES = (
     "assets/household/porcelain_bowl/metadata.pbtxt", "assets/household/porcelain_bowl/model.config",
     "assets/household/porcelain_bowl/collision/manifest.json",
     "simready.py", "simready_rack.py", "simready_structures.py", "warehouse_library.py", "gltf_decode.py", "gltf_geometry.py", "gltf_visuals.py", "assets/simready/catalog.json",
+    "starter_environments.py", "assets/starters/catalog.json",
+    "assets/starters/warehouse/world.zip", "assets/starters/warehouse/thumbnail.png",
+    "assets/starters/house/world.zip", "assets/starters/house/thumbnail.png",
+    "assets/starters/hospital/world.zip", "assets/starters/hospital/thumbnail.png",
+    "assets/starters/bookstore/world.zip", "assets/starters/bookstore/thumbnail.png",
     "assets/codecs/decode-glb.mjs", "assets/codecs/meshopt_decoder.mjs",
     "assets/codecs/meshopt-source.json", "assets/codecs/MESHOPT-LICENSE.md",
 )

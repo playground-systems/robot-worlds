@@ -21,7 +21,8 @@ from urllib.parse import unquote
 import collada
 import httpx
 import numpy as np
-from geometry import prepare_static_collision, thicken_planar_visual
+from fuel import acquire_hospital_fuel
+from geometry import prepare_static_collision, prepare_static_envelopes, thicken_planar_visual
 from PIL import Image
 
 from robot_worlds.models import WorldSpec
@@ -59,7 +60,7 @@ def pose(node):
     return matrix
 
 
-def resolve(uri, source, base):
+def resolve(uri, source, base, disclosures=None):
     uri = unquote(uri)
     if uri.startswith("model://"):
         path = source / "models" / uri.removeprefix("model://")
@@ -68,9 +69,32 @@ def resolve(uri, source, base):
     else:
         path = base / uri
     path = path.resolve()
-    if not path.is_relative_to(source.resolve()) or not path.is_file():
+    if path.is_relative_to(source.resolve()) and path.is_file():
+        return path
+    # Reviewed source-exporter quirks: portrait images live in the repository's
+    # photos directory, and Spotlight's SDF disagrees with its filename's case.
+    candidate = None
+    if uri.startswith("../../../../photos/") and len(Path(uri).parts) == 6:
+        candidate = source / "photos" / Path(uri).name
+    elif path.parent.is_relative_to(source.resolve()) and path.parent.is_dir():
+        matches = [
+            p
+            for p in path.parent.iterdir()
+            if p.name.casefold() == path.name.casefold() and p.is_file()
+        ]
+        if len(matches) == 1:
+            candidate = matches[0]
+    if (
+        candidate is None
+        or not candidate.is_file()
+        or not candidate.resolve().is_relative_to(source.resolve())
+    ):
         raise ValueError(f"Unresolved source resource: {uri}")
-    return path
+    if disclosures is not None:
+        disclosures.append(
+            f"Source URI {uri} resolved to the original file {candidate.relative_to(source)} (exporter path/case correction)"
+        )
+    return candidate.resolve()
 
 
 def acquire(entry, cache):
@@ -100,7 +124,12 @@ def acquire(entry, cache):
     with tarfile.open(archive) as bundle:
         for member in bundle:
             relative = Path(*Path(member.name).parts[1:])
-            if not relative.parts or relative.parts[0] not in {"models", "worlds", "LICENSE"}:
+            if not relative.parts or relative.parts[0] not in {
+                "models",
+                "worlds",
+                "photos",
+                "LICENSE",
+            }:
                 continue
             if member.issym() or member.islnk() or ".." in relative.parts or relative.is_absolute():
                 raise ValueError("Unsafe source archive member")
@@ -123,11 +152,32 @@ def acquire(entry, cache):
     return target
 
 
-def primitives(path, disclosures=None):
+def primitives(path, disclosures=None, *, root=None):
+    if path.suffix.lower() == ".obj":
+        from obj_source import read_obj
+
+        for primitive in read_obj(path, root=root or path.parent):
+            yield primitive, 1.0
+        return
+    if path.suffix.lower() != ".dae":
+        raise ValueError(f"Unreviewed source mesh format: {path.suffix}")
     document = collada.Collada(str(path))
-    if document.assetInfo.upaxis not in (None, "Z_UP"):
+    if document.assetInfo.upaxis not in (None, "Z_UP", "Y_UP"):
         raise ValueError(f"Unreviewed source up-axis: {path}")
-    unit = document.assetInfo.unitmeter or 1.0
+    # These are Gazebo scene imports, not a general-purpose COLLADA viewer.
+    # Gazebo Classic's loader applies authored scene-node transforms and unit
+    # scale, but does not apply the asset.up_axis metadata. Hospital exports
+    # declare Y_UP and already contain the rotations producing Z-up geometry.
+    # Rotating the bound vertices again would turn their floors into walls.
+    # https://github.com/gazebosim/gazebo-classic/blob/gazebo11/gazebo/common/ColladaLoader.cc
+    if document.assetInfo.upaxis == "Y_UP" and disclosures is not None:
+        disclosures.append(
+            f"{path.name}: Y_UP metadata retained with authored scene-node rotations "
+            "and metre unit conversion, matching Gazebo Classic; no extra up-axis rotation"
+        )
+    unit = document.assetInfo.unitmeter
+    if unit is None:
+        unit = 1.0
     if not math.isfinite(unit) or not 0.0001 <= unit <= 100:
         raise ValueError("Invalid COLLADA unit scale")
     if document.scene is None:
@@ -150,8 +200,11 @@ def primitives(path, disclosures=None):
                     node is not None
                     and node.tag.rsplit("}", 1)[-1] == "triangles"
                     and node.get("count") == "0"
-                    and all(not (child.text or "").strip() for child in node
-                            if child.tag.rsplit("}", 1)[-1] == "p")
+                    and all(
+                        not (child.text or "").strip()
+                        for child in node
+                        if child.tag.rsplit("}", 1)[-1] == "p"
+                    )
                     and (indices is None or not np.asarray(indices).size)
                 )
                 if not empty:
@@ -162,8 +215,12 @@ def primitives(path, disclosures=None):
                         "(source count=0, no face indices); no source surface removed"
                     )
                 continue
-            if (vertices is None or indices is None or np.asarray(indices).ndim != 2
-                    or np.asarray(indices).shape[1] != 3):
+            if (
+                vertices is None
+                or indices is None
+                or np.asarray(indices).ndim != 2
+                or np.asarray(indices).shape[1] != 3
+            ):
                 raise ValueError(f"Unsupported or incomplete COLLADA triangles in {path}")
             yield primitive, unit
 
@@ -202,6 +259,9 @@ class Adapter:
         self.objects, self.inputs, self.disclosures = [], {}, []
         self.collision_cache = {}
         self.texture_cache = {}
+        external = source / "fuel-sources.json"
+        self.external_sources = json.loads(external.read_text()) if external.exists() else []
+        self.external_models = {record["name"] for record in self.external_sources}
 
     def store(self, data, suffix):
         name = hashlib.sha256(data).hexdigest() + suffix
@@ -211,15 +271,15 @@ class Adapter:
         return "files/" + name
 
     def input(self, path):
-        self.inputs[str(path.relative_to(self.source))] = hashlib.sha256(
-            path.read_bytes()
-        ).hexdigest()
+        relative = str(path.relative_to(self.source))
+        if relative not in self.inputs:
+            self.inputs[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
 
     def geometry(self, node):
         mesh = node.find("geometry/mesh")
         if mesh is None:
             raise ValueError("Starter source currently requires reviewed mesh geometry")
-        path = resolve(mesh.findtext("uri"), self.source, self.source)
+        path = resolve(mesh.findtext("uri"), self.source, self.source, self.disclosures)
         self.input(path)
         scale = np.fromstring(mesh.findtext("scale", "1 1 1"), sep=" ")
         if scale.shape != (3,) or np.any(scale <= 0):
@@ -228,22 +288,32 @@ class Adapter:
 
     def texture(self, primitive, mesh):
         color, texture, opacity = [0.65, 0.65, 0.65], None, 1.0
-        if primitive.material is not None:
+        path = None
+        if hasattr(primitive, "source_color"):
+            color, opacity = list(primitive.source_color[:3]), float(primitive.source_color[3])
+            path = primitive.source_texture_path
+            for resource in primitive.source_material_files:
+                self.input(resource)
+        elif primitive.material is not None:
             diffuse = primitive.material.effect.diffuse
             if isinstance(diffuse, collada.material.Map):
-                path = resolve(diffuse.sampler.surface.image.path, self.source, mesh.parent)
-                self.input(path)
-                if str(path) not in self.texture_cache:
-                    with Image.open(path) as image:
-                        image = image.convert("RGBA" if "A" in image.getbands() else "RGB")
-                        image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
-                        data = io.BytesIO()
-                        image.save(data, format="PNG", optimize=True)
-                    self.texture_cache[str(path)] = self.store(data.getvalue(), ".png")
-                texture, color = self.texture_cache[str(path)], [1, 1, 1]
+                path = resolve(
+                    diffuse.sampler.surface.image.path, self.source, mesh.parent, self.disclosures
+                )
+                color = [1, 1, 1]
             elif diffuse is not None:
                 color = list(diffuse[:3])
                 opacity = float(diffuse[3]) if len(diffuse) == 4 else 1.0
+        if path is not None:
+            self.input(path)
+            if str(path) not in self.texture_cache:
+                with Image.open(path) as image:
+                    image = image.convert("RGBA" if "A" in image.getbands() else "RGB")
+                    image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+                    data = io.BytesIO()
+                    image.save(data, format="PNG", optimize=True)
+                self.texture_cache[str(path)] = self.store(data.getvalue(), ".png")
+            texture = self.texture_cache[str(path)]
         return color, texture, opacity
 
     def add_mesh(
@@ -314,10 +384,24 @@ class Adapter:
         if key in self.collision_cache:
             return self.collision_cache[key]
         parts = []
-        for primitive, unit in primitives(mesh, self.disclosures):
-            prepared = prepare_static_collision(
-                primitive.vertex * unit * scale, primitive.vertex_index
-            )
+        model_name = mesh.relative_to(self.source / "models").parts[0]
+        curtain = self.entry["id"] == "hospital" and model_name in {
+            "aws_robomaker_hospital_curtain_closed_01",
+            "aws_robomaker_hospital_curtain_half_open_01",
+            "aws_robomaker_hospital_curtain_open_01",
+        }
+        for primitive, unit in primitives(mesh, self.disclosures, root=self.source):
+            vertices = primitive.vertex * unit * scale
+            if model_name in self.external_models or curtain:
+                # Only the known hospital scans and curtain hardware use
+                # envelopes. Preserve the single >1m tall cloth component in
+                # each pinned curtain so its U-shaped/open passage survives.
+                preserve = (lambda v, f: np.ptp(v, axis=0)[2] > 1.0) if curtain else None
+                prepared = prepare_static_envelopes(
+                    vertices, primitive.vertex_index, preserve_surfaces=preserve
+                )
+            else:
+                prepared = prepare_static_collision(vertices, primitive.vertex_index)
             parts.extend(prepared.parts)
             self.disclosures.append(f"{mesh.relative_to(self.source)}: {prepared.disclosure}")
         if not parts:
@@ -411,7 +495,7 @@ class Adapter:
                     match.update(visible=True, color=color[:3].tolist(), opacity=float(color[3]))
                     continue
                 path, scale = self.geometry(visual)
-                for primitive, unit in primitives(path, self.disclosures):
+                for primitive, unit in primitives(path, self.disclosures, root=self.source):
                     uv = (
                         primitive.texcoordset[0][primitive.texcoord_indexset[0]]
                         if primitive.texcoordset
@@ -529,7 +613,8 @@ class Adapter:
                 assumptions=[
                     "Imported source scene, not model-generated. All source equipment is static; manipulation is not certified.",
                     "Original layout/visual surfaces retained; source centimetres converted to metres, vertex coordinates quantized to 0.1 micrometre. Textures limited to 1024px; Phong materials mapped to estimated rough dielectric appearance.",
-                    "Verified solid convex source collision components are retained. Other static contact surfaces use convex prisms with 0.5 mm total thickness; source openings are preserved. Planar visual surfaces receive 0.1 mm backing. Per-mesh adaptations are recorded in provenance.",
+                    "Verified solid convex source collision components are retained. Architectural and curtain cloth contact surfaces use convex prisms with 0.5 mm total thickness, preserving their openings. Planar visual surfaces receive 0.1 mm backing. Per-mesh adaptations are recorded in provenance.",
+                    "Hospital scanned props and disconnected curtain hardware use conservative component envelopes that can fill concavities and spaces under furniture. These fixed navigation props are not manipulation-certified; their original visual meshes remain intact.",
                     "Gazebo plugins, ROS launch code, source lights and dynamic actors are not executed. Robot Worlds supplies robot, ground and lighting. Source ODE-specific contact parameters are replaced by the runtime default isotropic friction 0.7.",
                     "A robot spawn and a short navigation task are added; the arrival volume allows 5 mm for compliant ground contact. Creation checks do not prove task solvability.",
                 ],
@@ -555,6 +640,7 @@ class Adapter:
                 ],
             },
             source_files=self.inputs,
+            external_sources=self.external_sources,
             acquisition=json.loads((self.source / "acquisition.json").read_text()),
             disclosures=sorted(set(self.disclosures)),
             instances=len(xml(self.source / self.entry["world"]).find("world").findall("model")),
@@ -569,6 +655,11 @@ class Adapter:
             + self.entry["source_url"]
             + "\n\n"
             + "\n".join(spec.assumptions)
+            + (
+                "\n\n" + (self.source / "FUEL-NOTICE.txt").read_text()
+                if self.external_sources
+                else ""
+            )
         )
         files = {
             str(p.relative_to(self.output)): hashlib.sha256(p.read_bytes()).hexdigest()
@@ -606,6 +697,8 @@ def main():
             continue
         print("Preparing " + entry["id"], flush=True)
         source = acquire(entry, args.cache)
+        if entry["id"] == "hospital":
+            acquire_hospital_fuel(source, args.cache)
         output = args.output / entry["id"]
         adapter = Adapter(entry, source, output, args.cache)
         (output / "manifest.json").unlink(missing_ok=True)

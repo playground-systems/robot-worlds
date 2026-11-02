@@ -170,3 +170,34 @@ def test_prepared_manifest_requires_exact_checksums_and_provenance(tmp_path):
     (tmp_path / "unexpected.txt").write_text("extra")
     with pytest.raises(ValueError, match="do not match"):
         freeze.verify_prepared(tmp_path, "warehouse")
+
+
+@pytest.mark.parametrize("failed", [set(), {"warehouse", "hospital"}])
+def test_native_batch_attempts_every_scene_but_catalog_requires_all_ready(tmp_path, monkeypatch, failed):
+    identifiers = ["warehouse", "house", "hospital", "bookstore"]
+    catalog = tmp_path / "pinned-catalog.json"
+    catalog.write_text(json.dumps({"environments": [{"id": identifier} for identifier in identifiers]}))
+    output, evidence = tmp_path / "bundles", tmp_path / "evidence"
+    output.mkdir()
+    (output / "catalog.json").write_text("stale prior catalog")
+    called = []
+
+    def fixture_freeze(entry, source, destination, diagnostics):
+        called.append(entry["id"])
+        if entry["id"] in failed:
+            raise ValueError("Test-only native failure")
+        return {**entry, "world_id": "fixture-" + entry["id"]}
+
+    monkeypatch.setattr(freeze, "freeze_one", fixture_freeze)
+    arguments = ["--input", str(tmp_path / "prepared"), "--output", str(output),
+                 "--evidence", str(evidence), "--catalog", str(catalog)]
+    if failed:
+        with pytest.raises(ValueError, match="no release catalog written"):
+            freeze.main(arguments)
+        assert not (output / "catalog.json").exists()
+    else:
+        freeze.main(arguments)
+        assert [entry["id"] for entry in json.loads((output / "catalog.json").read_text())["environments"]] == identifiers
+    assert called == identifiers
+    outcomes = json.loads((evidence / "native-summary.json").read_text())["environments"]
+    assert {outcome["starter_id"] for outcome in outcomes if outcome["status"] == "failed"} == failed

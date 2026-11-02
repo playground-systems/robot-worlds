@@ -390,6 +390,22 @@ class World:
                           allow_task_changes=allow_task_changes,
                           allow_physics_changes=allow_physics_changes, output=output, **kwargs)
 
+    def revalidate(self, *, output: str | Path | None = None,
+                   runtime_factory: Callable | None = None) -> World:
+        """Probe the unchanged scene on this runtime, creating an immutable child.
+
+        This explicit native operation makes no model calls. Source assets,
+        task, rubric and import profile are preserved. Failed checks produce an
+        unvalidated child with diagnostics; the source version is never changed.
+        """
+        frozen = load(self.path)
+        return World.from_spec(
+            frozen._spec, output if output is not None else frozen.path.parent,
+            asset_root=frozen.path, parent_id=frozen.id, runtime_factory=runtime_factory,
+            validation_profile=frozen.manifest["validation"].get("profile", "strict"),
+            edit_metadata={"kind": "revalidate", "parent_world_id": frozen.id},
+        )
+
     def with_rubric(self, rubric: list, *, output: str | Path | None = None,
                     runtime_factory: Callable | None = None) -> World:
         payload = self._spec.model_dump(mode="json")
@@ -494,7 +510,8 @@ class World:
                 changed = [key for key in ("engine", "engine_version", "timestep", "controller", "model_fingerprint", "implementation_fingerprint", "trace_interval", "clock", "action_contract", "sensor_contract", "policy_sha256", "policy_source_revision", "policy_frequency_hz")
                            if key in expected_runtime and episode["runtime"].get(key) != expected_runtime[key]]
                 if changed:
-                    raise WorldNotReady("Runtime contract changed since validation; create a new world version: " + ", ".join(changed))
+                    raise WorldNotReady("Runtime contract changed since validation: " + ", ".join(changed)
+                                        + ". Call world.revalidate() or robot-worlds revalidate PATH before evaluation.")
                 if render and on_event and hasattr(runtime, "set_live_observer"):
                     def live_frame(frame):
                         target = episode_dir / "live.png"

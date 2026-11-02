@@ -1,0 +1,13 @@
+# Hospital source dependencies
+
+Verified 2026-11-02 against the pinned AWS source and OpenRobotics Fuel metadata.
+
+The hospital's missing models are external dependencies. The official [AWS README](https://raw.githubusercontent.com/aws-robotics/aws-robomaker-hospital-world/7161eb8448f5cba6a469da7a79ae5d660b0b7f58/README.md) lists 43 Fuel models. Its [setup script](https://raw.githubusercontent.com/aws-robotics/aws-robomaker-hospital-world/7161eb8448f5cba6a469da7a79ae5d660b0b7f58/setup.sh) downloads them into `fuel_models`; its [downloader](https://raw.githubusercontent.com/aws-robotics/aws-robomaker-hospital-world/7161eb8448f5cba6a469da7a79ae5d660b0b7f58/fuel_utility.py) identifies OpenRobotics as publisher. Robot Worlds reads those declarations and downloads data without executing either upstream script.
+
+All 43 exact-name Fuel lookups succeeded. The [pinned manifest](../tools/starters/hospital-fuel.json) records their versions, licenses, original author fields, 519 expected files and SHA-256 hashes of the small source XML files. The archives total 48,885,215 bytes. Example: [CGMClassic metadata](https://fuel.gazebosim.org/1.0/OpenRobotics/models/CGMClassic) identifies version 4 and CC BY 4.0; its [original model.config](https://fuel.gazebosim.org/1.0/OpenRobotics/models/CGMClassic/4/files/model.config) credits Roselle Carmen.
+
+These external assets have their own CC BY 4.0 license; the AWS repository's [MIT-0 license](https://raw.githubusercontent.com/aws-robotics/aws-robomaker-hospital-world/7161eb8448f5cba6a469da7a79ae5d660b0b7f58/LICENSE) is not substituted for that declaration. Attribution retains publisher, source URL, version, original author field and conversion changes. The full [official CC BY 4.0 legalcode](https://creativecommons.org/licenses/by/4.0/legalcode.txt) is cached with a checksum and included in the prepared notice.
+
+The external models use OBJ geometry. [CGMClassic's SDF](https://fuel.gazebosim.org/1.0/OpenRobotics/models/CGMClassic/4/files/model.sdf), for example, references its original OBJ at 0.01 scale. Preserve source identifiers even when legacy display names differ: [Drawer's SDF](https://fuel.gazebosim.org/1.0/OpenRobotics/models/Drawer/2/files/model.sdf) names its model `OfficeChairBlue`, while the original package remains `Drawer`. No missing model should be omitted or replaced to conceal an importer failure.
+
+`tools/starters/fuel.py` acquires these pinned packages through the existing bounded ZIP downloader, checks reviewed files and attribution, and writes `fuel-sources.json` plus `FUEL-NOTICE.txt`. Safe acquisition and mocked ZIP tests establish data integrity; converted geometry and native scene validation require the hosted preparation workflow.

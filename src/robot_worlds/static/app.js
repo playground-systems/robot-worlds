@@ -17,13 +17,14 @@ const post = (path, data) => api(path, { method: 'POST', body: JSON.stringify(da
 function settings() { return { model: $('model').value.trim() || 'gpt-6-astra', reasoning: $('reasoning').value }; }
 function statusOf(world) { const value = world?.manifest?.validation || world?.validation || {}; return typeof value === 'string' ? value : value.status || 'preview'; }
 function controls() {
-  const busy = !!state.jobId || state.submitting, ready = state.worldId && statusOf(state.world) === 'ready' && $('report-area').hidden;
+  const busy = !!state.jobId || state.submitting, ready = state.worldId && statusOf(state.world) === 'ready' && !state.world?.runtime_compatibility?.requires_native_revalidation && $('report-area').hidden;
   $('generate-button').disabled = busy || !state.key;
   $('evaluate-button').disabled = busy || !ready || !state.key;
   $('refine-button').disabled = busy || !state.worldId || !state.key || !$('report-area').hidden;
   $('repair-button').disabled = $('refine-button').disabled;
   $('new-world').disabled = busy;
   $('open-starters').disabled = busy; $('empty-starters').disabled = busy;
+  document.querySelectorAll('.validate-local').forEach(button => { button.disabled = busy; });
   document.querySelectorAll('.starter-add').forEach(button => { button.disabled = busy || button.dataset.available !== 'true'; });
   for (const id of ['scope-input', 'add-scope', 'allow-task-changes', 'allow-physics-changes', 'leave-edit']) $(id).disabled = busy;
   document.querySelectorAll('.item-list button, .scope-chip button, .version-card button, .parent-actions button, .edit-actions button, .agent-history button').forEach(button => { button.disabled = busy; });
@@ -153,10 +154,10 @@ async function openWorld(id) {
   const world = await api(`/api/worlds/${encodeURIComponent(id)}`);
   if (navigation !== state.navigation) return;
   $('layer-filter').value = ''; state.layerLimit = 120; state.collisionLayers = false;
-  state.world = world; state.worldId = id; state.editing = false; state.selectedObject = null; state.scope = []; state.assets = []; renderAssets();
+  state.world = world; state.worldId = id; if (world.runtime_compatibility?.requires_native_revalidation) state.tab = 'validation'; state.editing = false; state.selectedObject = null; state.scope = []; state.assets = []; renderAssets();
   $('selection-label').hidden = true;
   setEditMode('edit', { activate: false });
-  displaySpec(world.spec); renderLists(); history.replaceState(null, '', `/?world=${encodeURIComponent(id)}`);
+  displaySpec(world.spec); syncTabs(); renderLists(); history.replaceState(null, '', `/?world=${encodeURIComponent(id)}`);
   loadLineage(id, world);
 }
 function openReport(id) {
@@ -273,6 +274,19 @@ function renderInspector() {
   } else {
     const validation = state.world?.manifest?.validation || { status: 'preview', checks: [] };
     root.append(el('h3', '', 'Validation status'), el('p', 'task-copy', validation.status === 'ready' ? 'Runnable under the recorded checks. Validation does not prove the policy can complete the mission.' : 'This version is not ready for a graded run. Review the unresolved checks below.'));
+    if (state.world?.runtime_compatibility?.requires_native_revalidation) root.append(el('p', 'task-copy', 'These checks were recorded with a different Python or simulation installation. Validate on this computer before evaluating.'));
+    if (state.worldId) {
+      const validate = el('button', 'button validate-local', 'Validate on this computer');
+      validate.disabled = !!state.jobId || state.submitting;
+      validate.onclick = async () => {
+        if (state.jobId || state.submitting) return;
+        state.submitting = true; controls();
+        try { const job = await post(`/api/worlds/${encodeURIComponent(state.worldId)}/revalidate`, {}); state.submitting = false; trackJob(job, 'Validating locally · no model calls'); }
+        catch (error) { notice(message(error)); }
+        finally { state.submitting = false; controls(); }
+      };
+      root.append(validate, el('p', 'small muted', 'Runs native reset and rendering checks locally. Saves a new version without changing the scene, task or rubric. No model key needed.'));
+    }
     for (const check of validation.checks || []) { const item = el('div', 'validation-item'); item.append(el('span', `badge ${check.passed ? 'ready' : 'unvalidated'}`, check.passed ? 'Pass' : 'Unresolved'), el('strong', '', String(check.check || check.name || 'check').replaceAll('_', ' '))); for (const error of check.errors || []) item.append(el('p', '', message(error))); if (check.error) item.append(el('p', '', message(check.error))); root.append(item); }
     if (state.worldId) { const repair = el('button', 'button', 'Repair unresolved checks'); repair.disabled = !!state.jobId || !state.key; repair.onclick = () => setEditMode('repair'); root.append(repair); }
     for (const limitation of validation.limitations || []) root.append(el('p', 'small muted', limitation));

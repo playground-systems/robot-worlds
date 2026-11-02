@@ -311,3 +311,111 @@ def thicken_planar_visual(vertices, faces, uv=None, normals=None, *, thickness=0
         normals = np.asarray(normals)
         normals = np.concatenate((normals, -normals[:, ::-1]), axis=0)
     return backed, faces, uv, normals, True
+
+
+@dataclass(frozen=True)
+class StaticEnvelopes:
+    """Conservative navigation-only component hulls, with explicit exceptions."""
+
+    parts: tuple[tuple[np.ndarray, np.ndarray], ...]
+    solid_components: int
+    envelope_components: int
+    preserved_surface_components: int
+    surface_prisms: int
+    adaptations: tuple[str, ...]
+
+    @property
+    def disclosure(self) -> str:
+        return (
+            f"Static navigation-only collision adaptation: {self.solid_components} verified "
+            f"convex solid components retained; {self.envelope_components} connected components "
+            "replaced by conservative convex hulls of their original vertices. These hulls "
+            "fill source concavities and spaces under furniture, but do not expand a "
+            "component's axis-aligned bounds or join disconnected components. Original "
+            "visual meshes remain unchanged. Not suitable for contact-rich manipulation "
+            "evaluation. "
+            f"{self.preserved_surface_components} selected/planar components retain "
+            f"{self.surface_prisms} exact-surface prisms with 0.5 mm total backing. "
+            + " ".join(self.adaptations)
+        ).strip()
+
+
+def prepare_static_envelopes(vertices, faces, *, max_parts=4096, preserve_surfaces=None):
+    """Adapt explicitly selected static props to conservative component hulls.
+
+    Never use this for architecture, shelves, containers or other task cavities.
+    The caller must opt in only known navigation props. ``preserve_surfaces`` is
+    an optional predicate ``(component_vertices, component_faces) -> bool``: use
+    it to retain curtain cloth while simplifying its disconnected hardware.
+    Planar components always retain their actual surface footprint and holes.
+    This adapter changes physics only; callers retain the original visual mesh.
+    """
+    vertices, faces = np.asarray(vertices, dtype=float), np.asarray(faces)
+    if (vertices.ndim != 2 or vertices.shape[1] != 3 or len(vertices) < 3
+            or len(vertices) > 100_000 or not np.isfinite(vertices).all()
+            or faces.ndim != 2 or faces.shape[1] != 3 or not len(faces)
+            or len(faces) > 200_000 or faces.dtype.kind not in "iu"
+            or faces.min() < 0 or faces.max() >= len(vertices)):
+        raise ValueError("Invalid bounded source triangle mesh")
+    if not isinstance(max_parts, int) or isinstance(max_parts, bool) or not 1 <= max_parts <= 20_000:
+        raise ValueError("Invalid static collision piece budget")
+    if preserve_surfaces is not None and not callable(preserve_surfaces):
+        raise ValueError("Expected a source component preservation predicate")
+    vertices, inverse = np.unique(vertices, axis=0, return_inverse=True)
+    faces = inverse[faces]
+    triangles = vertices[faces]
+    area_twice = np.linalg.norm(np.cross(triangles[:, 1] - triangles[:, 0],
+                                         triangles[:, 2] - triangles[:, 0]), axis=1)
+    removed_degenerate = int(np.count_nonzero(area_twice == 0))
+    faces = faces[area_twice > 0]
+    if not len(faces):
+        raise ValueError("Source collision has no nondegenerate surface")
+    _, unique = np.unique(np.sort(faces, axis=1), axis=0, return_index=True)
+    removed_duplicate = len(faces) - len(unique)
+    faces = faces[np.sort(unique)]
+    source = trimesh.Trimesh(vertices=vertices, faces=faces, process=False)
+    parts, adaptations = [], []
+    solid_count = envelope_count = preserved_count = surface_count = 0
+    if removed_degenerate or removed_duplicate:
+        adaptations.append(f"Removed {removed_degenerate} zero-area and {removed_duplicate} duplicate source triangles.")
+    for component in source.split(only_watertight=False, repair=False):
+        _repair_winding(component)
+        points, triangles = np.asarray(component.vertices), np.asarray(component.faces)
+        preserve = preserve_surfaces is not None and preserve_surfaces(points, triangles)
+        centered = points - points.mean(axis=0)
+        _, _, axes = np.linalg.svd(centered, full_matrices=False)
+        planar = np.max(np.abs(centered @ axes[-1])) <= 1e-8
+        if preserve or planar:
+            prepared = prepare_static_collision(points, triangles, max_parts=max_parts)
+            parts.extend(prepared.parts)
+            solid_count += prepared.solid_components
+            surface_count += prepared.surface_prisms
+            preserved_count += 1
+        elif component.is_watertight and _convex(points, triangles):
+            parts.append((points, triangles))
+            solid_count += 1
+        else:
+            try:
+                hull = ConvexHull(points)
+            except QhullError as error:
+                raise ValueError("Source component cannot form a bounded navigation envelope") from error
+            used, indices = np.unique(hull.simplices.reshape(-1), return_inverse=True)
+            hull_points, hull_faces = points[used], indices.reshape(-1, 3)
+            envelope = trimesh.Trimesh(vertices=hull_points, faces=hull_faces, process=False)
+            _repair_winding(envelope)
+            hull_faces = np.asarray(envelope.faces)
+            centered_hull = hull_points - hull_points.mean(axis=0)
+            tri = centered_hull[hull_faces]
+            signed_volume = np.einsum("ij,ij->i", tri[:, 0], np.cross(tri[:, 1], tri[:, 2])).sum() / 6
+            if signed_volume < 0:
+                hull_faces = hull_faces[:, ::-1].copy()
+            if not _convex(hull_points, hull_faces):
+                raise ValueError("Navigation envelope exceeds the verified convex geometry budget")
+            parts.append((hull_points, hull_faces))
+            envelope_count += 1
+        if len(parts) > max_parts:
+            raise ValueError(f"Static source needs more than {max_parts} convex collision pieces")
+    if not parts:
+        raise ValueError("Source collision produced no verified pieces")
+    return StaticEnvelopes(tuple(parts), solid_count, envelope_count, preserved_count,
+                           surface_count, tuple(adaptations))

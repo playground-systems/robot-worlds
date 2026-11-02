@@ -35,10 +35,11 @@ class Element {
   set innerHTML(value) { throw new Error('Untrusted markup must not be assigned'); }
 }
 
-function fixture({ add, status = 'completed', error = null, missing = false } = {}) {
+function fixture({ add, status = 'completed', error = null, missing = false, compatibility = false,
+  revalidate, revalidationStatus = 'completed', revalidationError = null, childValidation = 'ready' } = {}) {
   const nodes = new Map([...html.matchAll(/\bid="([^"]+)"/g)].map(match => [match[1], new Element()]));
   const shell = new Element(), created = [], requests = [], timers = [], views = [], history = [];
-  const worldId = 'c'.repeat(64), jobId = 'a'.repeat(32);
+  const worldId = 'c'.repeat(64), jobId = 'a'.repeat(32), childId = 'd'.repeat(64), validationJob = 'b'.repeat(32);
   const world = {
     spec: { name: 'Imported source layout', description: 'A source geometry fixture', task: 'Reach the marked square',
       bounds: [24, 18, 5], robot: 'tiago++',
@@ -46,20 +47,34 @@ function fixture({ add, status = 'completed', error = null, missing = false } = 
       regions: [], rubric: [], assumptions: [],
     },
     manifest: { id: worldId, validation: { status: 'ready', checks: [{ check: 'render', passed: true }] } },
+    runtime_compatibility: { requires_native_revalidation: compatibility },
   };
+  const child = structuredClone(world);
+  child.manifest.id = childId; child.manifest.parent_id = worldId;
+  child.manifest.validation.status = childValidation;
+  child.runtime_compatibility.requires_native_revalidation = false;
+  let validationSubmitted = false;
   const entries = catalog.map((entry, index) => ({ ...entry, available: !missing || index !== 1 }));
+  const inspectTabs = [...html.matchAll(/<button data-inspect="([^"]+)"/g)].map(match => {
+    const node = new Element('button'); node.dataset.inspect = match[1]; return node;
+  });
   class Viewer {
     constructor() { this.shellCount = 0; }
     setSpec(spec, assetBase) { views.push({ spec, assetBase }); }
     select() {}
     setActive() {}
   }
-  const response = (data, ok = true) => ({ ok, json: async () => data });
+  const response = (data, ok = true) => ({ ok, json: async () => structuredClone(data) });
   const context = vm.createContext({
     document: {
       getElementById: id => nodes.get(id), querySelector: () => shell,
-      querySelectorAll: selector => selector === '.starter-add'
-        ? created.filter(node => node.className?.split(' ').includes('starter-add')) : [],
+      querySelectorAll: selector => {
+        if (selector === '[data-inspect]') return inspectTabs;
+        if (selector === '.starter-add' || selector === '.validate-local') {
+          return created.filter(node => node.className?.split(' ').includes(selector.slice(1)));
+        }
+        return [];
+      },
       createElement: tag => { const node = new Element(tag); created.push(node); return node; },
     },
     window: { innerWidth: 1400, addEventListener() {} }, WorldViewer: Viewer, URLSearchParams,
@@ -68,15 +83,28 @@ function fixture({ add, status = 'completed', error = null, missing = false } = 
     fetch: async (path, options = {}) => {
       requests.push({ path, method: options.method || 'GET', body: options.body });
       if (path.endsWith('/add')) return add ? add(path, options) : response({ id: jobId, status: 'queued', kind: 'starter' });
+      if (path === `/api/worlds/${worldId}/revalidate`) {
+        validationSubmitted = true;
+        return revalidate ? revalidate(path, options) : response({ id: validationJob, status: 'queued', kind: 'revalidate' });
+      }
+      if (path === `/api/jobs/${validationJob}`) return response({
+        id: validationJob, kind: 'revalidate', status: revalidationStatus, error: revalidationError,
+        world_id: revalidationStatus === 'completed' ? childId : undefined,
+        events: [{ type: 'validation_started', message: 'Running mocked validation; no native or model calls' }],
+      });
       if (path === `/api/jobs/${jobId}`) return response({
         id: jobId, kind: 'starter', status, error,
         world_id: status === 'completed' ? worldId : undefined,
         events: [{ type: 'starter_import', message: 'Verifying source bundle' }],
       });
-      if (path === '/api/worlds') return response(status === 'completed' ? [{ id: worldId, name: world.spec.name, validation: { status: 'ready' } }] : []);
+      if (path === '/api/worlds') return response([
+        ...(status === 'completed' ? [{ id: worldId, name: world.spec.name, validation: { status: 'ready' } }] : []),
+        ...(validationSubmitted && revalidationStatus === 'completed' ? [{ id: childId, name: child.spec.name, validation: { status: childValidation } }] : []),
+      ]);
       if (path === '/api/runs' || path === '/api/references') return response([]);
       if (path === '/api/starters') return response(entries);
       if (path === `/api/worlds/${worldId}`) return response(world);
+      if (path === `/api/worlds/${childId}`) return response(child);
       throw new Error(`Unexpected request: ${path}`);
     },
   });
@@ -86,7 +114,8 @@ function fixture({ add, status = 'completed', error = null, missing = false } = 
   nodes.get('report-area').hidden = true;
   run('state.key=false;state.starters=entries;renderStarters();controls();');
   const buttons = () => created.filter(node => node.className?.split(' ').includes('starter-add'));
-  return { nodes, run, requests, timers, views, history, world, worldId, buttons };
+  const validateButton = () => nodes.get('inspector-body').children.find(node => node.className?.split(' ').includes('validate-local'));
+  return { nodes, run, requests, timers, views, history, world, worldId, childId, buttons, validateButton, inspectTabs };
 }
 
 async function settle() {
@@ -187,4 +216,63 @@ test('a failed import leaves the existing scene intact and shows the actual erro
   assert.equal(nodes.get('notice').hidden, false);
   assert.match(nodes.get('notice').textContent, /Bundle checksum mismatch/);
   assert(buttons().every(button => !button.disabled));
+});
+
+test('an incompatible starter offers keyless validation and opens its compatible child', async () => {
+  const { run, worldId, childId, nodes, validateButton, inspectTabs, requests, views, history } = fixture({ compatibility: true });
+  await run(`openWorld('${worldId}')`);
+  assert.equal(run('state.tab'), 'validation');
+  assert.equal(inspectTabs.find(tab => tab.dataset.inspect === 'validation').classList.contains('active'), true);
+  run('state.key=true;controls();');
+  assert.equal(nodes.get('evaluate-button').disabled, true); // A key cannot bypass the mismatch.
+  run('state.key=false;controls();');
+  assert.equal(validateButton().disabled, false);
+  await validateButton().click();
+  await settle();
+  assert.equal(run('state.worldId'), childId);
+  assert.equal(run('state.world.manifest.parent_id'), worldId);
+  assert.equal(run('state.world.runtime_compatibility.requires_native_revalidation'), false);
+  assert.equal(run('state.jobId'), null);
+  assert.equal(views.at(-1).assetBase, `/api/worlds/${childId}/files/`);
+  assert.equal(history.at(-1), `/?world=${childId}`);
+  const mutations = requests.filter(request => request.method === 'POST');
+  assert.equal(mutations.length, 1);
+  assert.equal(mutations[0].path, `/api/worlds/${worldId}/revalidate`);
+  assert.deepEqual(JSON.parse(mutations[0].body), {});
+  assert.equal(nodes.get('evaluate-button').disabled, true); // Local validation does not invent a key.
+  run('state.key=true;controls();');
+  assert.equal(nodes.get('evaluate-button').disabled, false);
+});
+
+test('pending local validation disables its button and a failed request preserves the parent', async () => {
+  let reject;
+  const { run, worldId, nodes, validateButton, requests } = fixture({ compatibility: true,
+    revalidate: () => new Promise((_, fail) => { reject = fail; }),
+  });
+  await run(`openWorld('${worldId}')`);
+  const button = validateButton(), click = button.click();
+  assert.equal(run('state.submitting'), true);
+  assert.equal(button.disabled, true);
+  await button.click();
+  reject(new Error('Mocked local validation queue unavailable'));
+  await click;
+  assert.equal(run('state.submitting'), false);
+  assert.equal(run('state.worldId'), worldId);
+  assert.equal(button.disabled, false);
+  assert.equal(requests.filter(request => request.method === 'POST').length, 1);
+  assert.match(nodes.get('notice').textContent, /validation queue unavailable/);
+});
+
+test('completed local validation with unresolved checks shows the saved child without enabling evaluation', async () => {
+  const { run, worldId, childId, validateButton, nodes } = fixture({ compatibility: true, childValidation: 'unvalidated' });
+  await run(`openWorld('${worldId}')`);
+  await validateButton().click();
+  await settle();
+  assert.equal(run('state.worldId'), childId);
+  assert.equal(run('state.tab'), 'validation');
+  assert.equal(run('state.world.manifest.validation.status'), 'unvalidated');
+  run('state.key=true;controls();');
+  assert.equal(nodes.get('evaluate-button').disabled, true);
+  assert.equal(nodes.get('world-status').textContent, 'unvalidated');
+  assert.match(nodes.get('notice').textContent, /unresolved checks/);
 });

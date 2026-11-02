@@ -20,7 +20,15 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from robot_worlds.artifacts import file_digest, inside, public_error, read_json, utc_now, write_json
+from robot_worlds.artifacts import (
+    digest,
+    file_digest,
+    inside,
+    public_error,
+    read_json,
+    utc_now,
+    write_json,
+)
 from robot_worlds.models import Identifier
 
 
@@ -131,6 +139,12 @@ def _job_worker(root_string: str, job_id: str, kind: str, payload: dict) -> None
             from robot_worlds.starter_environments import add_starter
             world = add_starter(payload['starter_id'], root/'worlds', on_event=event, cancelled=cancelled)
             job.update(world_id=world.id, status='completed', validation=world.manifest['validation'])
+        elif kind == "revalidate":
+            world = load(_world_directory(root, payload['world_id']))
+            event({'type': 'validation_started', 'message': 'Running native checks on this computer; no model calls'})
+            revised = world.revalidate(output=root/'worlds')
+            job.update(world_id=revised.id, status='completed', validation=revised.manifest['validation'])
+            event({'type': 'world_created', 'world_id': revised.id, 'validation': revised.manifest['validation']})
         elif kind == "generate":
             world = generate(**payload, output=root / "worlds", on_event=event, cancelled=cancelled)
             job.update(world_id=world.id, status="completed",
@@ -405,7 +419,15 @@ def create_app(data_dir: str | Path = ".robot-worlds", *, executor_factory=None)
     def get_world(world_id: str):
         from robot_worlds.sdk import load
         world = load(_world_directory(root, world_id))
-        return {"spec": world.spec.model_dump(mode="json"), "manifest": world.manifest}
+        spec = world.spec
+        runtime = world.manifest.get('runtime', {})
+        compatibility = {'requires_native_revalidation': False}
+        if runtime.get('engine') == 'mujoco' and runtime.get('implementation_fingerprint'):
+            from robot_worlds.runtime import runtime_implementation_identity
+            current = digest(runtime_implementation_identity(spec.robot, runtime.get('action_contract', [])))
+            compatibility['requires_native_revalidation'] = current != runtime['implementation_fingerprint']
+        return {"spec": spec.model_dump(mode="json"), "manifest": world.manifest,
+                'runtime_compatibility': compatibility}
 
     @app.get("/api/worlds/{world_id}/preview.png")
     def preview(world_id: str):
@@ -437,6 +459,11 @@ def create_app(data_dir: str | Path = ".robot-worlds", *, executor_factory=None)
     def refine_job(world_id: str, request: RefineRequest):
         _world_directory(root, world_id)
         return submit("refine", {"world_id": world_id, **generation_payload(request)})
+
+    @app.post('/api/worlds/{world_id}/revalidate', status_code=202)
+    def revalidate_job(world_id: str):
+        _world_directory(root, world_id)
+        return submit('revalidate', {'world_id': world_id})
 
     @app.post("/api/worlds/{world_id}/repair", status_code=202)
     def repair_job(world_id: str, request: RepairRequest):

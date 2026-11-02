@@ -20,10 +20,11 @@ pytest.importorskip("scipy")
 _SCRIPT_DIR = Path(__file__).resolve().parents[1] / "tools/starters"
 # prepare.py is deliberately a directly executable offline release script.
 # Resolve its sibling helper exactly as `python tools/starters/prepare.py` does.
-_geometry_spec = importlib.util.spec_from_file_location("geometry", _SCRIPT_DIR / "geometry.py")
-_geometry = importlib.util.module_from_spec(_geometry_spec)
-sys.modules[_geometry_spec.name] = _geometry
-_geometry_spec.loader.exec_module(_geometry)
+for _name in ("geometry", "fuel", "obj_source"):
+    _helper_spec = importlib.util.spec_from_file_location(_name, _SCRIPT_DIR / f"{_name}.py")
+    _helper = importlib.util.module_from_spec(_helper_spec)
+    sys.modules[_name] = _helper
+    _helper_spec.loader.exec_module(_helper)
 _prepare_spec = importlib.util.spec_from_file_location("starter_prepare", _SCRIPT_DIR / "prepare.py")
 prepare = importlib.util.module_from_spec(_prepare_spec)
 sys.modules[_prepare_spec.name] = prepare
@@ -211,3 +212,129 @@ def test_explicit_empty_collada_material_group_is_disclosed_without_losing_faces
     assert len(parts) == 1
     assert convex_volume(parts[0][0], parts[0][1]) == pytest.approx(1)
     assert any("source count=0" in item for item in adapter.disclosures)
+
+
+def test_main_collects_source_failures_and_never_releases_a_partial_scene(tmp_path, monkeypatch):
+    entries = [{"id": name, "world": "scene.world"} for name in ("partial", "complete")]
+    catalog = tmp_path / "catalog.json"
+    catalog.write_text(json.dumps({"environments": entries}))
+    source = tmp_path / "source"
+    for entry in entries:
+        directory = source / entry["id"]
+        directory.mkdir(parents=True)
+        (directory / "LICENSE").write_text("fixture")
+        models = '<model name="bad"/><model name="after_bad"/>' if entry["id"] == "partial" else '<model name="good"/>'
+        (directory / "scene.world").write_text(f'<sdf><world name="fixture">{models}</world></sdf>')
+    output = tmp_path / "output"
+    (output / "partial").mkdir(parents=True)
+    (output / "partial/manifest.json").write_text("stale previous success")
+    calls = []
+
+    class TinyAdapter:
+        def __init__(self, entry, source, output, cache):
+            self.entry, self.output = entry, output
+            output.mkdir(parents=True, exist_ok=True)
+
+        def input(self, path):
+            assert path.is_file()
+
+        def model(self, model, transform, label):
+            calls.append((self.entry["id"], label))
+            if label == "bad":
+                raise ValueError("original source fixture is unsupported")
+
+        def finish(self):
+            calls.append((self.entry["id"], "finish"))
+            (self.output / "manifest.json").write_text("complete fixture")
+
+    monkeypatch.setattr(prepare, "CATALOG", catalog)
+    monkeypatch.setattr(prepare, "Adapter", TinyAdapter)
+    monkeypatch.setattr(prepare, "acquire", lambda entry, cache: source / entry["id"])
+    monkeypatch.setattr(sys, "argv", ["prepare.py", "--output", str(output), "--cache", str(tmp_path / "cache")])
+    with pytest.raises(RuntimeError, match="no partial scene is release-ready"):
+        prepare.main()
+    assert calls == [("partial", "bad"), ("partial", "after_bad"), ("complete", "good"), ("complete", "finish")]
+    assert not (output / "partial/manifest.json").exists()
+    assert (output / "complete/manifest.json").read_text() == "complete fixture"
+    failures = json.loads((output / "failures.json").read_text())
+    assert len(failures) == 1
+    assert failures[0]["environment"] == "partial" and failures[0]["source_model"] == "bad"
+
+
+def test_y_up_gazebo_source_keeps_authored_node_rotation_in_collisions_and_visuals(adapter):
+    # Gazebo Classic does not add an asset.up_axis rotation. Its Y_UP hospital
+    # meshes already author Rx(+90 deg) nodes; repeating it makes floors vertical.
+    dae = adapter.source / "models/unit_cube/original.dae"
+    document = collada.Collada()
+    document.assetInfo.unitmeter = 0.01
+    document.assetInfo.unitname = "centimeter"
+    document.assetInfo.upaxis = "Y_UP"
+    positions = collada.source.FloatSource("positions", np.array(
+        [[0., 0., 0.], [100, 0, 0], [100, 0, -200], [0, 0, -200]], dtype=np.float32), ("X", "Y", "Z"))
+    normals = collada.source.FloatSource("normals", np.array([[0., 1., 0.]], dtype=np.float32), ("X", "Y", "Z"))
+    mesh = collada.geometry.Geometry(document, "floor", "floor", [positions, normals])
+    inputs = collada.source.InputList()
+    inputs.addInput(0, "VERTEX", "#positions")
+    inputs.addInput(1, "NORMAL", "#normals")
+    indices = np.array([[0, 0], [1, 0], [2, 0], [0, 0], [2, 0], [3, 0]]).reshape(-1)
+    mesh.primitives.append(mesh.createTriangleSet(indices, inputs))
+    document.geometries.append(mesh)
+    node = collada.scene.Node("source-floor", children=[collada.scene.GeometryNode(mesh)], transforms=[
+        collada.scene.TranslateTransform(100, 200, 300), collada.scene.RotateTransform(1, 0, 0, 90)])
+    scene = collada.scene.Scene("scene", [node])
+    document.scenes.append(scene)
+    document.scene = scene
+    document.write(str(dae))
+    geometry_xml = "<geometry><mesh><uri>model://unit_cube/original.dae</uri></mesh></geometry>"
+    instance = ET.fromstring(f'''<model name="floor"><link name="body">
+      <collision name="collision">{geometry_xml}</collision>
+      <visual name="visual">{geometry_xml}</visual></link></model>''')
+    adapter.model(instance, np.eye(4), "Source floor")
+    assert len(adapter.objects) == 2
+    collision, visual = adapter.objects
+    np.testing.assert_allclose(collision["position"], [1.5, 3, 3], atol=1e-7)
+    np.testing.assert_allclose(visual["position"], collision["position"], atol=1e-7)
+    np.testing.assert_allclose(collision["size"], [1, 2, .0005], atol=1e-7)
+    np.testing.assert_allclose(visual["size"], [1, 2, .0001], atol=1e-7)
+    lines = (adapter.output / visual["mesh_path"]).read_text().splitlines()
+    normals = np.array([[float(value) for value in line.split()[1:]] for line in lines if line.startswith("vn ")])
+    np.testing.assert_allclose(normals[:6], np.tile([0, 0, 1], (6, 1)), atol=1e-7)
+    assert any("Y_UP" in item and "no extra up-axis rotation" in item for item in adapter.disclosures)
+
+
+def test_reviewed_original_photo_remap_is_bounded_and_disclosed(adapter, tmp_path):
+    photos = adapter.source / "photos"
+    photos.mkdir()
+    image = photos / "portrait.png"
+    Image.new("RGB", (2, 2), (10, 20, 30)).save(image)
+    disclosures = []
+    found = prepare.resolve("../../../../photos/portrait.png", adapter.source,
+                            adapter.source / "models/unit_cube", disclosures)
+    assert found == image.resolve()
+    assert len(disclosures) == 1 and "photos/portrait.png" in disclosures[0]
+    outside = tmp_path / "outside.png"
+    outside.write_bytes(b"outside fixture")
+    with pytest.raises(ValueError, match="Unresolved source resource"):
+        prepare.resolve("../../outside.png", adapter.source, adapter.source, disclosures)
+    with pytest.raises(ValueError, match="Unresolved source resource"):
+        prepare.resolve("../../../../photos/nested/missing.png", adapter.source,
+                        adapter.source / "models/unit_cube", disclosures)
+
+
+def test_source_filename_case_correction_stays_in_existing_source_parent(adapter, monkeypatch):
+    directory = adapter.source / "models/unit_cube"
+    original = directory / "Actual_Collision.DAE"
+    original.write_text("original data")
+    requested_name = "actual_collision.dae"
+    original_is_file = Path.is_file
+    # Exercise the Linux case-sensitive source condition even on a Mac whose
+    # filesystem may consider both casings equal.
+    monkeypatch.setattr(Path, "is_file", lambda path: False if path.name == requested_name else original_is_file(path))
+    disclosures = []
+    path = prepare.resolve(f"model://unit_cube/{requested_name}", adapter.source,
+                           adapter.source, disclosures)
+    assert path == original.resolve()
+    assert len(disclosures) == 1 and "exporter path/case correction" in disclosures[0]
+    with pytest.raises(ValueError, match="Unresolved source resource"):
+        prepare.resolve("model://nonexistent/actual_collision.dae", adapter.source,
+                        adapter.source, disclosures)

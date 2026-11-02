@@ -16,7 +16,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from robot_worlds.artifacts import file_digest, inside, write_json
+from robot_worlds.artifacts import file_digest, inside, public_error, write_json
 from robot_worlds.models import WorldSpec
 from robot_worlds.sdk import World, load
 
@@ -127,21 +127,37 @@ def freeze_one(entry: dict, source: Path, output: Path, evidence: Path) -> dict:
     return result
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--evidence", type=Path, required=True)
     parser.add_argument("--catalog", type=Path, default=CATALOG)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     catalog = json.loads(args.catalog.read_text())
+    if (len(catalog["environments"]) != 4
+            or {entry["id"] for entry in catalog["environments"]} != {"warehouse", "house", "hospital", "bookstore"}):
+        raise ValueError("The release requires all four pinned starter environments")
     # A prior catalog must not survive a failed new preparation attempt.
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output / "catalog.json").unlink(missing_ok=True)
-    entries = [freeze_one(entry, args.input / entry["id"], args.output, args.evidence)
-               for entry in catalog["environments"]]
-    if len(entries) != 4 or {entry["id"] for entry in entries} != {"warehouse", "house", "hospital", "bookstore"}:
-        raise ValueError("The release requires all four pinned starter environments")
+    args.evidence.mkdir(parents=True, exist_ok=True)
+    entries, outcomes = [], []
+    for entry in catalog["environments"]:
+        try:
+            result = freeze_one(entry, args.input / entry["id"], args.output, args.evidence)
+            entries.append(result)
+            outcome = {"starter_id": entry["id"], "status": "ready", "world_id": result["world_id"]}
+        except Exception as exc:
+            # Independent source scenes need independent diagnostics. One failed
+            # reset must not hide issues in the remaining three environments.
+            outcome = {"starter_id": entry["id"], "status": "failed", "error": public_error(exc)}
+            print(json.dumps(outcome), flush=True)
+        outcomes.append(outcome)
+    write_json(args.evidence / "native-summary.json", {"environments": outcomes})
+    failed = [outcome["starter_id"] for outcome in outcomes if outcome["status"] != "ready"]
+    if failed:
+        raise ValueError("Native starter preparation failed; no release catalog written: " + ", ".join(failed))
     write_json(args.output / "catalog.json", {"schema_version": 1, "environments": entries})
 
 
