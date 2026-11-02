@@ -50,13 +50,14 @@ def main():
 
     def make_client(phase):
         generation = phase == "generation"
+        reasoning = "high" if generation else "medium"
         if args.transport == "codex":
             from robot_worlds.codex_client import CodexClient
-            return CodexClient(model="gpt-6-astra", reasoning="medium", executable=args.codex_executable,
+            return CodexClient(model="gpt-6-astra", reasoning=reasoning, executable=args.codex_executable,
                                max_calls=3 if generation else 12, max_seconds=2*args.generation_timeout+180 if generation else 420,
                                timeout=args.generation_timeout if generation else 180, max_input_chars=args.generation_input_chars if generation else 120000,
                                max_total_tokens=args.generation_token_limit if generation else 450000)
-        return ResponsesClient(model="gpt-6-astra", reasoning="medium",
+        return ResponsesClient(model="gpt-6-astra", reasoning=reasoning,
                                max_cost_usd=args.max_cost_usd*(.4 if generation else .6),
                                max_calls=3 if generation else 12, max_seconds=300 if generation else 420,
                                timeout=90, max_output_tokens=8192, max_total_output_tokens=40000)

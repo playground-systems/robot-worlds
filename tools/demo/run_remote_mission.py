@@ -50,7 +50,7 @@ def main():
         mirror = LiveMirror(args.live_root)
         print("RW_LIVE " + json.dumps({"job_id": mirror.id, "url": "http://127.0.0.1:8766/?job=" + mirror.id}), flush=True)
     clients = {
-        "generation": ResponsesClient(model="gpt-6-astra", reasoning="medium", max_cost_usd=2,
+        "generation": ResponsesClient(model="gpt-6-astra", reasoning="high", max_cost_usd=2,
                                       max_calls=4, max_seconds=900, timeout=240,
                                       max_output_tokens=16384, max_total_output_tokens=48000),
         "policy": ResponsesClient(model="gpt-6-astra", reasoning="medium", max_cost_usd=5,
@@ -60,7 +60,7 @@ def main():
     if args.backend == "codex":
         from robot_worlds.codex_client import CodexClient
         clients = {
-            "generation": CodexClient(max_calls=4, timeout=300, max_seconds=1200),
+            "generation": CodexClient(reasoning="high", max_calls=4, timeout=300, max_seconds=1200),
             "policy": CodexClient(max_calls=80, timeout=90, max_seconds=1800),
         }
     spent = {k: 0.0 for k in clients}

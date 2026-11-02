@@ -1,0 +1,369 @@
+{
+  "schema_version": 1,
+  "authorship": {
+    "model": "gpt-6-astra",
+    "reasoning": "high",
+    "date": "2026-11-02",
+    "method": "direct Codex subagent authorship; no model CLI/API call"
+  },
+  "status": "source and scene decisions; not visual or physical acceptance",
+  "user_scope": "Complete existing simulation-ready household scenes may be reused and supplemented with NVIDIA SimReady assets; all scene/model/asset/material/placement decisions remain Astra high or Claude Opus5.5.",
+  "kitchen": {
+    "source": "RoboCasa365",
+    "code_revision": "3443cdf3dd20f9ae8ed41adba442059b506891d0",
+    "layout": 4,
+    "style": 4,
+    "name": "L-shaped Island / Farmhouse",
+    "clutter_mode": 1,
+    "source_sampling_seed": 0,
+    "decision": "Preserve complete original source composition, source style maps, original fixture choices and original source-generated geometry. Preserve explicit enable:false entries as disabled.",
+    "rationale": "L-shaped counters, island with three stools, oven/microwave stack, fridge, cabinet/drawer banks, open shelving and original counter accessories provide rich visual density and authentic interaction structure.",
+    "materials": [
+      "source gray wood grain cabinet fronts",
+      "source marble counter and island tops",
+      "source gray wood floor",
+      "source white brick walls"
+    ],
+    "source_paths": [
+      ".robot-worlds/existing-scenes-2026-11-02/robocasa-kitchen/source/robocasa/robocasa/models/assets/scenes/kitchen_layouts/test/layout004.yaml",
+      ".robot-worlds/existing-scenes-2026-11-02/robocasa-kitchen/source/robocasa/robocasa/models/assets/scenes/kitchen_styles/test/style004.yaml"
+    ],
+    "supplements": "Pending assembled source support/cavity geometry. Existing SimReady bowl/notebook may supplement genuine source task props only after author-reviewed exact placements; no invented substitute fixtures.",
+    "remaining": [
+      "assemble unchanged source layout with deterministic sampler",
+      "inventory actual free props and joints",
+      "Astra visual review and supplement/task authoring",
+      "native settling/contact/articulation/robot-clearance acceptance"
+    ],
+    "source_clutter_physics": "Original accessory constructor defaults has_free_joints=False; decor cups/jars/fruitbowl are not automatically manipulation targets. Separate taskprops or authored supplements require physical inventory.",
+    "explicit_disabled_source_fixtures": [
+      "blender",
+      "dish_rack",
+      "electric_kettle",
+      "stand_mixer"
+    ]
+  },
+  "living_room": {
+    "source": "MolmoSpaces iTHOR",
+    "scene": "FloorPlan201_physics.xml",
+    "resource_version": "20251217_with_occupancy",
+    "object_resource_version": "20251117",
+    "source_xml": ".robot-worlds/existing-scenes-2026-11-02/molmo-living-room/source/scenes/ithor/FloorPlan201_physics.xml",
+    "source_sha256": "30fc5366a671aea8e965c132d0630947749e6a2a7576219a63f3753130c5aad0",
+    "decision": "Preserve the complete authored living/dining layout, original transforms/quaternions, source meshes, PBR materials, collision geometry, body masses/inertia and all joints; no furniture freezing or object deletion for importer convenience.",
+    "rationale": "Existing sofa/two-armchair/coffee-table/TV seating group, side stands, dining table with six chairs, lamps/plant/art/curtains and varied household props supply room-scale visual composition and task context.",
+    "raw_inventory": {
+      "bodies": 151,
+      "free_joints": 32,
+      "nonfree_joints": 7,
+      "nonfree_joint_definitions": [
+        {
+          "name": "stand_ed06bd6b2ac58e6eff75f4b429d16e87_1_2_0_joint_1",
+          "class": "/",
+          "pos": "0 0 0",
+          "axis": "0 0 1",
+          "type": "slide",
+          "range": "0 0.154",
+          "damping": "0.1",
+          "frictionloss": "1.2"
+        },
+        {
+          "name": "stand_4b42c255f5978da2d8b93d12ef0e4d49_1_2_0_joint_1",
+          "class": "/",
+          "pos": "0 0 0",
+          "axis": "0 0 1",
+          "type": "slide",
+          "range": "0 0.211",
+          "damping": "0.1",
+          "frictionloss": "1.2"
+        },
+        {
+          "name": "laptop_3d0472e4853246dc6bae0511d380cb9a_1_2_0_laptoplid1joint0_1",
+          "class": "/",
+          "pos": "0 0 0",
+          "axis": "1 0 0",
+          "range": "0 1.5708",
+          "damping": "0.1",
+          "frictionloss": "0.5"
+        },
+        {
+          "name": "box_b62e19f80505ed2584d53be931384199_1_1_0_box1flapinner2joint0_1",
+          "class": "/",
+          "pos": "0 0 0",
+          "axis": "-1 0 0",
+          "range": "-2.28064 0",
+          "damping": "0.01",
+          "frictionloss": "0.01"
+        },
+        {
+          "name": "box_b62e19f80505ed2584d53be931384199_1_2_0_box1flapinner1joint0_2",
+          "class": "/",
+          "pos": "0 0 0",
+          "axis": "-1 0 0",
+          "range": "-1.96304 0",
+          "damping": "0.01",
+          "frictionloss": "0.01"
+        },
+        {
+          "name": "box_b62e19f80505ed2584d53be931384199_1_3_0_box1flapouter2joint0_3",
+          "class": "/",
+          "pos": "0 0 0",
+          "axis": "0 0 1",
+          "range": "0 2.35176",
+          "damping": "0.01",
+          "frictionloss": "0.01"
+        },
+        {
+          "name": "box_b62e19f80505ed2584d53be931384199_1_4_0_box1flapouter1joint0_4",
+          "class": "/",
+          "pos": "0 0 0",
+          "axis": "0 0 1",
+          "range": "-2.33942 0",
+          "damping": "0.01",
+          "frictionloss": "0.01"
+        }
+      ]
+    },
+    "acquisition_decision": "Resolve only required seven THOR category archives, about 560 MB compressed, through bounded streaming extraction of referenced dependencies plus required notices. Root owns operational budget authorization.",
+    "task_candidates": [
+      "remote-control transfer",
+      "book or plate transfer between actual supports",
+      "source stand drawer open/close",
+      "retrieve or store a verified fitting loose prop",
+      "laptop lid hinge operation after physical validation",
+      "source box-flap operation after physical validation"
+    ],
+    "limits": [
+      "Free furniture is not automatically a grasp/carry target",
+      "The source entrance door has no articulated joint; no door-opening task",
+      "Paper and cushion appearance does not establish deformability",
+      "Laptop/TV electrical state is not implemented by retaining physical geometry"
+    ],
+    "remaining": [
+      "Astra rendered appearance and task-region review",
+      "native dynamics and robot interaction acceptance"
+    ],
+    "preview_renderer": {
+      "scope": "Separate derived/in-memory visual override; rawsourceXML/hashunchanged",
+      "offwidth": 640,
+      "offheight": 360,
+      "shadowsize": 1024,
+      "offsamples": 0,
+      "initial_frame_count": 1,
+      "preserve": [
+        "all original source textures/materials",
+        "source directional light direction and diffuse",
+        "source headlight ambient",
+        "all geometry/poses/joints/physics",
+        "walls and ceiling"
+      ],
+      "authored_camera": {
+        "eye": [
+          -4.65,
+          3.2,
+          1.65
+        ],
+        "lookat": [
+          -2.3,
+          4.9,
+          0.8
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "distance": 3.022,
+        "azimuth_degrees": 35.88,
+        "elevation_degrees": -16.34
+      },
+      "limitations": "Preview only; no physical or task success claim. Return literal obstruction evidence for camera revision."
+    },
+    "dependency_status": "Acquisition agent reports321assetrefs resolve to320unique original files; source dependencies complete, not imported/validated here.",
+    "visual_review": {
+      "image": ".robot-worlds/existing-scenes-2026-11-02/molmo-living-room/source-preview.png",
+      "method": "Actual local image viewed by Astrahigh after engineering source-native render",
+      "source_composition_suitable": true,
+      "final_high_fidelity_visual_acceptance": false,
+      "status": "provisional interaction-capable source",
+      "observed_gaps": [
+        "angular furniture geometry",
+        "flat/dark sofa",
+        "coarse repeated wall/floor textures",
+        "weak daylight and opaque-lookingwindow",
+        "limited fine domestic detail vs realphotograph"
+      ],
+      "next": "Faithful source-material browserrender with correct texture color-space; no silent recoloring/freezing/substitution. If source detail remains inadequate, approve sourced replacements or a betterbase explicitly."
+    }
+  },
+  "factory": {
+    "script": "tools/acceptance/astra_high_scene_plans_v2.py",
+    "output": ".robot-worlds/high-fidelity-presets-2026-11-02/astra-authored/factory",
+    "bounds": [
+      20,
+      16,
+      5
+    ],
+    "components": 3254,
+    "tasks": 15,
+    "source_assets_only": true,
+    "racks": 6,
+    "rack_cartons": 216,
+    "pallets": 5,
+    "pallet_cartons": 10,
+    "receiving_cartons": 1,
+    "stations": {
+      "receiving": [
+        5.5,
+        -4.7,
+        0
+      ],
+      "preparation": [
+        5.5,
+        -1.3,
+        0
+      ],
+      "inspection": [
+        5.5,
+        2.1,
+        0
+      ],
+      "dispatch": [
+        5.5,
+        5.5,
+        0
+      ],
+      "tool_cabinet": [
+        8.8,
+        -0.8,
+        0
+      ]
+    },
+    "cabinet_yaw_quarter_turns": 3,
+    "decision": "Dense loaded storage behind and alongside connected four-stage manual workcells, original source props/materials, steel-framed shell, dark floor and yellow lanes; no conveyor.",
+    "validation": "GenerationSpec, source-only architecture, materialization/expansion, TaskCatalog references and strict static geometry pass. No native compile/render or policy execution.",
+    "remaining": [
+      "native collision/settling/reset including all stock",
+      "source drawer sweep with contents",
+      "rendered comparison at overview and working height",
+      "robot approach/reach/grasp/transfer validation",
+      "viewport and simulation performance acceptance"
+    ],
+    "visual_review": {
+      "world_id": "4aa78cd919dadf4a127b3cc6aef5da51164319d321a3fdf80e271b08db1e604a",
+      "screenshot": "docs/images/manipulation-presets/factory-v2-preview.png",
+      "method": "Actual fully loaded browser3Dpreview; fullAX/screenshot capture",
+      "density_and_circulation_improved": true,
+      "final_production_factory_visual_acceptance": false,
+      "remaining_gap": "Still reads as warehouse/manualpacking; actual production-floor equipment, task-scale containers/toolstorage and overheadservices need genuine sourced assets and author review, not procedural substitutes."
+    }
+  },
+  "release_policy": "Existing bundled presets, worlds and replays remain untouched; these are isolated new candidates.",
+  "photo_review": {
+    "author": {
+      "model": "gpt-6-astra",
+      "reasoning": "high",
+      "date": "2026-11-02",
+      "method": "direct Codex subagent authorship; no model CLI/API call"
+    },
+    "notes": "docs/scene-photo-references-2026-11-02.md",
+    "method": "Three actual photographs viewed through Chrome screenshots, not inferred from captions",
+    "viewed": [
+      "https://boschmediaservice.hu/en/press_photo/bosch-opened-a-new-production-hall-in-miskolc-1014.html",
+      "https://www.poparchitecture.com.au/south-yarra-house-iii",
+      "https://www.houzz.com/photos/custom-home-daniel-island-sc-farmhouse-kitchen-charleston-phvw-vp~126649948"
+    ],
+    "unviewed": [
+      "Nefit Bosch direct image returned404; excluded"
+    ],
+    "runtime_photo_assets_added": false,
+    "source_compositions_changed": false
+  },
+  "factory_v3": {
+    "status": "14 core and one conditional source selected for bounded acquisition; exact placements and physical affordance acceptance pending",
+    "author": {
+      "model": "gpt-6-astra",
+      "reasoning": "high",
+      "date": "2026-11-02",
+      "method": "direct Codex subagent authorship; no model CLI/API call"
+    },
+    "brief": "docs/factory-v3-capability-brief-2026-11-02.md",
+    "theme": "parts kitting, service and inspection department",
+    "core_capabilities": [
+      "industrial articulated storage",
+      "open parts tray and deep tote",
+      "four to six distinct rigid industrial parts",
+      "two additional hand-tool types",
+      "genuine lidded case if available"
+    ],
+    "next_capabilities": [
+      "physical rolling service cart"
+    ],
+    "conditional_capabilities": [
+      "source vise/clamp/fixture",
+      "real control joint for explicit inspection process"
+    ],
+    "long_horizon_missions": [
+      "pick-kit-dispatch",
+      "incorrect-kit rework",
+      "cart replenishment",
+      "conditional fixture-inspect-release"
+    ],
+    "rules": [
+      "Source inventory reviewed; specific acquisition IDs approved. Geometry and visual evidence precede new placements.",
+      "Preserve original scale, visual materials, meshes and mechanics",
+      "Different physical operations take precedence over repeated decorative stock",
+      "No unmeasured pushing/clamping/metrology claims",
+      "v2 remains preview, not final productionfactoryacceptance"
+    ],
+    "source_selection": "docs/factory-v3-source-selection-2026-11-02.json",
+    "selected_asset_ids": [
+      "equipment_rolling_tool_chest_cabinet_combo_d01",
+      "equipment_utility_cart_e01",
+      "storage_toolbox_standard_hardCase_d01",
+      "crate_blue_a01",
+      "crate_white_a20",
+      "dishware_plastic_tray_a01",
+      "handTool_wrench_combination_a01",
+      "handTool_pliers_combination_a01",
+      "instrument_caliper_a01",
+      "engineComponent_idler_pulley_a01",
+      "brakeSystem_brake_master_cylinder_b01",
+      "engineComponent_spark_plug_b01",
+      "hardware_bracket_largeCorner_a01",
+      "factory_bolt_m20_tight",
+      "equipment_bench_vise_a01"
+    ],
+    "selected_glb_bytes": 13960236
+  },
+  "homebody_reference": {
+    "url": "https://tml.stanford.edu/homebody/",
+    "author": {
+      "model": "gpt-6-astra",
+      "reasoning": "high",
+      "date": "2026-11-02",
+      "method": "direct Codex subagent authorship; no model CLI/API call"
+    },
+    "directly_viewed": [
+      "interactive simulation overview",
+      "interactive kitchen view",
+      "interactive topdown",
+      "refrigerator matched real/simulation view including full simulation",
+      "island matched real/simulation view"
+    ],
+    "visual_target": [
+      "complete proportionally coherent room",
+      "recognizable source material and appliance identity",
+      "handle/cabinet/trim and taskprop detail at working distance",
+      "readable neutral indoor lighting",
+      "review from robot-height interior views as well as overhead"
+    ],
+    "source_switch_approved": false,
+    "comparison": {
+      "RoboCasa": "Selected farmhouse source remains pending actual assembly/render; must meet this visual bar.",
+      "MolmoFloorPlan201": "Current classic native still below bar; interaction-capable source remains provisional.",
+      "factory": "Functional diversity in v3 and detailed equipment matter more than duplicate stock count."
+    },
+    "physics_boundary": "Engineering audit of shipped src_kitchen at2388aa44c875bb0c2ce4603dd557bf3918b7a1a1 finds4freeprops and0hinge/slidejoints; websiteillustrative rollout and realrobotdrawer demos do not make shipped kitchen drawers physically operable."
+  }
+}

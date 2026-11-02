@@ -22,7 +22,7 @@ from robot_worlds.task_catalog import TaskCatalog, TaskVariant
 
 class SceneAuthor:
     def __init__(self, output: Path):
-        self.client = CodexClient(model="gpt-6-astra", reasoning="medium", max_calls=4,
+        self.client = CodexClient(model="gpt-6-astra", reasoning="high", max_calls=4,
                                   max_seconds=1800, timeout=480,
                                   max_input_chars=700000, max_total_tokens=600000)
         self.output = output

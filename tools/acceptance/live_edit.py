@@ -39,7 +39,7 @@ def main():
         members = expanded
     scope = sorted(members | {r.id for r in before.regions if r.interior_of in members})
     clients = {
-        'edit': CodexClient(model='gpt-6-astra', reasoning='medium', executable=args.codex_executable,
+        'edit': CodexClient(model='gpt-6-astra', reasoning='high', executable=args.codex_executable,
                             max_calls=2, max_seconds=360, timeout=180, max_total_tokens=120000),
         'policy': CodexClient(model='gpt-6-astra', reasoning='medium', executable=args.codex_executable,
                               max_calls=12, max_seconds=420, timeout=180, max_total_tokens=450000),

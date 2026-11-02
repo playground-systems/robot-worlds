@@ -1,0 +1,394 @@
+{
+  "schema_version": 1,
+  "author": {
+    "model": "gpt-6-astra",
+    "reasoning": "high",
+    "date": "2026-11-02"
+  },
+  "official_revision": "4763fbfaa4f8e97658e68b57d01b4c86659e08b5",
+  "optimized_revision": "e52172290393dde80e8d383861db94b8d0e92ec3",
+  "selection_basis": "docs/factory-asset-candidates-2026-11-02.md and literal candidate-inventory.json",
+  "core_count": 14,
+  "conditional_count": 1,
+  "selected_glb_bytes": 13960236,
+  "records": [
+    {
+      "asset_id": "equipment_rolling_tool_chest_cabinet_combo_d01",
+      "role": "Industrial tool storage: eight drawers and a real hinged top; retain wheels and source mobility.",
+      "priority": "core",
+      "optimized_glb_bytes": 3370652,
+      "source_bounds_y_up": {
+        "min": [
+          -0.17785447619251255,
+          -0.05797349656506712,
+          -0.37895592846364945
+        ],
+        "max": [
+          0.25852153970725567,
+          1.0912980566394557,
+          0.37895592846364945
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 21,
+        "joints": 20,
+        "colliders": 21
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "equipment_utility_cart_e01",
+      "role": "Cargo transport candidate: real wheel/caster joints and source deck/bin supports; physical pushing pending.",
+      "priority": "core",
+      "optimized_glb_bytes": 2817008,
+      "source_bounds_y_up": {
+        "min": [
+          -0.4011548998517433,
+          8.21240246295929e-06,
+          -0.20609218741564145
+        ],
+        "max": [
+          0.4528095570705868,
+          0.907224178314209,
+          0.20609218741564145
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 11,
+        "joints": 10,
+        "colliders": 11
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "storage_toolbox_standard_hardCase_d01",
+      "role": "Reusable work-order kit case with genuine lid, handle and lock hinges; no inferred latch logic.",
+      "priority": "core",
+      "optimized_glb_bytes": 2195628,
+      "source_bounds_y_up": {
+        "min": [
+          -0.1599145798894794,
+          -0.05159447830514079,
+          -0.26530173420906067
+        ],
+        "max": [
+          0.30394411299386886,
+          0.27910082156726135,
+          0.2653363049030304
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 4,
+        "joints": 3,
+        "colliders": 4
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "crate_blue_a01",
+      "role": "Deep source supply/dispatch container; cavity and source handle geometry must be verified.",
+      "priority": "core",
+      "optimized_glb_bytes": 526916,
+      "source_bounds_y_up": {
+        "min": [
+          -0.30256661772727966,
+          -1.4484031086614557e-05,
+          -0.2025729074892746
+        ],
+        "max": [
+          0.30256661772727966,
+          0.2533161768782491,
+          0.2025729074892746
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 1,
+        "joints": 0,
+        "colliders": 1
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "crate_white_a20",
+      "role": "Shallow industrial sorting/rework container; source geometry must establish usable support and open interior.",
+      "priority": "core",
+      "optimized_glb_bytes": 539756,
+      "source_bounds_y_up": {
+        "min": [
+          -0.30583518743515015,
+          5.723226135720405e-07,
+          -0.2058066311516178
+        ],
+        "max": [
+          0.30583518743515015,
+          0.09035015007987707,
+          0.2058066311516178
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 1,
+        "joints": 0,
+        "colliders": 1
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "dishware_plastic_tray_a01",
+      "role": "Small transferable part tray candidate; generic industrial suitability requires image review.",
+      "priority": "core",
+      "optimized_glb_bytes": 175780,
+      "source_bounds_y_up": {
+        "min": [
+          -0.12784767308772005,
+          6.723940041862206e-06,
+          -0.13499999046325684
+        ],
+        "max": [
+          0.12784767308772005,
+          0.02165652278052177,
+          0.13499999046325684
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 1,
+        "joints": 0,
+        "colliders": 1
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "handTool_wrench_combination_a01",
+      "role": "Distinct rigid hand tool for kit selection, carrying and return-to-storage.",
+      "priority": "core",
+      "optimized_glb_bytes": 497948,
+      "source_bounds_y_up": {
+        "min": [
+          -0.12566736340522766,
+          0.00011398728548544547,
+          -0.022912167612947898
+        ],
+        "max": [
+          0.1339177042245865,
+          0.01757440444470388,
+          0.023067987192906814
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 1,
+        "joints": 0,
+        "colliders": 1
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "handTool_pliers_combination_a01",
+      "role": "Different grasp shape plus genuine handle hinge; no gripping/cutting action claimed yet.",
+      "priority": "core",
+      "optimized_glb_bytes": 617556,
+      "source_bounds_y_up": {
+        "min": [
+          -0.13684457540512085,
+          -0.01125522062857349,
+          -0.034389031770905354
+        ],
+        "max": [
+          0.08684830367565155,
+          0.026422821103825163,
+          0.034503153784975746
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 2,
+        "joints": 1,
+        "colliders": 2
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "instrument_caliper_a01",
+      "role": "Physical slider/tool-handling candidate; no metrology claim.",
+      "priority": "core",
+      "optimized_glb_bytes": 192224,
+      "source_bounds_y_up": {
+        "min": [
+          -0.22128817439079285,
+          5.960546156919336e-06,
+          -0.0480900052263828
+        ],
+        "max": [
+          0.01702413521707058,
+          0.0075525160993425485,
+          0.030377706445703097
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 2,
+        "joints": 1,
+        "colliders": 2
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "engineComponent_idler_pulley_a01",
+      "role": "Round industrial part with distinct grasp and stable-placement requirements; rigid source part only.",
+      "priority": "core",
+      "optimized_glb_bytes": 616564,
+      "source_bounds_y_up": {
+        "min": [
+          -0.029999999329447746,
+          6.605217939146396e-05,
+          -0.030126888304948807
+        ],
+        "max": [
+          0.03066427359590307,
+          0.04510339443797342,
+          0.030000001192092896
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 1,
+        "joints": 0,
+        "colliders": 1
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "brakeSystem_brake_master_cylinder_b01",
+      "role": "Larger irregular service component; original mass/inertia and gripper access must be resolved.",
+      "priority": "core",
+      "optimized_glb_bytes": 747224,
+      "source_bounds_y_up": {
+        "min": [
+          -0.16380621492862701,
+          0.0002522371045622779,
+          -0.07365205739138346
+        ],
+        "max": [
+          0.16380621492862701,
+          0.10912310562214518,
+          0.07365205739138346
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 1,
+        "joints": 0,
+        "colliders": 1
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "engineComponent_spark_plug_b01",
+      "role": "Slender keyed kit component; not a fastening or electrical-operation model.",
+      "priority": "core",
+      "optimized_glb_bytes": 258604,
+      "source_bounds_y_up": {
+        "min": [
+          -0.03963856399059296,
+          -0.007888745683720217,
+          -0.006882648981610983
+        ],
+        "max": [
+          0.0388505682349205,
+          0.01594382727473031,
+          0.006885945397863835
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 1,
+        "joints": 0,
+        "colliders": 1
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "hardware_bracket_largeCorner_a01",
+      "role": "Flat/angled source component for sorting/rework; thin-edge grasp requires validation.",
+      "priority": "core",
+      "optimized_glb_bytes": 45428,
+      "source_bounds_y_up": {
+        "min": [
+          -0.050275142304599285,
+          -0.0020004811936104464,
+          -0.04995472729206085
+        ],
+        "max": [
+          0.02165998797863722,
+          0.004103193362900035,
+          0.02165999449789524
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 1,
+        "joints": 0,
+        "colliders": 1
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "factory_bolt_m20_tight",
+      "role": "Medium source fastener for selection/handling; no screw-thread insertion or torque claim.",
+      "priority": "core",
+      "optimized_glb_bytes": 316972,
+      "source_bounds_y_up": {
+        "min": [
+          -0.014997786177397247,
+          -0.011392570100724697,
+          -0.014997787108719822
+        ],
+        "max": [
+          0.014997787108719822,
+          0.06499999668449163,
+          0.014997786177397247
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 1,
+        "joints": 0,
+        "colliders": 1
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    },
+    {
+      "asset_id": "equipment_bench_vise_a01",
+      "role": "Conditional source fixture for jaw/handle manipulation; no verified screw-to-jaw coupling or clamping retention.",
+      "priority": "conditional",
+      "optimized_glb_bytes": 1041976,
+      "source_bounds_y_up": {
+        "min": [
+          -0.15115587413311005,
+          -0.05346640512491836,
+          -0.11672986298799515
+        ],
+        "max": [
+          0.20797447860240936,
+          0.1803467603042282,
+          0.11604627221822739
+        ]
+      },
+      "manifest_physics_counts": {
+        "rigidBodies": 5,
+        "joints": 4,
+        "colliders": 5
+      },
+      "status": "approved for bounded acquisition and geometry/visual inspection; not final placement or physical affordance approval"
+    }
+  ],
+  "not_selected": {
+    "electricalSystem_engine_control_module_a01": "8.962107kg source mass makes it unsuitable as the chosen robot carrying target; do not lower its mass.",
+    "engineComponent_valve_lifter_a01": "11.6mm source width is too small for a flagship task; do not enlarge.",
+    "hardware_bracket_smallCorner_a01": "23mm source size; prefer larger bracket without scaling.",
+    "container_black_c04": "Lid joint fixed, not openable.",
+    "container_recycle_blue_b02": "Lid joint fixed, not openable.",
+    "electrical_power_shutoff_a01": "Anomalous exported ~9.63m extent unresolved; no scale repair authorized.",
+    "warehouse_fireAlarm_wallSwitch_a01": "Emergency alarm is semantically unsuitable as a pretend production inspection button.",
+    "equipment_powerOutlet_autoswitch_a01": "No connected process semantics or safe production-control role established."
+  },
+  "requirements": [
+    "Keep source bytes, PBR maps, dimensions and original articulated hierarchy.",
+    "Preserve raw source masses/physics; absent mass is unresolved, not permission to choose a convenient value.",
+    "Document source convexHull cavity limitations; use faithful source-mesh contact adaptations rather than filled cavities or primitive replacement visuals.",
+    "Return previews and measured cavities/handles/sweeps before coordinates are authored.",
+    "Do not claim push/clamp/measurement/screwdriving from joint existence alone.",
+    "No scene placements or task IDs have yet been frozen for these assets."
+  ]
+}

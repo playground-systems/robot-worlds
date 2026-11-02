@@ -18,11 +18,11 @@ from robot_worlds.sdk import World, generate, load
 
 class RelayClient:
     model = "gpt-6-astra"
-    reasoning = "medium"
     max_input_chars = 120000
 
     def __init__(self, channel):
         self.channel = channel
+        self.reasoning = "high" if channel == "generation" else "medium"
         self.usage = {}
         self.budget = {}
         self.last_usage = {}
