@@ -27,9 +27,11 @@ jobs:
           uv pip install --python .venv/bin/python pycollada==0.9.3 trimesh==4.7.4 scipy==1.16.3
       - name: Convert pinned source scenes without model calls
         run: |
+          set -euo pipefail
           mkdir -p starter-evidence
           git rev-parse HEAD > starter-evidence/commit.txt
           .venv/bin/python tools/starters/prepare.py --output starter-output --cache "$RUNNER_TEMP/starter-sources" 2>&1 | tee starter-evidence/conversion.log
+          .venv/bin/python -c "from pathlib import Path; assert len(list(Path('starter-output').glob('*/manifest.json'))) == 4"
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:

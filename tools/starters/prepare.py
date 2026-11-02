@@ -106,8 +106,11 @@ def acquire(entry, cache):
 
 def primitives(path):
     document = collada.Collada(str(path))
-    if document.assetInfo.upaxis not in (None, 'Z_UP') or document.assetInfo.unitmeter not in (None, 1.0):
-        raise ValueError(f'Unreviewed source axes/units: {path}')
+    if document.assetInfo.upaxis not in (None, 'Z_UP'):
+        raise ValueError(f'Unreviewed source up-axis: {path}')
+    unit = document.assetInfo.unitmeter or 1.0
+    if not math.isfinite(unit) or not .0001 <= unit <= 100:
+        raise ValueError('Invalid COLLADA unit scale')
     if document.scene is None:
         raise ValueError('COLLADA scene is missing')
     for geometry in document.scene.objects('geometry'):
@@ -116,7 +119,7 @@ def primitives(path):
                 primitive = primitive.triangleset()
             if not hasattr(primitive, 'vertex_index'):
                 raise ValueError(f'Unsupported COLLADA primitive in {path}')
-            yield primitive
+            yield primitive, unit
 
 
 def obj_bytes(vertices, faces, uv=None, normals=None):
@@ -187,7 +190,8 @@ class Adapter:
         if np.any(high-low < 1e-7):
             raise ValueError(f'Planar source needs explicit conversion: {label}')
         center, extent = (low+high)/2, high-low
-        local = transformed-center
+        local = np.round(transformed-center, 7)
+        local[np.abs(local) < 1e-7] = 0
         if normals is not None:
             normals = normals @ np.linalg.inv(transform[:3, :3])
             normals /= np.maximum(np.linalg.norm(normals, axis=-1, keepdims=True), 1e-12)
@@ -208,8 +212,8 @@ class Adapter:
         if key in self.collision_cache:
             return self.collision_cache[key]
         parts = []
-        for primitive in primitives(mesh):
-            raw = trimesh.Trimesh(vertices=primitive.vertex*scale, faces=primitive.vertex_index, process=True)
+        for primitive, unit in primitives(mesh):
+            raw = trimesh.Trimesh(vertices=primitive.vertex*unit*scale, faces=primitive.vertex_index, process=True)
             for component in raw.split(only_watertight=False):
                 if component.is_convex and component.is_watertight:
                     parts.append((np.asarray(component.vertices), np.asarray(component.faces)))
@@ -252,10 +256,10 @@ class Adapter:
                 raise ValueError(f'Visual-only source has no physical parent: {label}')
             for visual in link.findall('visual'):
                 path, scale = self.geometry(visual)
-                for primitive in primitives(path):
+                for primitive, unit in primitives(path):
                     uv = primitive.texcoordset[0][primitive.texcoord_indexset[0]] if primitive.texcoordset else None
                     normals = primitive.normal[primitive.normal_index] if primitive.normal is not None else None
-                    scaled = frame @ pose(visual) @ np.diag([*scale, 1.])
+                    scaled = frame @ pose(visual) @ np.diag([*(scale*unit), 1.])
                     self.add_mesh(primitive.vertex, primitive.vertex_index, scaled, label,
                                   parent=parent, uv=uv, normals=normals, material=self.texture(primitive, path))
 
@@ -290,7 +294,7 @@ class Adapter:
             regions=[dict(id='arrival',position=[*target.tolist(),.5],size=[1.,1.,1.])],
             rubric=[dict(id='arrive',description='Reach the arrival zone',predicate='robot_in_region',target_id='arrival',duration=1)],
             assumptions=['Imported source scene, not model-generated. All source equipment is static; manipulation is not certified.',
-                         'Original layout/visual meshes retained. Textures limited to 1024px; Phong materials mapped to estimated rough dielectric appearance.',
+                         'Original layout/visual surfaces retained; source centimetres converted to metres, vertex coordinates quantized to 0.1 micrometre. Textures limited to 1024px; Phong materials mapped to estimated rough dielectric appearance.',
                          'Source collision meshes are split into convex components; concave components use disclosed approximate decomposition.',
                          'Gazebo plugins, ROS launch code, source lights and dynamic actors are not executed. Robot Worlds supplies robot, ground and lighting.',
                          'A robot spawn and a short navigation task are added; creation checks do not prove task solvability.'],
