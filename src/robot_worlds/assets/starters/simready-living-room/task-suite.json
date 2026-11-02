@@ -1,0 +1,1073 @@
+{
+  "schema_version": "1.0",
+  "tasks": [
+    {
+      "id": "tidy_note_close",
+      "name": "Put the reading notebook away",
+      "task": "Pull open the upper cabinet drawer, pick up the loose notebook beside the ball on the coffee table, carry it to the cabinet, lay it fully inside the upper drawer, let go, and push the drawer shut.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part19",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "holding",
+          "object_id": "reading_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "reading_note_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "reading_note_part0",
+          "target_id": "cabinet_part19",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "reading_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part19",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "release"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "reading_note_part0",
+          "target_id": "upper_closed_cavity",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "closed_cavity_containment",
+          "description": "closed cavity containment",
+          "duration": 0.4,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "note_lift_return",
+      "name": "Lift and return the notebook",
+      "task": "Grasp the loose coffee-table notebook by its thin edge, lift and carry it a short distance, then return it flat to the coffee table and let go.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "reading_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "reading_note_part0",
+          "target_id": null,
+          "threshold": 0.15,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "reading_note_part0",
+          "target_id": "coffee_part1",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "reading_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "book_to_cabinet",
+      "name": "Put the open reading book on the cabinet",
+      "task": "Pick up the open book from the coffee table, carry it to a clear part of the cabinet top and set it down without changing its open shape.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "reading_book_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "reading_book_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "reading_book_part0",
+          "target_id": "cabinet_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "reading_book_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "book_to_reading",
+      "name": "Bring the cabinet book to the reading area",
+      "task": "Carry the open book from the cabinet top to a free position on the coffee table and release it.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "cabinet_book_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "cabinet_book_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "cabinet_book_part0",
+          "target_id": "coffee_part1",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "cabinet_book_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "ball_to_cabinet",
+      "name": "Collect the coffee-table golf ball",
+      "task": "Pick up the golf ball on the coffee table and put it on a clear part of the cabinet top.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "table_ball_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "table_ball_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "table_ball_part0",
+          "target_id": "cabinet_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "table_ball_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "ball_to_reading",
+      "name": "Bring the cabinet golf ball over",
+      "task": "Pick up the golf ball from the cabinet top and carry it to a clear position on the coffee table, then let it settle.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "cabinet_ball_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "cabinet_ball_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "cabinet_ball_part0",
+          "target_id": "coffee_part1",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "cabinet_ball_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "open_upper",
+      "name": "Pull open the upper drawer",
+      "task": "Pull the upper drawer outward by its handle and leave it open.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part19",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "cycle_upper",
+      "name": "Open and push shut the upper drawer",
+      "task": "Pull the upper drawer open by its handle, then push it fully shut.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part19",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part19",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "open_lower",
+      "name": "Pull open the lower drawer",
+      "task": "Pull the lower drawer outward by its handle and leave it open.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part41",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "cycle_lower",
+      "name": "Open and push shut the lower drawer",
+      "task": "Pull the lower drawer open by its handle, then push it fully shut.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part41",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part41",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "fetch_stored_note",
+      "name": "Fetch the stored notebook",
+      "task": "Pull open the lower cabinet drawer, take out the notebook, carry it to a free part of the coffee table, and release it.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part41",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "opened",
+          "description": "opened",
+          "duration": 0.3,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "holding",
+          "object_id": "stored_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [
+            "opened"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "stored_note_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "stored_note_part0",
+          "target_id": "coffee_part1",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "stored_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "put_ball_away",
+      "name": "Store the small golf ball",
+      "task": "Open the upper drawer, carry the coffee-table golf ball into it, set it on the drawer floor, release it, and push the drawer shut.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part19",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "holding",
+          "object_id": "table_ball_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "table_ball_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "table_ball_part0",
+          "target_id": "cabinet_part19",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "table_ball_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part19",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "release"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "table_ball_part0",
+          "target_id": "upper_closed_cavity",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "closed_cavity_containment",
+          "description": "closed cavity containment",
+          "duration": 0.4,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "two_item_tidy",
+      "name": "Clear the reading area and close the drawer",
+      "task": "First carry the open book from the coffee table onto the cabinet top. Then open the upper drawer, put the coffee-table notebook inside, release it, and push the drawer shut.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "reading_book_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "book_grasp",
+          "description": "book grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "reading_book_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "book_carry",
+          "description": "book carry",
+          "duration": 0.0,
+          "after": [
+            "book_grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "reading_book_part0",
+          "target_id": "cabinet_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "book_support",
+          "description": "book support",
+          "duration": 0.25,
+          "after": [
+            "book_carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "reading_book_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "book_release",
+          "description": "book release",
+          "duration": 0.4,
+          "after": [
+            "book_carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part19",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [
+            "book_release"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "holding",
+          "object_id": "reading_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "reading_note_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "reading_note_part0",
+          "target_id": "cabinet_part19",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "reading_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "cabinet_part19",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "release"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "reading_note_part0",
+          "target_id": "upper_closed_cavity",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "closed_cavity_containment",
+          "description": "closed cavity containment",
+          "duration": 0.4,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    }
+  ],
+  "selected_task_id": "tidy_note_close"
+}

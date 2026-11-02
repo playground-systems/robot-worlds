@@ -145,6 +145,13 @@ def _job_worker(root_string: str, job_id: str, kind: str, payload: dict) -> None
             revised = world.revalidate(output=root/'worlds')
             job.update(world_id=revised.id, status='completed', validation=revised.manifest['validation'])
             event({'type': 'world_created', 'world_id': revised.id, 'validation': revised.manifest['validation']})
+        elif kind == "task":
+            world = load(_world_directory(root, payload["world_id"]))
+            revised = world.with_task(payload["task_id"], output=root / "worlds")
+            job.update(world_id=revised.id, status="completed", validation=revised.manifest["validation"])
+            event({"type": "world_created", "world_id": revised.id,
+                   "validation": revised.manifest["validation"],
+                   "message": "Task selected; physical scene unchanged"})
         elif kind == "generate":
             world = generate(**payload, output=root / "worlds", on_event=event, cancelled=cancelled)
             job.update(world_id=world.id, status="completed",
@@ -435,6 +442,22 @@ def create_app(data_dir: str | Path = ".robot-worlds", *, executor_factory=None)
         if not path.exists():
             raise HTTPException(404, "Physical preview is not available for this version")
         return FileResponse(path, media_type="image/png")
+
+    @app.get("/api/worlds/{world_id}/tasks")
+    def world_tasks(world_id: str):
+        from robot_worlds.sdk import load
+        world = load(_world_directory(root, world_id))
+        tasks = world.tasks
+        return {"world_id": world.id, "tasks": [task.model_dump(mode="json") for task in tasks],
+                "count": len(tasks), "selected_task_id": world.selected_task_id}
+
+    @app.post("/api/worlds/{world_id}/tasks/{task_id}/select", status_code=202)
+    def select_task(world_id: str, task_id: Identifier, request: RequestModel | None = None):
+        from robot_worlds.sdk import load
+        world = load(_world_directory(root, world_id))
+        if not any(task.id == task_id for task in world.tasks):
+            raise HTTPException(422, f"Unknown task ID: {task_id}")
+        return submit("task", {"world_id": world_id, "task_id": task_id})
 
     @app.get("/api/worlds/{world_id}/files/{member:path}")
     def world_asset(world_id: str, member: str):

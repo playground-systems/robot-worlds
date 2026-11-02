@@ -2,27 +2,23 @@
 
 Checked **2026-11-02** against publisher documentation, source code, dataset cards and distributed license files. This is source research, not a successful import or simulation test. No packages, models or large datasets were installed/downloaded.
 
-**The minimum is one manipulation-ready kitchen and one manipulation-ready factory.** Use a RoboCasa365 kitchen and compose our own factory from selected NVIDIA SimReady assets. This replaces the earlier household-only starter recommendation. MolmoSpaces remains an additional indoor source; ReplicaCAD remains conditional on resolving its conflicting licenses.
+**Current build selection: three Astra-authored scenes using only NVIDIA SimReady props and furniture.** The user narrowed the asset source after this comparison. RoboCasa, MolmoSpaces and the other datasets below remain research alternatives; they are not sources for the new kitchen, factory or living room.
 
-## Selected starter pair
+## Selected scenes
 
-These are selected integration targets, not additions already available in the starter catalog.
-
-| Preset | Source and layout | Required interaction |
+| Scene | SimReady composition | Task families |
 | --- | --- | --- |
-| **Kitchen** | RoboCasa365 **One Wall / Industrial, layout 1 + style 1**. Preserve the furnished layout and articulated cabinets/appliances. [Source scenes](https://robocasa.ai/docs/build/html/assets/scenes.html). | Movable bowls and utensils; physical cabinet/drawer motion; an openable microwave with usable interior. The bowl-to-microwave mission must establish reachability, cavity clearance and stable placement before it is advertised. |
-| **Factory** | **Our authored assembly-and-inspection floor**, composed from individually licensed [NVIDIA SimReady assets](https://huggingface.co/datasets/nvidia/simready-assets). Connect parts storage, a loading/assembly fixture, inspection and dispatch with navigable aisles and accessible transfer surfaces. | Loose parts and kit containers can be grasped, carried, seated in a fixture, released for inspection, regrasped and delivered. Internal inspection uses the declared process-cycle abstraction; no material deformation is implied. |
+| **Kitchen** | Original articulated kitchen counter, hollow bowl, recipe books and small props. | Grasp and carry dishware; open, load and close drawers; operate the original hinged door; retrieve stored items. |
+| **Factory** | Packing workbenches, storage rack, real drawer cabinet, screwdriver and sealed cartons. | Tool transfer, storage retrieval, drawer pulling/pushing, carton staging and an explicit inspection process cycle. |
+| **Living room** | Sofa, coffee table, drawer cabinet, rigid books/notebooks and golf balls. | Tidying, carrying, drawer operation and retrieval. No invented electronics or deformable furniture behavior. |
 
-The factory starts from the existing reviewed [source catalog](../src/robot_worlds/assets/simready/catalog.json) and [portable library adapters](../src/robot_worlds/warehouse_library.py):
+Astra composes the layouts and task rubrics from prepared source geometry. Original source appearance, articulation and notices are retained; MuJoCo collision adaptations are recorded separately. Room walls and floor markings are ordinary architectural primitives. No non-SimReady furniture, procedural substitute props or microwave from a separate asset collection is included.
 
-- `rack_large_empty_a02`: fixed rack with open shelf regions.
-- `pallet_a01` and `box_corrugated_brown_b20`: movable rigid assemblies. Cartons remain sealed; pallet movement is not a TIAGo++ lifting requirement.
-- `barrier_fence_metal_a02`: fixed guarding placed beside actual hazards, with access left clear.
-- `conveyor_belt_a05`: fixed frame with **29 passive roller hinges**. Include it only at a meaningful loading/unloading station; powered transport requires a separately implemented and verified drive.
+The selected industrial [source catalog](../src/robot_worlds/assets/simready/catalog.json) is supplemented by [living-room](../src/robot_worlds/assets/simready/living_room_catalog.json), [kitchen-counter](../src/robot_worlds/assets/simready/kitchen_counter_catalog.json), [dishware](../src/robot_worlds/assets/simready/kitchen_dish_catalog.json) and [workbench](../src/robot_worlds/assets/simready/workbench_catalog.json) catalogs. Each records pinned source files, per-package licensing and conversion evidence. The optimized GLB provider does not declare the exact upstream revision from which its files were derived; our upstream reference check is recorded separately.
 
-Workbench, grasp-sized industrial parts, fixture and tray choices still need source selection and adaptation. Search existing models before authoring geometry; the five existing adapters do not cover those assets. Keep original appearance, source notices and package-specific licenses. NVIDIA's [physics guidance](https://docs.omniverse.nvidia.com/simready/latest/simready-asset-creation/physics-best-practices.html) defines USDPhysics metadata; converting it into MuJoCo dynamics and implementing interactions remains our work. [SimReady Central](https://docs.omniverse.nvidia.com/simready/latest/simready-central.html) also requires checking each asset's profile, validation evidence and license.
+The carton is too wide for the current one-handed gripper; the 50 kg pallet is not a TIAGo++ lift task. Books retain their rigid source shape. The conveyor's rollers are passive, so no powered transport is claimed. The inspected optimized catalog did not supply a microwave; the all-SimReady kitchen therefore uses its actual drawers and hinged door instead of promising microwave behavior.
 
-**Ready means:** both presets install as prepared packages, open through the app and SDK without generation/model calls, reset reproducibly, retain separate movable objects/joints and have verified collisions, supports and robot access. A scripted physical demonstration must exercise each promised interaction and an SDK run must produce its rubric report and replay. Mock model responses where possible while keeping the manipulation proof in real physics. Record scripted/privileged control as engineering evidence, separately from autonomous policy success. Scene composition, preparation and these checks have not been performed in this research task.
+See [manipulation presets](manipulation-presets.md) for the installed scenes, task selection, validation evidence and remaining interaction checks. Native reset and executable rubric checks are separate from a successful robot demonstration. NVIDIA's [physics guidance](https://docs.omniverse.nvidia.com/simready/latest/simready-asset-creation/physics-best-practices.html) describes source metadata; converting it into useful MuJoCo contact behavior remains our responsibility.
 
 ## Candidate comparison
 

@@ -37,6 +37,7 @@ class JointSpec(Model):
     frictionloss: Nonnegative = 0.2
     armature: Nonnegative = 0
     stiffness: Nonnegative = 0
+    collide_parent: bool = Field(default=True, description="Whether the parent and child rigid groups may contact. False preserves an explicit source joint collision exclusion; other joints, workpieces and the robot still collide.")
 
     @model_validator(mode="after")
     def check_joint(self):

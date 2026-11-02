@@ -4,6 +4,7 @@ These fixtures test packaging and API lifecycle only. They are not physical
 validation of the upstream environments; release preparation performs that check.
 """
 
+import io
 import json
 import shutil
 import stat
@@ -19,6 +20,8 @@ from robot_worlds.artifacts import digest, file_digest, read_json, write_json
 from robot_worlds.generator import GenerationCancelled
 from robot_worlds.sdk import World, load
 from robot_worlds.server import create_app
+
+LEGACY_STARTER_IDS = {"warehouse", "house", "hospital", "bookstore"}
 
 
 class FakeStarterRuntime:
@@ -100,6 +103,12 @@ def packaged(tmp_path, monkeypatch):
             "rubric": [{"id": "move", "description": "Move test part", "predicate": "in_region",
                         "object_id": "part", "target_id": "target"}],
         }, tmp_path / "frozen", asset_root=sources, runtime_factory=FakeStarterRuntime)
+        if entry.get("task_count"):
+            variants = [{"id": f"task{i}", "name": f"Fixture task {i + 1}",
+                         "task": f"Move test part for fixture task {i + 1}",
+                         "rubric": world.spec.model_dump(mode="json")["rubric"]}
+                        for i in range(entry["task_count"])]
+            world = world.with_tasks(variants)
         assert world.manifest["validation"]["status"] == "ready"
         entries.append(dict(entry, **bundle_world(root, identifier, world)))
         worlds[identifier] = world
@@ -125,10 +134,11 @@ def rewrite_archive(root, identifier, write_members):
     write_json(root / "catalog.json", catalog)
 
 
-def test_four_offline_starters_preserve_versions_and_source_evidence(packaged, tmp_path):
+def test_all_offline_starters_preserve_versions_and_source_evidence(packaged, tmp_path):
     _, expected = packaged
     catalog = starters.starter_catalog()
-    assert [entry["id"] for entry in catalog] == ["warehouse", "house", "hospital", "bookstore"]
+    assert [entry["id"] for entry in catalog] == list(expected)
+    assert LEGACY_STARTER_IDS <= set(expected)
     assert all(entry["available"] and entry["preview_available"] for entry in catalog)
     for entry in catalog:
         events = []
@@ -137,6 +147,7 @@ def test_four_offline_starters_preserve_versions_and_source_evidence(packaged, t
         assert load(world.path).id == world.id
         assert world.manifest == expected[entry["id"]].manifest
         assert world.manifest["runtime"]["engine"] == "FAKE_STARTER_ORCHESTRATION_TEST_ONLY"
+        assert len(world.tasks) == entry.get("task_count", 0)
         for member in world.manifest["assets"]:
             assert (world.path / member).read_bytes() == (expected[entry["id"]].path / member).read_bytes()
         assert [event["type"] for event in events] == ["starter_import", "world_created"]
@@ -273,7 +284,8 @@ def test_unvalidated_preview_is_not_a_ready_starter(packaged, tmp_path):
     preview = World.from_spec(worlds["warehouse"].spec, tmp_path / "previews",
                               asset_root=worlds["warehouse"].path, validate=False)
     catalog = read_json(root / "catalog.json")
-    catalog["environments"][0].update(bundle_world(root, "warehouse", preview))
+    entry = next(item for item in catalog["environments"] if item["id"] == "warehouse")
+    entry.update(bundle_world(root, "warehouse", preview))
     write_json(root / "catalog.json", catalog)
     with pytest.raises(ValueError, match="matching validated-world evidence"):
         starters.add_starter("warehouse", tmp_path / "workspace")
@@ -298,13 +310,14 @@ def test_unknown_missing_and_unprepared_starters(packaged, tmp_path):
         starters.starter_preview("warehouse")
 
 
-def test_four_starter_api_jobs_complete_without_key_and_reopen(packaged, tmp_path):
+def test_all_starter_api_jobs_complete_without_key_and_reopen(packaged, tmp_path):
     _, worlds = packaged
     queue, workspace = Queue(), tmp_path / "api"
     with TestClient(create_app(workspace, executor_factory=lambda: queue)) as client:
         assert client.get("/api/health").json()["key_configured"] is False
         catalog = client.get("/api/starters").json()
-        assert len(catalog) == 4 and all(entry["available"] for entry in catalog)
+        assert len(catalog) == len(worlds) and all(entry["available"] for entry in catalog)
+        assert LEGACY_STARTER_IDS <= {entry["id"] for entry in catalog}
         for entry in catalog:
             assert client.get(f"/api/starters/{entry['id']}/preview").status_code == 200
             response = client.post(f"/api/starters/{entry['id']}/add")
@@ -318,17 +331,19 @@ def test_four_starter_api_jobs_complete_without_key_and_reopen(packaged, tmp_pat
             reopened = client.get(f"/api/worlds/{completed['world_id']}").json()
             assert reopened["manifest"]["id"] == completed["world_id"]
             assert reopened["manifest"]["validation"]["status"] == "ready"
+            tasks = client.get(f"/api/worlds/{completed['world_id']}/tasks").json()
+            assert tasks["count"] == entry.get("task_count", 0)
         again = client.post("/api/starters/warehouse/add").json()
         queue.finish()
         assert client.get(f"/api/jobs/{again['id']}").json()["status"] == "completed"
-        assert len(client.get("/api/worlds").json()) == 4
+        assert len(client.get("/api/worlds").json()) == len(worlds)
         assert client.post("/api/starters/unknown/add").status_code == 404
         assert client.get("/api/starters/unknown/preview").status_code == 404
         assert client.post("/api/starters/warehouse/add", headers={"Origin": "https://external.example"}).status_code == 403
 
     # Persistence survives a fresh app process/lifecycle without re-adding scenes.
     with TestClient(create_app(workspace, executor_factory=Queue)) as client:
-        assert len(client.get("/api/worlds").json()) == 4
+        assert len(client.get("/api/worlds").json()) == len(worlds)
         assert client.get(f"/api/worlds/{worlds['warehouse'].id}").status_code == 200
 
 
@@ -451,3 +466,107 @@ def test_api_revalidation_can_be_cancelled_before_worker_or_fail_without_replaci
         assert calls == [parent.id]
         assert client.get(f"/api/worlds/{parent.id}").json()["manifest"]["id"] == parent.id
         assert len(client.get("/api/worlds").json()) == 1
+
+
+@pytest.fixture
+def packaged_tasks(packaged, tmp_path):
+    root, original_worlds = packaged
+    catalog = read_json(root / "catalog.json")
+    original_entries = list(catalog["environments"])
+    worlds = dict(original_worlds)
+    added = {"fixture-kitchen": 16, "fixture-factory": 15, "fixture-living-room": 13}
+    source = worlds["warehouse"]
+    for identifier, task_count in added.items():
+        payload = source.spec.model_dump(mode="json")
+        payload["name"] = "FAKE catalog fixture " + identifier
+        base = World.from_spec(payload, tmp_path / "task-worlds", asset_root=source.path,
+                               runtime_factory=FakeStarterRuntime)
+        variants = [{"id": f"variant{i}", "name": f"Named manipulation {i + 1}",
+                     "task": f"Perform fixture manipulation {i + 1}",
+                     "rubric": [{**payload["rubric"][0], "duration": (i + 1) / 10}]} for i in range(task_count)]
+        world = base.with_tasks(variants)
+        assert world.manifest["identity_version"] == 4
+        assert world.manifest["validation"]["status"] == "ready"
+        catalog["environments"].append({"id": identifier, "name": payload["name"],
+                                        "description": "Synthetic catalog-bearing starter fixture",
+                                        "source_url": "https://example.invalid/fixture", "license": "Test only",
+                                        "bounds": payload["bounds"], "components": len(payload["objects"]),
+                                        "task_count": task_count,
+                                        **bundle_world(root, identifier, world)})
+        worlds[identifier] = world
+    assert catalog["environments"][:len(original_entries)] == original_entries
+    write_json(root / "catalog.json", catalog)
+    return root, worlds, list(added)
+
+
+def test_additive_catalog_starter_import_select_revalidate_export_is_portable(packaged_tasks, tmp_path, monkeypatch):
+    _, worlds, added = packaged_tasks
+    queue, workspace = Queue(), tmp_path / "api"
+    revalidate = World.revalidate
+
+    def fake_local_check(world, *, output):
+        return revalidate(world, output=output, runtime_factory=FakeStarterRuntime)
+
+    monkeypatch.setattr(World, "revalidate", fake_local_check)
+    with TestClient(create_app(workspace, executor_factory=lambda: queue)) as client:
+        catalog = client.get("/api/starters").json()
+        assert {entry["id"] for entry in catalog} == set(worlds)
+        assert LEGACY_STARTER_IDS | set(added) <= {entry["id"] for entry in catalog}
+        assert all(entry["available"] for entry in catalog)
+        imported = client.post(f"/api/starters/{added[-1]}/add").json()
+        queue.finish()
+        world_id = client.get(f"/api/jobs/{imported['id']}").json()["world_id"]
+        parent = load(workspace / "worlds" / world_id[:20])
+        assert parent.manifest == worlds[added[-1]].manifest
+        assert parent.manifest["identity_version"] == 4
+        tasks = client.get(f"/api/worlds/{world_id}/tasks").json()
+        assert tasks["count"] == len(worlds[added[-1]].tasks) == 13
+        assert tasks["selected_task_id"] is None
+        assert tasks["tasks"][5]["name"] == "Named manipulation 6"
+        jobs_before = len(queue.jobs)
+        assert client.post(f"/api/worlds/{world_id}/tasks/unknown/select").status_code == 422
+        assert len(queue.jobs) == jobs_before
+        selected_job = client.post(f"/api/worlds/{world_id}/tasks/variant5/select", json={}).json()
+        queue.finish()
+        selected_id = client.get(f"/api/jobs/{selected_job['id']}").json()["world_id"]
+        selected = client.get(f"/api/worlds/{selected_id}").json()
+        assert selected["manifest"]["task_catalog"]["selected_task_id"] == "variant5"
+        assert selected["manifest"]["physical_id"] == parent.manifest["physical_id"]
+        assert selected["spec"]["objects"] == parent.spec.model_dump(mode="json")["objects"]
+        assert selected["manifest"]["validation"]["status"] == "preview"
+        assert client.post(f"/api/worlds/{selected_id}/evaluate", json={}).status_code == 409
+        check_job = client.post(f"/api/worlds/{selected_id}/revalidate").json()
+        queue.finish()
+        checked_id = client.get(f"/api/jobs/{check_job['id']}").json()["world_id"]
+        checked = client.get(f"/api/worlds/{checked_id}").json()
+        assert checked["manifest"]["validation"]["status"] == "ready"
+        assert checked["manifest"]["task_catalog"] == selected["manifest"]["task_catalog"]
+        response = client.get(f"/api/worlds/{checked_id}/export")
+        assert response.status_code == 200
+        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+            archive.extractall(tmp_path / "portable-task-starter")
+        restored = load(tmp_path / "portable-task-starter")
+        assert restored.id == checked_id
+        assert len(restored.tasks) == len(parent.tasks) == 13
+        assert restored.selected_task_id == "variant5"
+        assert restored.manifest["physical_id"] == parent.manifest["physical_id"]
+        assert load(parent.path).manifest == parent.manifest
+        assert client.get("/api/health").json()["key_configured"] is False
+
+
+def test_packaged_catalog_tampering_cannot_inherit_ready_evidence(packaged_tasks, tmp_path):
+    root, worlds, added = packaged_tasks
+    source = worlds[added[0]]
+    manifest = read_json(source.path / "manifest.json")
+    manifest["task_catalog"]["tasks"][5]["task"] = "Changed without a new immutable version"
+
+    def members(bundle):
+        for path in source.path.rglob("*"):
+            if path.is_file():
+                name = path.relative_to(source.path).as_posix()
+                bundle.writestr(name, json.dumps(manifest).encode() if name == "manifest.json" else path.read_bytes())
+
+    rewrite_archive(root, added[0], members)
+    with pytest.raises(ValueError, match="validation evidence was modified"):
+        starters.add_starter(added[0], tmp_path / "workspace")
+    assert not list((tmp_path / "workspace").iterdir())

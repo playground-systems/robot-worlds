@@ -604,6 +604,16 @@ def edit_world(world, prompt: str | None, *, kind="refine", scope=None,
             changes, counts = scene_diff(before, candidate)
             if not changes:
                 raise ValueError("Repair reverted every requested edit; no final scene changes remain")
+            task_catalog = original._task_catalog.model_copy(deep=True) if original._task_catalog else None
+            if task_catalog is not None:
+                if task_catalog.selected_task_id is not None:
+                    selected = task_catalog.get(task_catalog.selected_task_id)
+                    if selected.task != candidate.task or selected.rubric != candidate.rubric:
+                        task_catalog.selected_task_id = None
+                try:
+                    task_catalog.validate_for(candidate)
+                except ValueError as error:
+                    raise ValueError(f"Scene edit invalidates task catalog: {error}") from error
             candidate_operations = operations + patch.model_dump(mode="json")["operations"]
             metadata = {"kind": kind, "prompt": prompt, "parent_world_id": original.id, "scope": scope,
                         "allow_task_changes": allow_task_changes, "allow_physics_changes": allow_physics_changes,
@@ -613,7 +623,8 @@ def edit_world(world, prompt: str | None, *, kind="refine", scope=None,
                         "protection_note": "Only typed operations are applied. Unmentioned data is preserved; semantic interpretation of an unscoped request is model-proposed, not independently proven."}
             common = {"output": destination, "asset_root": asset_root or original.path,
                       "parent_id": original.id, "edit_metadata": audit_value(metadata),
-                      "validation_profile": original.manifest["validation"].get("profile", "strict")}
+                      "validation_profile": original.manifest["validation"].get("profile", "strict"),
+                      "task_catalog": task_catalog}
             latest = World.from_spec(candidate, validate=False, **common)
             record["versions"].append(latest.id)
             event({"type": "preview", "spec": candidate.model_dump(mode="json"), "edit": metadata,

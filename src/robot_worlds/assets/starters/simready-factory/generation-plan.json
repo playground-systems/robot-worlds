@@ -1,0 +1,1797 @@
+{
+  "schema_version": "1.0",
+  "name": "Tool preparation, inspection and dispatch",
+  "description": "Four connected physical work areas around a compact manual tool-processing cell, with reserve rack storage and a clear loading apron.",
+  "task": "Pick up the screwdriver at the left end of the preparation table by its handle and carry it to the inspection table. Lay it near the front centre and release it for the three-second inspection dwell. After inspection, pick it up again, carry it to the clear left-hand kit position on the outbound table, and release it.",
+  "robot": "tiago++",
+  "bounds": [
+    18.0,
+    9.0,
+    4.5
+  ],
+  "robot_start": [
+    0.0,
+    -3.4,
+    1.57
+  ],
+  "objects": [
+    {
+      "id": "west_wall",
+      "label": "west wall",
+      "kind": "box",
+      "position": [
+        -8.94,
+        0.0,
+        2.25
+      ],
+      "size": [
+        0.12,
+        8.76,
+        4.5
+      ],
+      "color": [
+        0.85,
+        0.83,
+        0.77
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "east_wall",
+      "label": "east wall",
+      "kind": "box",
+      "position": [
+        8.94,
+        0.0,
+        2.25
+      ],
+      "size": [
+        0.12,
+        8.76,
+        4.5
+      ],
+      "color": [
+        0.85,
+        0.83,
+        0.77
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "north_wall",
+      "label": "north wall",
+      "kind": "box",
+      "position": [
+        0.0,
+        4.44,
+        2.25
+      ],
+      "size": [
+        17.76,
+        0.12,
+        4.5
+      ],
+      "color": [
+        0.9,
+        0.88,
+        0.82
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "entry_wall_left",
+      "label": "entry wall left",
+      "kind": "box",
+      "position": [
+        -5.300000000000001,
+        -4.44,
+        2.25
+      ],
+      "size": [
+        7.4,
+        0.12,
+        4.5
+      ],
+      "color": [
+        0.9,
+        0.88,
+        0.82
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "entry_wall_right",
+      "label": "entry wall right",
+      "kind": "box",
+      "position": [
+        5.300000000000001,
+        -4.44,
+        2.25
+      ],
+      "size": [
+        7.4,
+        0.12,
+        4.5
+      ],
+      "color": [
+        0.9,
+        0.88,
+        0.82
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "entry_lintel",
+      "label": "entry lintel",
+      "kind": "box",
+      "position": [
+        0.0,
+        -4.44,
+        3.4
+      ],
+      "size": [
+        3.2,
+        0.12,
+        2.2
+      ],
+      "color": [
+        0.9,
+        0.88,
+        0.82
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "receiving_north_paint",
+      "label": "receiving north paint",
+      "kind": "box",
+      "position": [
+        -4.0,
+        0.75,
+        0.001
+      ],
+      "size": [
+        2.4,
+        0.035,
+        0.002
+      ],
+      "color": [
+        0.7,
+        0.45,
+        0.2
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "receiving_south_paint",
+      "label": "receiving south paint",
+      "kind": "box",
+      "position": [
+        -4.0,
+        -1.15,
+        0.001
+      ],
+      "size": [
+        2.4,
+        0.035,
+        0.002
+      ],
+      "color": [
+        0.7,
+        0.45,
+        0.2
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "receiving_west_paint",
+      "label": "receiving west paint",
+      "kind": "box",
+      "position": [
+        -5.2,
+        -0.2,
+        0.001
+      ],
+      "size": [
+        0.035,
+        1.9,
+        0.002
+      ],
+      "color": [
+        0.7,
+        0.45,
+        0.2
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "receiving_east_paint",
+      "label": "receiving east paint",
+      "kind": "box",
+      "position": [
+        -2.8,
+        -0.2,
+        0.001
+      ],
+      "size": [
+        0.035,
+        1.9,
+        0.002
+      ],
+      "color": [
+        0.7,
+        0.45,
+        0.2
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "preparation_north_paint",
+      "label": "preparation north paint",
+      "kind": "box",
+      "position": [
+        -0.7,
+        1.75,
+        0.001
+      ],
+      "size": [
+        2.4,
+        0.035,
+        0.002
+      ],
+      "color": [
+        0.27,
+        0.48,
+        0.66
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "preparation_south_paint",
+      "label": "preparation south paint",
+      "kind": "box",
+      "position": [
+        -0.7,
+        -0.1499999999999999,
+        0.001
+      ],
+      "size": [
+        2.4,
+        0.035,
+        0.002
+      ],
+      "color": [
+        0.27,
+        0.48,
+        0.66
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "preparation_west_paint",
+      "label": "preparation west paint",
+      "kind": "box",
+      "position": [
+        -1.9,
+        0.8,
+        0.001
+      ],
+      "size": [
+        0.035,
+        1.9,
+        0.002
+      ],
+      "color": [
+        0.27,
+        0.48,
+        0.66
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "preparation_east_paint",
+      "label": "preparation east paint",
+      "kind": "box",
+      "position": [
+        0.5,
+        0.8,
+        0.001
+      ],
+      "size": [
+        0.035,
+        1.9,
+        0.002
+      ],
+      "color": [
+        0.27,
+        0.48,
+        0.66
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "inspection_north_paint",
+      "label": "inspection north paint",
+      "kind": "box",
+      "position": [
+        2.7,
+        1.75,
+        0.001
+      ],
+      "size": [
+        2.4,
+        0.035,
+        0.002
+      ],
+      "color": [
+        0.2,
+        0.58,
+        0.49
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "inspection_south_paint",
+      "label": "inspection south paint",
+      "kind": "box",
+      "position": [
+        2.7,
+        -0.1499999999999999,
+        0.001
+      ],
+      "size": [
+        2.4,
+        0.035,
+        0.002
+      ],
+      "color": [
+        0.2,
+        0.58,
+        0.49
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "inspection_west_paint",
+      "label": "inspection west paint",
+      "kind": "box",
+      "position": [
+        1.5000000000000002,
+        0.8,
+        0.001
+      ],
+      "size": [
+        0.035,
+        1.9,
+        0.002
+      ],
+      "color": [
+        0.2,
+        0.58,
+        0.49
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "inspection_east_paint",
+      "label": "inspection east paint",
+      "kind": "box",
+      "position": [
+        3.9000000000000004,
+        0.8,
+        0.001
+      ],
+      "size": [
+        0.035,
+        1.9,
+        0.002
+      ],
+      "color": [
+        0.2,
+        0.58,
+        0.49
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "dispatch_north_paint",
+      "label": "dispatch north paint",
+      "kind": "box",
+      "position": [
+        6.1,
+        0.75,
+        0.001
+      ],
+      "size": [
+        2.4,
+        0.035,
+        0.002
+      ],
+      "color": [
+        0.76,
+        0.64,
+        0.22
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "dispatch_south_paint",
+      "label": "dispatch south paint",
+      "kind": "box",
+      "position": [
+        6.1,
+        -1.15,
+        0.001
+      ],
+      "size": [
+        2.4,
+        0.035,
+        0.002
+      ],
+      "color": [
+        0.76,
+        0.64,
+        0.22
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "dispatch_west_paint",
+      "label": "dispatch west paint",
+      "kind": "box",
+      "position": [
+        4.8999999999999995,
+        -0.2,
+        0.001
+      ],
+      "size": [
+        0.035,
+        1.9,
+        0.002
+      ],
+      "color": [
+        0.76,
+        0.64,
+        0.22
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "dispatch_east_paint",
+      "label": "dispatch east paint",
+      "kind": "box",
+      "position": [
+        7.3,
+        -0.2,
+        0.001
+      ],
+      "size": [
+        0.035,
+        1.9,
+        0.002
+      ],
+      "color": [
+        0.76,
+        0.64,
+        0.22
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "storage_north_paint",
+      "label": "storage north paint",
+      "kind": "box",
+      "position": [
+        -6.4,
+        4.3,
+        0.001
+      ],
+      "size": [
+        4.6,
+        0.035,
+        0.002
+      ],
+      "color": [
+        0.7,
+        0.45,
+        0.2
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "storage_south_paint",
+      "label": "storage south paint",
+      "kind": "box",
+      "position": [
+        -6.4,
+        1.7,
+        0.001
+      ],
+      "size": [
+        4.6,
+        0.035,
+        0.002
+      ],
+      "color": [
+        0.7,
+        0.45,
+        0.2
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "storage_west_paint",
+      "label": "storage west paint",
+      "kind": "box",
+      "position": [
+        -8.7,
+        3.0,
+        0.001
+      ],
+      "size": [
+        0.035,
+        2.6,
+        0.002
+      ],
+      "color": [
+        0.7,
+        0.45,
+        0.2
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "storage_east_paint",
+      "label": "storage east paint",
+      "kind": "box",
+      "position": [
+        -4.1000000000000005,
+        3.0,
+        0.001
+      ],
+      "size": [
+        0.035,
+        2.6,
+        0.002
+      ],
+      "color": [
+        0.7,
+        0.45,
+        0.2
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "workcell_route_paint",
+      "label": "workcell route paint",
+      "kind": "box",
+      "position": [
+        1.05,
+        -1.65,
+        0.001
+      ],
+      "size": [
+        10.1,
+        0.05,
+        0.002
+      ],
+      "color": [
+        0.72,
+        0.72,
+        0.66
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "entry_route_paint",
+      "label": "entry route paint",
+      "kind": "box",
+      "position": [
+        0.0,
+        -2.94,
+        0.001
+      ],
+      "size": [
+        0.05,
+        2.58,
+        0.002
+      ],
+      "color": [
+        0.72,
+        0.72,
+        0.66
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    }
+  ],
+  "assembly_templates": [],
+  "assembly_instances": [],
+  "regions": [
+    {
+      "id": "inspection_loading",
+      "label": "Tool inspection position on the south edge",
+      "position": [
+        2.7,
+        0.33999999999999986,
+        1.0514856083569835
+      ],
+      "size": [
+        0.5,
+        0.3,
+        0.125
+      ],
+      "interior_of": null
+    },
+    {
+      "id": "outbound_kit",
+      "label": "Clear outbound kit position",
+      "position": [
+        5.73,
+        -0.6599999999999999,
+        1.0514856083569835
+      ],
+      "size": [
+        0.5,
+        0.32,
+        0.125
+      ],
+      "interior_of": null
+    },
+    {
+      "id": "carton_staging",
+      "label": "Right-hand carton staging position",
+      "position": [
+        -3.5999999999999996,
+        -0.44999999999999996,
+        1.1814856083569834
+      ],
+      "size": [
+        0.44,
+        0.72,
+        0.385
+      ],
+      "interior_of": null
+    },
+    {
+      "id": "tool_lower_closed",
+      "label": "Fully contained in the closed drawer",
+      "position": [
+        -0.7000000000000002,
+        3.8199999999999994,
+        0.658
+      ],
+      "size": [
+        0.6,
+        0.48,
+        0.116
+      ],
+      "interior_of": "tool_cabinet_part0"
+    }
+  ],
+  "rubric": [
+    {
+      "predicate": "holding",
+      "object_id": "primary_tool_part0",
+      "target_id": null,
+      "threshold": null,
+      "tolerance": 0.03,
+      "value": null,
+      "id": "inspect_grasp",
+      "description": "inspect grasp",
+      "duration": 0.0,
+      "after": [],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "carried_distance",
+      "object_id": "primary_tool_part0",
+      "target_id": null,
+      "threshold": 1.0,
+      "tolerance": 0.03,
+      "value": null,
+      "id": "inspect_carry",
+      "description": "inspect carry",
+      "duration": 0.0,
+      "after": [
+        "inspect_grasp"
+      ],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "on_top",
+      "object_id": "primary_tool_part0",
+      "target_id": "inspection_part0",
+      "threshold": null,
+      "tolerance": 0.012,
+      "value": null,
+      "id": "inspect_support",
+      "description": "inspect support",
+      "duration": 0.25,
+      "after": [
+        "inspect_carry"
+      ],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "released",
+      "object_id": "primary_tool_part0",
+      "target_id": null,
+      "threshold": null,
+      "tolerance": 0.03,
+      "value": null,
+      "id": "inspect_release",
+      "description": "inspect release",
+      "duration": 0.4,
+      "after": [
+        "inspect_carry"
+      ],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "in_region",
+      "object_id": "primary_tool_part0",
+      "target_id": "inspection_loading",
+      "threshold": null,
+      "tolerance": 0.003,
+      "value": null,
+      "id": "inspection_position",
+      "description": "inspection position",
+      "duration": 0.3,
+      "after": [],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "process_complete",
+      "object_id": "primary_tool_part0",
+      "target_id": "inspection_cycle",
+      "threshold": null,
+      "tolerance": 0.03,
+      "value": "inspected",
+      "id": "inspection_finished",
+      "description": "inspection finished",
+      "duration": 0.0,
+      "after": [
+        "inspect_release"
+      ],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "holding",
+      "object_id": "primary_tool_part0",
+      "target_id": null,
+      "threshold": null,
+      "tolerance": 0.03,
+      "value": null,
+      "id": "dispatch_grasp",
+      "description": "dispatch grasp",
+      "duration": 0.0,
+      "after": [
+        "inspection_finished"
+      ],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "carried_distance",
+      "object_id": "primary_tool_part0",
+      "target_id": null,
+      "threshold": 1.0,
+      "tolerance": 0.03,
+      "value": null,
+      "id": "dispatch_carry",
+      "description": "dispatch carry",
+      "duration": 0.0,
+      "after": [
+        "dispatch_grasp"
+      ],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "on_top",
+      "object_id": "primary_tool_part0",
+      "target_id": "dispatch_part0",
+      "threshold": null,
+      "tolerance": 0.012,
+      "value": null,
+      "id": "dispatch_support",
+      "description": "dispatch support",
+      "duration": 0.25,
+      "after": [
+        "dispatch_carry"
+      ],
+      "required": true,
+      "mode": "final",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "released",
+      "object_id": "primary_tool_part0",
+      "target_id": null,
+      "threshold": null,
+      "tolerance": 0.03,
+      "value": null,
+      "id": "dispatch_release",
+      "description": "dispatch release",
+      "duration": 0.4,
+      "after": [
+        "dispatch_carry"
+      ],
+      "required": true,
+      "mode": "final",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "in_region",
+      "object_id": "primary_tool_part0",
+      "target_id": "outbound_kit",
+      "threshold": null,
+      "tolerance": 0.003,
+      "value": null,
+      "id": "dispatch_contained",
+      "description": "dispatch contained",
+      "duration": 0.4,
+      "after": [],
+      "required": true,
+      "mode": "final",
+      "alternative_group": null,
+      "intent": "achieve"
+    }
+  ],
+  "process_cycles": [
+    {
+      "id": "inspection_cycle",
+      "label": "Three-second inspection dwell",
+      "fixture_id": "inspection_part0",
+      "workpiece_ids": [
+        "primary_tool_part0"
+      ],
+      "duration": 3.0,
+      "output_state": "inspected",
+      "prerequisites": [
+        {
+          "predicate": "on_top",
+          "object_id": "primary_tool_part0",
+          "target_id": "inspection_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "primary_tool_part0",
+          "target_id": "inspection_loading",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null
+        },
+        {
+          "predicate": "released",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null
+        }
+      ]
+    }
+  ],
+  "assumptions": [
+    "Spatial composition and every task were authored by the Astra model running as a Codex subagent on 2026-11-02. This is direct model-authored saved planning data, not a completed paid SDK generation call.",
+    "All furniture and loose objects use the selected NVIDIA SimReady prepared sources at original scale; source meshes, materials, masses and articulation are retained. Only room architecture and optional floor paint are new primitives.",
+    "Initial joint values are shared by every selectable task. Task selection changes instruction and rubric only.",
+    "Holding means bilateral physical finger contact. Carry distance is net XY displacement during uninterrupted sampled holding, sampled at 0.05 seconds and action boundaries; unseen intervening motion is not certified.",
+    "Static geometry and task-reference checks do not prove native contact stability, arm reachability, successful grasping or autonomous task execution. Native validation remains a separate step.",
+    "Placement regions extend 5 mm below the support contact plane and separately require measured on_top contact and release. Joint closure tolerance is 15 mm; this is not permission for an item to protrude from the closed cavity.",
+    "Books are rigid source shapes; pages do not turn. Drawers are passive source mechanisms. No new appliance, deformable, liquid or screw-thread behavior is claimed.",
+    "Manual material flow runs receiving/storage to tool preparation to inspection to outbound dispatch. Four real worktables have connected front approaches and clear inter-station aisles; no conveyor or powered transfer is implied.",
+    "Inspection is explicitly a three-second bookkeeping process, not optical metrology, damage detection or material transformation. It runs only while the exact primary screwdriver is physically supported in the inspection position and released.",
+    "The receiving carton is 0.299 by 0.622 by 0.302 m. It is pushed across its worktable; no one-handed grasp is requested. Its push rubric measures supported destination and absence of measured holding, not a dedicated push-force classification.",
+    "The 50.73 kg source pallet is inventory scenery and is never a lift or carrying target. Lower rack shelf inventory sits on verified source deck top Z=.505994m; no rubric targets the rack root as a shelf.",
+    "Source screwdriver handle diameter is approximately 34 mm. Tools are separate physical instances and tasks require holding the movable tool root, not its fixed handle appearance component.",
+    "The 18 by 9 m envelope includes a loading apron south of the compact workcell. Guarding follows the bulk storage and pallet edge; it is not an invented precision fixture or safety interlock.",
+    "Native visual review prompted an 18 by 9 m footprint instead of the initial 24 by 16 m planning brief. The complete workcell was recentered without changing relative source poses or transfer distances. Thin noncolliding floor outlines distinguish actual stations and connect their front approach route."
+  ],
+  "source_prompt": "Create a high fidelity, semantically coherent 18 m by 9 m factory tool-preparation and inspection floor for a mobile TIAGo++ robot. You (Astra) author the spatial composition and task suite using the installed SimReady sources.\nConnect four actual work areas: receiving/storage, tool/kit preparation, inspection, and outbound dispatch. Reuse source racks, packing worktables, an articulated drawer cabinet if supplied, cartons, pallets and guarding. Use the real source screwdriver as the graspable industrial tool if supplied; include several separate tool instances, placed on stable worktops and in accessible storage. Its handle is narrow enough to grasp. A source notebook can be the work-order book. Treat large cartons as pushable/storage objects, not one-handed gripper targets: their 30 cm width exceeds the robot gripper. Pallets are 50 kg and must not be lifted by this robot.\nChoose compact accessible workcells in the larger floor, with connected aisles and source guarding alongside actual stations. Put a clear entry/loading opening in a real wall. Ensure tables and racks are oriented so a robot can approach useful faces, reach tools near the edges, pull real drawers without hitting furniture, and move between stages. Do not use a rack root's full bounds as its top surface; use named actual shelf support geometry from the catalog. Do not put tools several metres above robot reach. Duplicate source assets only where they have a meaningful function.\nIf including conveyor_belt_a05, use only one and connect its infeed/discharge to named staging stations at compatible heights. It has 29 passive rollers and no motor. Any transport on it requires actual physical pushing; do not imply an automated production line or float a conveyor between unrelated props. Omit it if it cannot fit a coherent material flow.\nOnly floor/walls/paint may use newly authored layout primitives; all furniture and manipulable objects must come from actual prepared source references. Keep original meshes/materials, source scale, parts, physical roots, joints and provenance. Do not invent precision assembly, screw-thread physics, articulated clamps, buttons, payloads or fixture sockets that are not in the installed assets.\nFlagship mission: retrieve a source screwdriver from the tool-preparation station, carry it to the inspection work surface, place it stably and release it for a clearly disclosed 3-second inspection process cycle, regrasp it, then deliver it to the outbound kit location on a real surface. Preserve support, release, carry-distance and process ordering as measured conditions. No welding or cutting.\nAuthor at least 12 distinct selectable tasks over the same physical reset. Include tool grasp/release and transfers, physical drawer pulling and pushing for both available drawers, storage retrieval, delivery across stations, a work-order book transfer if available, pushing a carton into an accessible staging region, and multi-step inspection-and-dispatch missions. Use the actual source mechanism joints and real free spaces. Closing a drawer starting shut requires a measured opening before closure. Do not claim that a rubric scoring final placement alone proves grasping: include holding/carried/released where the instruction requires them. Keep operator task instructions in ordinary language without privileged coordinates.\n",
+  "unvalidated_requirements": [],
+  "created_assets": [],
+  "asset_requests": [],
+  "prepared_assets": [
+    {
+      "id": "receiving",
+      "asset_id": "table_packing_heavyduty_c01",
+      "position": [
+        -4.0,
+        -0.19999999999999996,
+        0.0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "preparation",
+      "asset_id": "table_packing_heavyduty_c01",
+      "position": [
+        -0.7000000000000002,
+        0.7999999999999998,
+        0.0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "inspection",
+      "asset_id": "table_packing_heavyduty_c01",
+      "position": [
+        2.7,
+        0.7999999999999998,
+        0.0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "dispatch",
+      "asset_id": "table_packing_heavyduty_c01",
+      "position": [
+        6.1,
+        -0.19999999999999996,
+        0.0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "tool_cabinet",
+      "asset_id": "fixture_cabinet_b01",
+      "position": [
+        -0.7000000000000002,
+        3.8,
+        0.0
+      ],
+      "quarter_turns": 3,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "stock_rack",
+      "asset_id": "rack_large_empty_a02",
+      "position": [
+        -6.4,
+        3.0,
+        0.0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "receiving_pallet",
+      "asset_id": "pallet_a01",
+      "position": [
+        -6.4,
+        -0.19999999999999996,
+        0.002
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "pallet_carton",
+      "asset_id": "box_corrugated_brown_b20",
+      "position": [
+        -6.4,
+        -0.19999999999999996,
+        0.2126
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "storage_guard",
+      "asset_id": "barrier_fence_metal_a02",
+      "position": [
+        -4.15,
+        3.0,
+        0.0
+      ],
+      "quarter_turns": 1,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "pallet_guard",
+      "asset_id": "barrier_fence_metal_a02",
+      "position": [
+        -6.4,
+        -1.35,
+        0.0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "stock_left_carton",
+      "asset_id": "box_corrugated_brown_b20",
+      "position": [
+        -7.35,
+        2.55,
+        0.507995
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "stock_right_carton",
+      "asset_id": "box_corrugated_brown_b20",
+      "position": [
+        -5.45,
+        2.55,
+        0.507995
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "primary_tool",
+      "asset_id": "handTool_screwdriver_phillips_ph2_a01",
+      "position": [
+        -1.1800000000000002,
+        0.31999999999999984,
+        0.9959856083569834
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "spare_tool",
+      "asset_id": "handTool_screwdriver_phillips_ph2_a01",
+      "position": [
+        -0.2200000000000002,
+        0.31999999999999984,
+        0.9959856083569834
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "work_order",
+      "asset_id": "misc_notebook_a01",
+      "position": [
+        -0.7000000000000002,
+        0.3999999999999999,
+        0.9959856083569834
+      ],
+      "quarter_turns": 1,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "stored_tool",
+      "asset_id": "handTool_screwdriver_phillips_ph2_a01",
+      "position": [
+        -0.7000000000000002,
+        3.74,
+        0.7501440543652003
+      ],
+      "quarter_turns": 1,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "outbound_tool",
+      "asset_id": "handTool_screwdriver_phillips_ph2_a01",
+      "position": [
+        6.65,
+        -0.6799999999999999,
+        0.9959856083569834
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "receiving_carton",
+      "asset_id": "box_corrugated_brown_b20",
+      "position": [
+        -4.48,
+        -0.44999999999999996,
+        0.9959856083569834
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    }
+  ]
+}

@@ -10,8 +10,9 @@ from typing import Callable
 
 from pydantic import ValidationError
 
+from .joint_collisions import joint_collision_exclusions
 from .large_scene import MAX_EXPANDED_OBJECTS, candidate_pairs, expand_assemblies
-from .models import TEXTURE_FIELDS, WorldSpec
+from .models import ASSET_FILE_FIELDS, TEXTURE_FIELDS, WorldSpec
 from .revolved import MAX_SCENE_COLLIDERS, collision_count, intersects_box
 from .rubric import measure_predicate, rigid_members, validate_rubric
 
@@ -42,6 +43,24 @@ class GenerationError(RuntimeError):
 
 class GenerationCancelled(GenerationError):
     """Cancellation retains the most recent candidate and generation history."""
+
+
+def _source_only_layout(plan):
+    """An asset allowlist permits architecture, not invented substitute props."""
+    import re
+    if plan.created_assets:
+        raise ValueError("A source asset allowlist does not permit generated object assets")
+    parts = [*plan.objects, *(part for template in plan.assembly_templates for part in template.parts)]
+    for obj in parts:
+        name = (obj.id + " " + obj.label).lower()
+        flat = bool(re.search(r"floor|ceiling|paint|marking|lane|stripe|arrival", name))
+        upright = bool(re.search(r"wall|window|lintel|jamb|doorway|threshold|baseboard|entry", name))
+        shape = ((flat and obj.size[2] <= .15) or
+                 (upright and min(obj.size[:2]) <= .35))
+        if (obj.kind != "box" or obj.movable or obj.joint is not None or obj.parent_id is not None
+                or any(getattr(obj, field) for field in ASSET_FILE_FIELDS)
+                or not shape):
+            raise ValueError("Source-only generation permits only fixed architectural/paint boxes outside prepared_assets: " + obj.id)
 
 
 def _intersects(a, b, epsilon=1e-5):
@@ -211,8 +230,15 @@ def validate_spec(spec: WorldSpec, *, asset_root: str | Path | None = None,
             dy = max(0, abs(y-obj.position[1])-obj.size[1]/2)
             if math.hypot(dx, dy) < .4-1e-5:
                 errors.append(f"{obj.id}: intersects initial robot clearance envelope")
+    try:
+        joint_exclusions = set(joint_collision_exclusions(spec.objects))
+    except ValueError as exc:
+        errors.append(str(exc))
+        joint_exclusions = set()
     overlaps = 0
     for a, b in candidate_pairs(spec.objects):
+        if tuple(sorted((a.id, b.id))) in joint_exclusions:
+            continue
         if welded_roots[a.id] == welded_roots[b.id]:
             continue
         if (validation_profile == "fixed_reference" and fixed[a.id] and fixed[b.id]
@@ -302,9 +328,18 @@ def _generation_phase(emit, phase: str, attempt: int):
 def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", client=None, max_repairs=2, on_candidate: Callable | None = None, event_callback: Callable | None = None, validator: Callable | None = None, asset_root=None,
                   cancelled: Callable | None = None, client_options: dict | None = None,
                   scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0, asset_library=None,
-                  online_asset_cache=None, asset_resolver=None, online_assets=True) -> WorldSpec:
+                  online_asset_cache=None, asset_resolver=None, online_assets=True,
+                  allowed_asset_ids=None) -> WorldSpec:
     if not isinstance(online_assets, bool) or (not online_assets and asset_resolver is not None):
         raise ValueError("online_assets must be boolean; a resolver cannot be supplied when disabled")
+    if allowed_asset_ids is not None:
+        if (not isinstance(allowed_asset_ids, (list, tuple)) or not allowed_asset_ids
+                or any(not isinstance(value, str) or not value for value in allowed_asset_ids)
+                or len(set(allowed_asset_ids)) != len(allowed_asset_ids)):
+            raise ValueError("allowed_asset_ids must be a nonempty list of distinct asset IDs")
+        if online_assets or asset_resolver is not None:
+            raise ValueError("An asset allowlist requires online_assets=False")
+        allowed_asset_ids = set(allowed_asset_ids)
     if scene_profile not in {"standard", "large"}:
         raise ValueError("scene_profile must be standard or large")
     if not isinstance(max_objects, int) or isinstance(max_objects, bool) or not 1 <= max_objects <= MAX_EXPANDED_OBJECTS:
@@ -349,10 +384,20 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
             except CollisionPreparationCancelled as exc:
                 raise GenerationCancelled("World generation cancelled while loading cached sources", attempts=0,
                                           errors=["Generation cancelled before model request"]) from exc
+        if allowed_asset_ids is not None:
+            missing = allowed_asset_ids - {entry["asset_id"] for entry in catalog_entries}
+            if missing:
+                raise ValueError("Allowed asset IDs are not installed: " + ", ".join(sorted(missing)))
+            catalog_entries = [entry for entry in catalog_entries if entry["asset_id"] in allowed_asset_ids]
         catalog = json.dumps(catalog_entries, separators=(",", ":"))
     asset_instructions = "\nPrefer prepared_assets when the supplied catalog matches the requested object. These are previously sourced online originals, already downloaded and converted. Emit one reference with asset_id, instance id, bottom-center position and required mass instead of recreating its geometry or inventing local file paths. Use catalog body/geom/joint/region IDs with {prefix} replaced by the instance id in rubric and process references. Referenced objects and cavity regions are added automatically; do not duplicate them in objects/regions. Catalog coordinates are relative to the instance bottom-center at position [0,0,0]. Preserve original scale; use quarter_turns=0/1/2/3 for supported whole-asset orientation changes. Record incompatible scaling or arbitrary-angle requirements as unvalidated rather than silently changing geometry. For repeated source assets, use repeat=[nx,ny,nz] and spacing=[dx,dy,dz] in WORLD axes; position is the first copy bottom-center. Each repeated axis needs nonzero spacing and sufficient physical clearance. For multiple copies, replace {prefix} in catalog IDs by id_ix_iy_iz, with zero-based indices; a single copy keeps the plain instance id. Mass is per copy. All copied components count against the object budget. Do not emit one long source reference per identical repeated copy. The catalog is an asset library, not a fixed scene or task. Keep generating arbitrary surrounding layouts and requested tasks."
     asset_instructions += "\nBefore creating an object asset absent from the installed catalog, request it through asset_requests. Layout floor and wall primitives remain freely generated; other new object assets require discovery. A request pauses scene materialization: keep its current scene fields minimal because they are only a draft until the actual source geometry arrives. Do not invent source dimensions, joint IDs or collision parts. After resolution, use the new grounded catalog, place every requested asset through prepared_assets and clear asset_requests. Never replace a failed lookup/import with procedural geometry. Search is limited to Fuel's supported single-link scanned OBJ sources; openable mechanisms and declared cavities need compatible installed assets or further source preparation. Use existing catalog matches first to avoid unnecessary network/model work. At most two resolution rounds and eight new assets are allowed."
     asset_instructions += "\nOnline asset resolution is " + ("available." if asset_resolver is not None else "disabled; missing assets remain unresolved.")
+    if allowed_asset_ids is not None:
+        asset_instructions += ("\nSTRICT SOURCE-ONLY MODE: only catalog IDs may supply furniture, mechanisms and portable objects. "
+                               "Outside prepared_assets, only fixed unparented box architecture (floors, walls, ceiling, windows, doorway framing) "
+                               "and thin floor paint is allowed. Name those architectural parts clearly. No generated props, direct mesh paths "
+                               "or created_assets. Missing source assets remain unresolved.")
     asset_instructions += "\nOnly a supplied completed empty-search record authorizes a generated object asset. For each such request, author procedural objects/assemblies and list every component and owned cavity under created_assets with that asset_id. One connected physical root per group; all attached components belong to the group, with no parent outside it. Do not invent mesh, texture or provenance files. Preserve the request's dimensions, mobility and required articulation/cavity, and distribute its exact estimated total mass across collision components. Different instances may use separate groups for the same authorized asset_id. Search absence is scoped to the recorded catalog, not the whole internet. Failed lookup, rejected metadata selection and unsupported import never authorize creation. Clear asset_requests after receiving evidence and retain every requested asset in prepared_assets or an authorized created_assets group."
     history, candidate, previous = [], None, None
     creation_evidence = {}
@@ -431,10 +476,17 @@ def generate_spec(prompt: str, *, model="gpt-6-astra", reasoning="medium", clien
                     assembly_errors.append("Requested source assets were dropped: " + ", ".join(sorted(missing)))
                     creation_ok = False
                 try:
+                    if allowed_asset_ids is not None:
+                        _source_only_layout(plan)
+                        forbidden = {item.asset_id for item in plan.prepared_assets} - allowed_asset_ids
+                        if forbidden:
+                            raise ValueError("Prepared assets outside the required source allowlist: " + ", ".join(sorted(forbidden)))
                     spec = materialize_prepared_assets(plan, max_objects=max_objects, event_callback=event_callback, asset_library=asset_library)
                     spec = expand_assemblies(spec, max_objects=max_objects)
                 except (ValueError, ValidationError) as exc:
                     assembly_errors.append(str(exc))
+                    if allowed_asset_ids is not None:
+                        creation_ok = False
                 try:
                     from .generated_assets import materialize_created_assets
                     spec = materialize_created_assets(spec, plan.created_assets, creation_evidence,

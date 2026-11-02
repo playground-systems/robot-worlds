@@ -1,8 +1,10 @@
 # Starter environments
 
 Choose **Browse starter environments → Add to workspace** in the workbench.
-Four complete source layouts are included: a small warehouse, furnished house,
-hospital and bookstore. Adding one verifies and unpacks local data. It needs no
+The [three SimReady manipulation presets](manipulation-presets.md) include
+44 selectable task rubrics. Four static source layouts are also included: a
+small warehouse, furnished house, hospital and bookstore. This guide describes
+those four static imports. Adding a preset verifies and unpacks local data. It needs no
 model key, network connection, ROS installation or asset conversion. Selecting
 the same starter again reopens its saved version.
 

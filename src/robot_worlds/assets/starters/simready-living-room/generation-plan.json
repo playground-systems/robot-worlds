@@ -1,0 +1,649 @@
+{
+  "schema_version": "1.0",
+  "name": "Reading and putting things away",
+  "description": "A comfortable west-side seating group and a north-wall household cabinet, with clear east-side access.",
+  "task": "Pull open the upper cabinet drawer, pick up the loose notebook beside the ball on the coffee table, carry it to the cabinet, lay it fully inside the upper drawer, let go, and push the drawer shut.",
+  "robot": "tiago++",
+  "bounds": [
+    5.0,
+    4.6,
+    3.2
+  ],
+  "robot_start": [
+    0.0,
+    -1.4,
+    1.57
+  ],
+  "objects": [
+    {
+      "id": "west_wall",
+      "label": "west wall",
+      "kind": "box",
+      "position": [
+        -2.44,
+        0.0,
+        1.6
+      ],
+      "size": [
+        0.12,
+        4.359999999999999,
+        3.2
+      ],
+      "color": [
+        0.85,
+        0.83,
+        0.77
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "east_wall",
+      "label": "east wall",
+      "kind": "box",
+      "position": [
+        2.44,
+        0.0,
+        1.6
+      ],
+      "size": [
+        0.12,
+        4.359999999999999,
+        3.2
+      ],
+      "color": [
+        0.85,
+        0.83,
+        0.77
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "north_wall",
+      "label": "north wall",
+      "kind": "box",
+      "position": [
+        0.0,
+        2.2399999999999998,
+        1.6
+      ],
+      "size": [
+        4.76,
+        0.12,
+        3.2
+      ],
+      "color": [
+        0.9,
+        0.88,
+        0.82
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "entry_wall_left",
+      "label": "entry wall left",
+      "kind": "box",
+      "position": [
+        -1.6,
+        -2.2399999999999998,
+        1.6
+      ],
+      "size": [
+        1.8,
+        0.12,
+        3.2
+      ],
+      "color": [
+        0.9,
+        0.88,
+        0.82
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "entry_wall_right",
+      "label": "entry wall right",
+      "kind": "box",
+      "position": [
+        1.6,
+        -2.2399999999999998,
+        1.6
+      ],
+      "size": [
+        1.8,
+        0.12,
+        3.2
+      ],
+      "color": [
+        0.9,
+        0.88,
+        0.82
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "entry_lintel",
+      "label": "entry lintel",
+      "kind": "box",
+      "position": [
+        0.0,
+        -2.2399999999999998,
+        2.75
+      ],
+      "size": [
+        1.4,
+        0.12,
+        0.9000000000000004
+      ],
+      "color": [
+        0.9,
+        0.88,
+        0.82
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    }
+  ],
+  "assembly_templates": [],
+  "assembly_instances": [],
+  "regions": [
+    {
+      "id": "upper_closed_cavity",
+      "label": "Fully contained in the closed drawer",
+      "position": [
+        0.85,
+        1.82,
+        0.801
+      ],
+      "size": [
+        0.6,
+        0.48,
+        0.116
+      ],
+      "interior_of": "cabinet_part0"
+    },
+    {
+      "id": "lower_closed_cavity",
+      "label": "Fully contained in the closed drawer",
+      "position": [
+        0.85,
+        1.82,
+        0.658
+      ],
+      "size": [
+        0.6,
+        0.48,
+        0.116
+      ],
+      "interior_of": "cabinet_part0"
+    },
+    {
+      "id": "reading_delivery",
+      "label": "Cleared south reading position",
+      "position": [
+        -0.87,
+        -0.75,
+        0.5202259308587432
+      ],
+      "size": [
+        0.4,
+        0.28,
+        0.165
+      ],
+      "interior_of": null
+    },
+    {
+      "id": "cabinet_delivery",
+      "label": "Clear rear cabinet top",
+      "position": [
+        0.89,
+        1.94,
+        1.0059577667713164
+      ],
+      "size": [
+        0.42,
+        0.25,
+        0.165
+      ],
+      "interior_of": null
+    }
+  ],
+  "rubric": [
+    {
+      "predicate": "joint_at",
+      "object_id": "cabinet_part19",
+      "target_id": null,
+      "threshold": 0.4,
+      "tolerance": 0.025,
+      "value": null,
+      "id": "pulled_open",
+      "description": "pulled open",
+      "duration": 0.25,
+      "after": [],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "holding",
+      "object_id": "reading_note_part0",
+      "target_id": null,
+      "threshold": null,
+      "tolerance": 0.03,
+      "value": null,
+      "id": "grasp",
+      "description": "grasp",
+      "duration": 0.0,
+      "after": [
+        "pulled_open"
+      ],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "carried_distance",
+      "object_id": "reading_note_part0",
+      "target_id": null,
+      "threshold": 0.3,
+      "tolerance": 0.03,
+      "value": null,
+      "id": "carry",
+      "description": "carry",
+      "duration": 0.0,
+      "after": [
+        "grasp"
+      ],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "on_top",
+      "object_id": "reading_note_part0",
+      "target_id": "cabinet_part19",
+      "threshold": null,
+      "tolerance": 0.012,
+      "value": null,
+      "id": "support",
+      "description": "support",
+      "duration": 0.25,
+      "after": [
+        "carry"
+      ],
+      "required": true,
+      "mode": "final",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "released",
+      "object_id": "reading_note_part0",
+      "target_id": null,
+      "threshold": null,
+      "tolerance": 0.03,
+      "value": null,
+      "id": "release",
+      "description": "release",
+      "duration": 0.4,
+      "after": [
+        "carry"
+      ],
+      "required": true,
+      "mode": "final",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "joint_at",
+      "object_id": "cabinet_part19",
+      "target_id": null,
+      "threshold": 0.0,
+      "tolerance": 0.015,
+      "value": null,
+      "id": "pushed_closed",
+      "description": "pushed closed",
+      "duration": 0.4,
+      "after": [
+        "release"
+      ],
+      "required": true,
+      "mode": "final",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "in_region",
+      "object_id": "reading_note_part0",
+      "target_id": "upper_closed_cavity",
+      "threshold": null,
+      "tolerance": 0.003,
+      "value": null,
+      "id": "closed_cavity_containment",
+      "description": "closed cavity containment",
+      "duration": 0.4,
+      "after": [],
+      "required": true,
+      "mode": "final",
+      "alternative_group": null,
+      "intent": "achieve"
+    }
+  ],
+  "process_cycles": [],
+  "assumptions": [
+    "Spatial composition and every task were authored by the Astra model running as a Codex subagent on 2026-11-02. This is direct model-authored saved planning data, not a completed paid SDK generation call.",
+    "All furniture and loose objects use the selected NVIDIA SimReady prepared sources at original scale; source meshes, materials, masses and articulation are retained. Only room architecture and optional floor paint are new primitives.",
+    "Initial joint values are shared by every selectable task. Task selection changes instruction and rubric only.",
+    "Holding means bilateral physical finger contact. Carry distance is net XY displacement during uninterrupted sampled holding, sampled at 0.05 seconds and action boundaries; unseen intervening motion is not certified.",
+    "Static geometry and task-reference checks do not prove native contact stability, arm reachability, successful grasping or autonomous task execution. Native validation remains a separate step.",
+    "Placement regions extend 5 mm below the support contact plane and separately require measured on_top contact and release. Joint closure tolerance is 15 mm; this is not permission for an item to protrude from the closed cavity.",
+    "Books are rigid source shapes; pages do not turn. Drawers are passive source mechanisms. No new appliance, deformable, liquid or screw-thread behavior is claimed."
+  ],
+  "source_prompt": "Create a high fidelity, comfortable and semantically coherent, compact 5 m by 4.6 m living room for a mobile TIAGo++ robot. You (Astra) must author the entire scene layout and the task suite using the installed NVIDIA SimReady assets. This is a furnished room where people could actually relax, read and put their belongings away.\nUse the source sofa, low coffee table, wooden two-drawer cabinet, books/notebooks and small ball if supplied. Face seating toward the coffee table and a plausible shared focal area; give people leg space and the robot an accessible approach, rather than surrounding a table so tightly that it cannot be reached. The cabinet belongs against a wall with its drawer fronts facing usable room space. Leave an unobstructed entry doorway, a continuous walking route from entry to sofa/table/cabinet, and full drawer sweeps. Keep bulky furniture against sensible boundaries; avoid floating objects, furniture blocking the entry, inaccessible storage, random industrial equipment or purposeless empty hall space. If using multiple identical sofas or tables, arrange a coherent seating group, not a grid of props.\nUse at least six loose source objects across the coffee table, cabinet top and reachable storage surfaces: books/notebooks for reading/putting away, small balls as household toy/sports items kept in the same reading/play area. Keep their identities as the actual source items; do not call a golf ball an apple. Give each a stable support and room for grasping. Only SimReady source entries are allowed; do not use the Google bowl or other NVIDIA asset collections. The original cabinet drawers must be real sliding articulated mechanisms with open cavities/handles, not a fixed box relabeled as openable. Do not invent cushions, fabric, mugs, remote controls or electronics absent from the catalog. Only architecture and paint may use new layout primitives.\nUse sensible original scale and materials; preserve source furniture and object visual meshes. Estimate no new dynamics where a source value exists. Low table items must have an accessible near edge; use the torso/arm reach constraints rather than assuming the robot can reach through or over a sofa. Include enough clear air above objects to lift them. All required task regions must lie on real supports or inside verified usable cavities.\nFlagship mission: tidy a loose notebook from the reading area into the upper cabinet drawer, opening it physically first, leaving the notebook fully contained, supported and released, and pushing the drawer closed. If the exact original book cannot fit the drawer with clearance, choose a smaller supplied notebook for this task rather than scaling assets or widening score tolerances. Do not remove the drawer opening/closing requirement.\nAuthor at least 12 useful and varied tasks over the exact unchanged initial scene: grasping and returning a loose object, book transfers between cabinet top and coffee table, picking up/placing a ball, opening each drawer by pulling its handle, pushing each drawer shut after opening, putting a fitting item away, fetching an item to the reading area, and a longer tidy-and-close sequence. Use genuine holding, measured support, release and joint predicates with temporal ordering. Do not pretend paper pages bend or sofas/cushions deform. Do not require lifting large furniture. Describe tasks for a real operator without coordinates or hidden simulator state, and explain the coherent room arrangement in semantic_plan.\n",
+  "unvalidated_requirements": [],
+  "created_assets": [],
+  "asset_requests": [],
+  "prepared_assets": [
+    {
+      "id": "sofa",
+      "asset_id": "sofa_soft_b02",
+      "position": [
+        -1.95,
+        -0.3,
+        0.0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "coffee",
+      "asset_id": "furniture_table_coffee_low_a01",
+      "position": [
+        -0.85,
+        -0.3,
+        0.0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "cabinet",
+      "asset_id": "fixture_cabinet_b01",
+      "position": [
+        0.85,
+        1.8,
+        0.0
+      ],
+      "quarter_turns": 3,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "reading_note",
+      "asset_id": "misc_notebook_a01",
+      "position": [
+        -0.72,
+        -0.7,
+        0.44472593085874323
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "reading_book",
+      "asset_id": "book_open_a01",
+      "position": [
+        -0.73,
+        0.1,
+        0.44472593085874323
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "table_ball",
+      "asset_id": "misc_golfBall_a01",
+      "position": [
+        -0.7,
+        -0.3,
+        0.44472593085874323
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "cabinet_book",
+      "asset_id": "book_open_a01",
+      "position": [
+        0.65,
+        1.68,
+        0.9304577667713165
+      ],
+      "quarter_turns": 1,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "cabinet_ball",
+      "asset_id": "misc_golfBall_a01",
+      "position": [
+        1.07,
+        1.66,
+        0.9304577667713165
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "stored_note",
+      "asset_id": "misc_notebook_a01",
+      "position": [
+        0.85,
+        1.76,
+        0.6073799696858241
+      ],
+      "quarter_turns": 1,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    }
+  ]
+}

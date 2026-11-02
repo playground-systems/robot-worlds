@@ -25,6 +25,7 @@ function controls() {
   $('new-world').disabled = busy;
   $('open-starters').disabled = busy; $('empty-starters').disabled = busy;
   document.querySelectorAll('.validate-local').forEach(button => { button.disabled = busy; });
+  document.querySelectorAll('.task-selector').forEach(select => { select.disabled = busy || !state.worldId; });
   document.querySelectorAll('.starter-add').forEach(button => { button.disabled = busy || button.dataset.available !== 'true'; });
   for (const id of ['scope-input', 'add-scope', 'allow-task-changes', 'allow-physics-changes', 'leave-edit']) $(id).disabled = busy;
   document.querySelectorAll('.item-list button, .scope-chip button, .version-card button, .parent-actions button, .edit-actions button, .agent-history button').forEach(button => { button.disabled = busy; });
@@ -180,7 +181,8 @@ function setPanel(panel) {
 }
 document.querySelectorAll('[data-panel]').forEach(button => { button.onclick = () => { setPanel(button.dataset.panel); if (button.dataset.panel === 'agent') $('prompt').focus(); }; });
 $('close-left').onclick = () => document.querySelector('.app-shell').classList.remove('show-left');
-$('inspector-toggle').onclick = () => { const shell = document.querySelector('.app-shell'); shell.classList.add('show-inspector'); shell.classList.remove('show-left'); $('inspector-toggle').setAttribute('aria-expanded', 'true'); };
+function showInspector() { const shell = document.querySelector('.app-shell'); shell.classList.add('show-inspector'); shell.classList.remove('show-left'); $('inspector-toggle').setAttribute('aria-expanded', 'true'); }
+$('inspector-toggle').onclick = showInspector;
 $('close-inspector').onclick = () => { document.querySelector('.app-shell').classList.remove('show-inspector'); $('inspector-toggle').setAttribute('aria-expanded', 'false'); };
 $('assets-to-agent').onclick = () => { setPanel('agent'); $('prompt').focus(); };
 $('layer-filter').oninput = () => { state.layerLimit = 120; renderLayers(); };
@@ -250,7 +252,33 @@ function renderInspector() {
   const root = $('inspector-body'); root.replaceChildren(); const spec = currentSpec();
   if (!spec) { root.append(el('h3', '', 'World'), el('p', 'small muted', 'Create a world in the Agent panel, then select an object to inspect its properties.')); return; }
   if (state.tab === 'task') {
-    root.append(el('h3', '', 'The mission'), el('p', 'task-copy', spec.task));
+    root.append(el('h3', '', 'The mission'));
+    const catalog = state.world?.manifest?.task_catalog, tasks = catalog?.tasks || [];
+    if (tasks.length) {
+      const label = el('label', 'small muted', `${tasks.length} task variant${tasks.length === 1 ? '' : 's'} · one physical scene`);
+      label.htmlFor = 'task-variant';
+      const select = el('select', 'task-selector'); select.id = 'task-variant'; select.style.width = '100%'; select.setAttribute('aria-label', 'Task variant');
+      const current = el('option', '', 'Current mission'); current.value = ''; current.disabled = true; select.append(current);
+      for (const task of tasks) { const option = el('option', '', task.name || task.id); option.value = task.id; select.append(option); }
+      select.value = catalog.selected_task_id || ''; select.disabled = !state.worldId || !!state.jobId || state.submitting;
+      select.onchange = async () => {
+        const taskId = select.value, parentId = state.worldId;
+        if (!taskId || !parentId || state.jobId || state.submitting) return;
+        state.submitting = true; controls();
+        try {
+          const job = await post(`/api/worlds/${encodeURIComponent(parentId)}/tasks/${encodeURIComponent(taskId)}/select`, {});
+          state.submitting = false; state.editing = false;
+          state.jobContext = { mode: 'task', parentId };
+          notice(''); trackJob(job, 'Selecting task · scene unchanged');
+        } catch (error) { select.value = catalog.selected_task_id || ''; notice(message(error)); }
+        finally { state.submitting = false; controls(); }
+      };
+      root.append(label, select, el('p', 'small muted', 'Switching changes the instruction and rubric. Objects and their initial poses stay the same.'));
+    }
+    root.append(el('p', 'task-copy', spec.task));
+    if (state.world?.manifest?.edit?.kind === 'select_task' && statusOf(state.world) !== 'ready') {
+      root.append(el('p', 'small muted', 'This task version needs native checks before evaluation. Open Checks and choose “Validate on this computer”.'));
+    }
     const label = el('div', 'inspector-label', 'EXECUTABLE RUBRIC'), edit = el('button', 'text-button', state.editing ? 'Close JSON' : 'Edit JSON');
     edit.disabled = !state.worldId || !!state.jobId; edit.onclick = () => { state.editing = !state.editing; renderInspector(); }; label.append(edit); root.append(label);
     if (state.editing) {
@@ -623,8 +651,25 @@ async function pollJob(id) {
       if (job.error) notice(message(job.error));
       await refreshLists();
       if (job.run_id) openReport(job.run_id);
-      else if (job.world_id) { await openWorld(job.world_id); state.tab = context?.mode ? 'changes' : statusOf(state.world) !== 'ready' ? 'validation' : state.tab; syncTabs(); renderInspector(); if (statusOf(state.world) !== 'ready') notice('A version was saved with unresolved checks. Review Changes and Validation, then request a targeted repair.'); }
-      else { if (context?.parentId) { await openWorld(context.parentId); setEditMode(context.mode || 'edit'); $('prompt').value = context.prompt || ''; } if (job.status === 'cancelled') notice('Job cancelled. Your parent version and any saved candidates remain available.'); }
+      else if (job.world_id) {
+        await openWorld(job.world_id);
+        const taskSelection = job.kind === 'task' || context?.mode === 'task';
+        state.tab = taskSelection ? 'task' : context?.mode ? 'changes' : statusOf(state.world) !== 'ready' ? 'validation' : state.tab;
+        syncTabs(); renderInspector();
+        if (taskSelection) {
+          if (!job.error && ['completed', 'succeeded', 'done'].includes(job.status)) showInspector();
+          notice(statusOf(state.world) === 'ready' ? 'Task selected. The physical scene is unchanged.' : 'Task selected. The physical scene is unchanged. Open Checks and validate on this computer before evaluating.', true);
+        }
+        else if (statusOf(state.world) !== 'ready') notice('A version was saved with unresolved checks. Review Changes and Validation, then request a targeted repair.');
+      }
+      else {
+        if (context?.parentId) {
+          await openWorld(context.parentId);
+          if (context.mode === 'task') { state.tab = 'task'; syncTabs(); renderInspector(); }
+          else { setEditMode(context.mode || 'edit'); $('prompt').value = context.prompt || ''; }
+        }
+        if (job.status === 'cancelled') notice('Job cancelled. Your parent version and any saved candidates remain available.');
+      }
       if (job.error) notice(message(job.error));
       return;
     }

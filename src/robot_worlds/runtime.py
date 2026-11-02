@@ -21,6 +21,7 @@ from PIL import Image
 
 from .appearance import add_appearance, add_source_material, finish_name
 from .artifacts import digest
+from .joint_collisions import joint_collision_exclusions
 from .revolved import MAX_SCENE_COLLIDERS, collision_count, wedges
 from .robot_assets import ROBOT_MANIFESTS, robot_asset_path
 from .rubric import rigid_members
@@ -48,7 +49,7 @@ def runtime_implementation_identity(robot: str, action_contract: list[dict]) -> 
     nonbehavioral edit. Missing resources/version metadata fail closed. These
     hashes identify an implementation; they do not attest to an untampered host.
     """
-    modules = ["runtime.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py", "trace_storage.py", "spectator.py", "sensors.py", "revolved.py", "mesh_assets.py"]
+    modules = ["runtime.py", "joint_collisions.py", "reset_diagnostics.py", "rubric.py", "models.py", "robot_assets.py", "artifacts.py", "appearance.py", "live.py", "trace_storage.py", "spectator.py", "sensors.py", "revolved.py", "mesh_assets.py"]
     dependencies = ["mujoco", "numpy", "pillow", "pydantic"]
     if robot == "g1":
         modules.append("g1_runtime.py")
@@ -430,6 +431,7 @@ class Runtime:
         return self._append_objects(root)
 
     def _append_objects(self, root):
+        exclusions = joint_collision_exclusions(self.spec.objects)
         if sum(collision_count(obj) for obj in self.spec.objects) > MAX_SCENE_COLLIDERS:
             raise ValueError(f"Scene exceeds {MAX_SCENE_COLLIDERS} physical scene colliders")
         # Every scene object receives one body below, even when it has no
@@ -581,6 +583,12 @@ class Runtime:
                 progress = True
             if not progress:
                 raise ValueError("Object parent relationships are missing or cyclic")
+        if exclusions:
+            contact = root.find("contact")
+            if contact is None:
+                contact = ET.SubElement(root, "contact")
+            for first, second in exclusions:
+                ET.SubElement(contact, "exclude", body1="object_" + first, body2="object_" + second)
         return ET.tostring(root, encoding="unicode")
 
     def _reset(self):

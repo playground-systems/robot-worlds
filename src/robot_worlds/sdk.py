@@ -27,6 +27,7 @@ from robot_worlds.artifacts import (
     write_json,
 )
 from robot_worlds.models import ASSET_FILE_FIELDS, WorldSpec
+from robot_worlds.task_catalog import TaskCatalog, TaskVariant
 from robot_worlds.trace_storage import TraceCheckpoint, read_trace
 
 FINISH_TOOL = {
@@ -53,6 +54,26 @@ def _robot_assets(robot: str) -> dict:
 
 def _physical_spec(spec: dict) -> dict:
     return {k: v for k, v in spec.items() if k not in ("rubric", "task", "name", "description", "source_prompt", "assumptions", "unvalidated_requirements", "assembly_templates", "assembly_instances")}
+
+
+def _world_identity(spec: dict, manifest: dict) -> dict:
+    version = manifest.get("identity_version")
+    if version not in {2, 3, 4}:
+        raise ValueError("Legacy world validation is not integrity-protected; create a new world version")
+    identity = {"spec": spec, "assets": manifest["assets"], "robot_assets": manifest["robot_assets"],
+                "validation": manifest["validation"], "runtime": manifest.get("runtime", {})}
+    if version == 3 or (version == 4 and "edit" in manifest):
+        edit = manifest.get("edit")
+        if not isinstance(edit, dict) or edit.get("parent_world_id") != manifest.get("parent_id"):
+            raise ValueError("Edited world is missing its parent-bound edit metadata")
+        identity["edit"] = edit
+    if version == 4:
+        if "task_catalog" not in manifest:
+            raise ValueError("World task catalog is missing")
+        identity["task_catalog"] = manifest["task_catalog"]
+    elif "task_catalog" in manifest:
+        raise ValueError("Task catalogs require an integrity-protected world identity")
+    return identity
 
 
 def _runtime_manifest(runtime) -> dict:
@@ -131,6 +152,8 @@ class World:
         self.path = path.resolve()
         self._spec = spec.model_copy(deep=True)
         self.manifest = copy.deepcopy(manifest)
+        self._task_catalog = (TaskCatalog.model_validate(manifest["task_catalog"]).validate_for(self._spec)
+                              if "task_catalog" in manifest else None)
 
     @property
     def spec(self) -> WorldSpec:
@@ -140,11 +163,91 @@ class World:
     def id(self) -> str:
         return self.manifest["id"]
 
+    @property
+    def tasks(self) -> list[TaskVariant]:
+        """Named instruction/rubric variants; returned values are independent copies."""
+        return [task.model_copy(deep=True) for task in self._task_catalog.tasks] if self._task_catalog else []
+
+    @property
+    def selected_task_id(self) -> str | None:
+        return self._task_catalog.selected_task_id if self._task_catalog else None
+
+    def with_tasks(self, tasks: list[TaskVariant | dict], *, output: str | Path | None = None) -> World:
+        """Attach a portable task catalog without changing or simulating the scene.
+
+        Every rubric must reference this scene's existing physical objects,
+        mechanisms, regions and processes. The current instruction and its
+        validation remain unchanged; adding a catalog certifies no new task.
+        """
+        frozen = load(self.path)
+        catalog = TaskCatalog.model_validate({"tasks": [
+            task.model_dump(mode="json") if isinstance(task, TaskVariant) else task for task in tasks
+        ]}).validate_for(frozen._spec)
+        if frozen.selected_task_id:
+            matches = [task for task in catalog.tasks if task.id == frozen.selected_task_id
+                       and task.task == frozen._spec.task and task.rubric == frozen._spec.rubric]
+            if matches:
+                catalog.selected_task_id = frozen.selected_task_id
+        return frozen._with_catalog(catalog, output=output)
+
+    def _with_catalog(self, catalog: TaskCatalog, *, output: str | Path | None = None) -> World:
+        """Publish metadata over identical frozen files and validation evidence."""
+        payload = catalog.model_dump(mode="json")
+        if self.manifest.get("task_catalog") == payload:
+            return self
+        root = Path(output if output is not None else self.path.parent).resolve()
+        if root.is_relative_to(self.path):
+            raise ValueError("Task version output must be outside the source world")
+        root.mkdir(parents=True, exist_ok=True)
+        stage = Path(tempfile.mkdtemp(prefix=".world-", dir=root))
+        try:
+            shutil.copytree(self.path, stage, dirs_exist_ok=True)
+            manifest = copy.deepcopy(self.manifest)
+            manifest.update(identity_version=4, parent_id=self.id, created_at=utc_now(), task_catalog=payload,
+                            edit={"kind": "task_catalog", "parent_world_id": self.id})
+            manifest["id"] = digest(_world_identity(read_json(stage / "world.json"), manifest))
+            write_json(stage / "manifest.json", manifest)
+            destination = root / manifest["id"][:20]
+            if destination.exists():
+                shutil.rmtree(stage)
+            else:
+                stage.rename(destination)
+            return load(destination)
+        except BaseException:
+            shutil.rmtree(stage, ignore_errors=True)
+            raise
+
+    def with_task(self, task_id: str, *, output: str | Path | None = None) -> World:
+        """Select a named task in a new immutable version with identical physics.
+
+        No simulator is started and no object/joint pose is changed. A changed
+        instruction/rubric is a preview until explicit ``revalidate()`` checks
+        it against the native reset. The source world's readiness is preserved.
+        """
+        frozen = load(self.path)
+        if frozen._task_catalog is None:
+            raise ValueError("World has no task catalog; attach variants with with_tasks()")
+        catalog = frozen._task_catalog.model_copy(deep=True)
+        task = catalog.get(task_id)
+        catalog.selected_task_id = task.id
+        if task.task == frozen._spec.task and task.rubric == frozen._spec.rubric:
+            return frozen._with_catalog(catalog, output=output)
+        payload = frozen._spec.model_dump(mode="json")
+        payload.update(task=task.task, rubric=[criterion.model_dump(mode="json") for criterion in task.rubric])
+        return World.from_spec(
+            payload, output if output is not None else frozen.path.parent,
+            asset_root=frozen.path, parent_id=frozen.id, validate=False,
+            validation_profile=frozen.manifest["validation"].get("profile", "strict"),
+            edit_metadata={"kind": "select_task", "parent_world_id": frozen.id, "task_id": task.id},
+            task_catalog=catalog,
+        )
+
     @classmethod
     def from_spec(cls, spec: WorldSpec | dict, output: str | Path = "worlds", *,
                   asset_root: str | Path | None = None, parent_id: str | None = None,
                   validate: bool = True, runtime_factory: Callable | None = None,
-                  validation_profile: str = "strict", edit_metadata: dict | None = None) -> World:
+                  validation_profile: str = "strict", edit_metadata: dict | None = None,
+                  task_catalog: TaskCatalog | dict | None = None) -> World:
         """Freeze and probe a supplied specification.
 
         ``fixed_reference`` permits overlap only between bodies whose complete
@@ -173,6 +276,10 @@ class World:
             spec = expand_assemblies(spec)
         except ValueError as exc:
             assembly_errors.append(str(exc))
+        catalog = None
+        if task_catalog is not None:
+            catalog = TaskCatalog.model_validate(task_catalog.model_dump(mode="json")
+                if isinstance(task_catalog, TaskCatalog) else task_catalog).validate_for(spec)
         objects = {obj.id: obj for obj in spec.objects}
         fixed_reference_ids = {obj.id for obj in spec.objects if validation_profile == "fixed_reference"
                                and _world_welded(obj, objects)}
@@ -253,6 +360,9 @@ class World:
                 manifest["edit"] = copy.deepcopy(edit_metadata)
                 if manifest["edit"].get("parent_world_id") != parent_id:
                     raise ValueError("Edit metadata must identify the immutable parent world")
+            if catalog is not None:
+                manifest["identity_version"] = 4
+                manifest["task_catalog"] = catalog.model_dump(mode="json")
             if validation_profile == "fixed_reference":
                 manifest["validation"]["below_floor_fixed_object_ids"] = below_floor_ids
                 manifest["validation"]["initial_ground_clearance_tolerance_m"] = FIXED_REFERENCE_GROUND_TOLERANCE_M
@@ -347,11 +457,7 @@ class World:
                 manifest["validation"]["status"] = "unvalidated"
             # Validation evidence is part of version identity. A preview can be
             # promoted by creating a new validated version without mutating it.
-            identity = {"spec": payload, "assets": assets, "robot_assets": robot_assets,
-                        "validation": manifest["validation"], "runtime": manifest.get("runtime", {})}
-            if manifest["identity_version"] == 3:
-                identity["edit"] = manifest["edit"]
-            manifest["id"] = digest(identity)
+            manifest["id"] = digest(_world_identity(payload, manifest))
             destination = root / manifest["id"][:20]
             write_json(stage / "world.json", payload)
             write_json(stage / "manifest.json", manifest)
@@ -404,15 +510,20 @@ class World:
             asset_root=frozen.path, parent_id=frozen.id, runtime_factory=runtime_factory,
             validation_profile=frozen.manifest["validation"].get("profile", "strict"),
             edit_metadata={"kind": "revalidate", "parent_world_id": frozen.id},
+            task_catalog=frozen._task_catalog,
         )
 
     def with_rubric(self, rubric: list, *, output: str | Path | None = None,
                     runtime_factory: Callable | None = None) -> World:
         payload = self._spec.model_dump(mode="json")
         payload["rubric"] = [c.model_dump(mode="json") if hasattr(c, "model_dump") else c for c in rubric]
+        catalog = self._task_catalog.model_copy(deep=True) if self._task_catalog else None
+        if catalog is not None:
+            catalog.selected_task_id = None
         return World.from_spec(payload, output or self.path.parent, asset_root=self.path, parent_id=self.id,
                                runtime_factory=runtime_factory,
-                               validation_profile=self.manifest["validation"].get("profile", "strict"))
+                               validation_profile=self.manifest["validation"].get("profile", "strict"),
+                               task_catalog=catalog)
 
     def evaluate(self, policy=None, *, episodes: int = 1, max_steps: int = 30,
                  max_sim_seconds: float = 120, seed: int = 0,
@@ -732,17 +843,7 @@ def load(path: str | Path) -> World:
     for member, expected in manifest["assets"].items():
         if file_digest(inside(path, member)) != expected:
             raise ValueError(f"World asset was modified: {member}")
-    identity = {"spec": stored_spec, "assets": manifest["assets"],
-                "robot_assets": manifest["robot_assets"]}
-    if manifest.get("identity_version") in {2, 3}:
-        identity.update(validation=manifest["validation"], runtime=manifest.get("runtime", {}))
-        if manifest["identity_version"] == 3:
-            edit = manifest.get("edit")
-            if not isinstance(edit, dict) or edit.get("parent_world_id") != manifest.get("parent_id"):
-                raise ValueError("Edited world is missing its parent-bound edit metadata")
-            identity["edit"] = edit
-    else:
-        raise ValueError("Legacy world validation is not integrity-protected; create a new world version")
+    identity = _world_identity(stored_spec, manifest)
     if digest(identity) != manifest["id"]:
         raise ValueError("World specification or validation evidence was modified; save edits as a new version")
     physical_id = digest({"physical_spec": _physical_spec(stored_spec), "assets": manifest["assets"], "robot_assets": manifest["robot_assets"]})
@@ -757,7 +858,7 @@ def generate(prompt: str, *, output: str | Path = "worlds", model: str = "gpt-6-
              on_event: Callable | None = None, runtime_factory: Callable | None = None,
              cancelled: Callable | None = None, client_options: dict | None = None,
              scene_profile: str = "standard", max_objects: int = 5000, min_objects: int = 0, asset_library=None,
-             online_assets: bool = True, asset_resolver=None) -> World:
+             online_assets: bool = True, asset_resolver=None, allowed_asset_ids=None) -> World:
     from robot_worlds.generator import GenerationCancelled, GenerationError, generate_spec
     if not isinstance(online_assets, bool) or (not online_assets and asset_resolver is not None):
         raise ValueError("online_assets must be boolean; a resolver cannot be supplied when disabled")
@@ -799,7 +900,8 @@ def generate(prompt: str, *, output: str | Path = "worlds", model: str = "gpt-6-
                       max_repairs=max_repairs, asset_root=asset_root, on_candidate=candidate,
                       validator=validate_physics, event_callback=event, cancelled=cancelled, client_options=client_options,
                       scene_profile=scene_profile, max_objects=max_objects, min_objects=min_objects, asset_library=asset_library,
-                      online_asset_cache=output.parent / "asset-cache", asset_resolver=asset_resolver, online_assets=online_assets)
+                      online_asset_cache=output.parent / "asset-cache", asset_resolver=asset_resolver, online_assets=online_assets,
+                      allowed_asset_ids=allowed_asset_ids)
     except GenerationError as exc:
         was_cancelled = isinstance(exc, GenerationCancelled)
         record.update(status="cancelled" if was_cancelled else "incomplete", errors=exc.errors, attempts=exc.attempts, history=exc.history)

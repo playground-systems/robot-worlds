@@ -1,0 +1,1111 @@
+{
+  "world": {
+    "name": "saved transfer regression",
+    "description": "Synthetic measured-state fixture, not native execution",
+    "task": "Carry the part and set it down",
+    "bounds": [
+      4,
+      4,
+      3
+    ],
+    "objects": [
+      {
+        "id": "part",
+        "label": "part",
+        "kind": "box",
+        "position": [
+          -0.5,
+          0,
+          0.1
+        ],
+        "size": [
+          0.1,
+          0.1,
+          0.1
+        ],
+        "movable": true
+      },
+      {
+        "id": "table",
+        "label": "table surface",
+        "kind": "box",
+        "position": [
+          0,
+          0,
+          0.5
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "traces": {
+    "immediate_release": [
+      {
+        "time": 0,
+        "objects": {
+          "part": {
+            "position": [
+              -0.5,
+              0,
+              0.1
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.05,
+        "objects": {
+          "part": {
+            "position": [
+              -0.5,
+              0,
+              1.2
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": "left",
+            "contacts": []
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.2,
+        "objects": {
+          "part": {
+            "position": [
+              -0.5,
+              0,
+              1.2
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": "left",
+            "contacts": []
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.25,
+        "objects": {
+          "part": {
+            "position": [
+              -0.1,
+              0,
+              1.2
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": "left",
+            "contacts": []
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.3,
+        "objects": {
+          "part": {
+            "position": [
+              0.2,
+              0,
+              1.05
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": [
+              "table"
+            ]
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.55,
+        "objects": {
+          "part": {
+            "position": [
+              0.2,
+              0,
+              1.05
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": [
+              "table"
+            ]
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.75,
+        "objects": {
+          "part": {
+            "position": [
+              0.2,
+              0,
+              1.05
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": [
+              "table"
+            ]
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      }
+    ],
+    "fast_carry_immediate_release": [
+      {
+        "time": 0,
+        "objects": {
+          "part": {
+            "position": [
+              -0.5,
+              0,
+              0.1
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.05,
+        "objects": {
+          "part": {
+            "position": [
+              -0.5,
+              0,
+              1.2
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": "left",
+            "contacts": []
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.1,
+        "objects": {
+          "part": {
+            "position": [
+              -0.1,
+              0,
+              1.2
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": "left",
+            "contacts": []
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.15,
+        "objects": {
+          "part": {
+            "position": [
+              0.2,
+              0,
+              1.05
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": [
+              "table"
+            ]
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.4,
+        "objects": {
+          "part": {
+            "position": [
+              0.2,
+              0,
+              1.05
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": [
+              "table"
+            ]
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.6,
+        "objects": {
+          "part": {
+            "position": [
+              0.2,
+              0,
+              1.05
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": [
+              "table"
+            ]
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      }
+    ],
+    "released_before_carry": [
+      {
+        "time": 0,
+        "objects": {
+          "part": {
+            "position": [
+              -0.5,
+              0,
+              0.1
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.05,
+        "objects": {
+          "part": {
+            "position": [
+              -0.5,
+              0,
+              1.2
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": "left",
+            "contacts": []
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.2,
+        "objects": {
+          "part": {
+            "position": [
+              -0.5,
+              0,
+              1.2
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": "left",
+            "contacts": []
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.25,
+        "objects": {
+          "part": {
+            "position": [
+              -0.3,
+              0,
+              1.2
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.3,
+        "objects": {
+          "part": {
+            "position": [
+              0.2,
+              0,
+              1.05
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": [
+              "table"
+            ]
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.55,
+        "objects": {
+          "part": {
+            "position": [
+              0.2,
+              0,
+              1.05
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": [
+              "table"
+            ]
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "time": 0.75,
+        "objects": {
+          "part": {
+            "position": [
+              0.2,
+              0,
+              1.05
+            ],
+            "size": [
+              0.1,
+              0.1,
+              0.1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": [
+              "table"
+            ]
+          },
+          "table": {
+            "position": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "quaternion": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "held_by": null,
+            "contacts": []
+          }
+        },
+        "robot": {
+          "position": [
+            0,
+            -1,
+            0
+          ]
+        }
+      }
+    ]
+  }
+}

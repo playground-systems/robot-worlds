@@ -15,6 +15,18 @@ module_spec = importlib.util.spec_from_file_location("check_distribution", CHECK
 checker = importlib.util.module_from_spec(module_spec)
 module_spec.loader.exec_module(checker)
 
+MANIPULATION_STARTERS = ("simready-kitchen", "simready-factory", "simready-living-room")
+MANIPULATION_MEMBERS = (
+    "world.zip", "thumbnail.png", "generation-plan.json", "task-suite.json",
+    "semantic-plan.md", "preparation-evidence.json", "release.json",
+)
+MANIPULATION_MODULES_AND_CATALOGS = (
+    "task_catalog.py", "joint_collisions.py", "simready_conveyor.py", "workbench_library.py",
+    "living_room_library.py", "living_room_cabinet.py", "kitchen_counter_library.py", "kitchen_dish_library.py",
+    "assets/simready/workbench_catalog.json", "assets/simready/living_room_catalog.json",
+    "assets/simready/kitchen_counter_catalog.json", "assets/simready/kitchen_dish_catalog.json",
+)
+
 
 def archives(tmp_path, monkeypatch, *, wheel_change=None, source_extra=None, package_change=None):
     metadata = b"Metadata-Version: 2.4\nName: robot-worlds\nVersion: 0.1.0a1\n"
@@ -93,10 +105,39 @@ def test_installed_starter_bundles_remain_in_both_checked_archives(tmp_path, mon
     archives(tmp_path, monkeypatch)
     wheel = checker._archive_files(tmp_path / "robot_worlds-0.1.0a1-py3-none-any.whl")
     source = checker._archive_files(tmp_path / "robot_worlds-0.1.0a1.tar.gz")
-    for starter in ("warehouse", "house", "hospital", "bookstore"):
-        path = f"robot_worlds/assets/starters/{starter}/world.zip"
+    required = {f"assets/starters/{starter}/world.zip"
+                for starter in ("warehouse", "house", "hospital", "bookstore")}
+    required.update(f"assets/starters/{starter}/{member}"
+                    for starter in MANIPULATION_STARTERS for member in MANIPULATION_MEMBERS)
+    required.update(MANIPULATION_MODULES_AND_CATALOGS)
+    assert required <= set(checker.REQUIRED_PACKAGE_FILES)
+    for member in required:
+        path = "robot_worlds/" + member
         assert wheel[path] == source["robot_worlds-0.1.0a1/src/" + path]
     assert checker.inspect_distributions(tmp_path)["status"] == "passed"
+
+
+@pytest.mark.parametrize("member", MANIPULATION_MEMBERS)
+@pytest.mark.parametrize("archive_kind", ["source", "wheel"])
+def test_missing_manipulation_bundle_or_sidecar_is_rejected(tmp_path, monkeypatch, member, archive_kind):
+    path = "assets/starters/simready-factory/" + member
+    if archive_kind == "source":
+        # Missing from both still fails completeness, rather than passing the
+        # later wheel/source inventory equality check.
+        archives(tmp_path, monkeypatch, package_change=lambda files: files.pop(path))
+    else:
+        archives(tmp_path, monkeypatch, wheel_change=lambda files: files.pop("robot_worlds/" + path))
+    with pytest.raises(checker.DistributionError, match="missing required nonempty files") as caught:
+        checker.inspect_distributions(tmp_path)
+    assert path in str(caught.value)
+
+
+@pytest.mark.parametrize("path", MANIPULATION_MODULES_AND_CATALOGS)
+def test_missing_manipulation_module_or_source_catalog_is_rejected(tmp_path, monkeypatch, path):
+    archives(tmp_path, monkeypatch, package_change=lambda files: files.pop(path))
+    with pytest.raises(checker.DistributionError, match="missing required nonempty files") as caught:
+        checker.inspect_distributions(tmp_path)
+    assert path in str(caught.value)
 
 
 @pytest.mark.parametrize("vcs_ignores_present", [False, True])
@@ -117,6 +158,8 @@ def test_build_selection_excludes_preparation_but_keeps_installed_starters(
     paths += [f"{directory}/warehouse/unneeded.bin" for directory in checker.PREPARATION_DIRECTORIES]
     paths += [f"src/robot_worlds/assets/starters/{starter}/world.zip"
               for starter in ("warehouse", "house", "hospital", "bookstore")]
+    paths += [f"src/robot_worlds/assets/starters/{starter}/{member}"
+              for starter in MANIPULATION_STARTERS for member in MANIPULATION_MEMBERS]
     for name in paths:
         target = tmp_path / name
         target.parent.mkdir(parents=True, exist_ok=True)

@@ -13,6 +13,7 @@ from pathlib import Path, PurePosixPath
 CONTROLLER_LICENSE_SHA256 = "ff28cacaef7b9919a0fb905136cf4ccffba5191522bf5d024c4339932c0edc28"
 REQUIRED_PACKAGE_FILES = (
     "__init__.py", "cli.py", "diagnostics.py", "sdk.py", "runtime.py", "g1_runtime.py",
+    "task_catalog.py", "joint_collisions.py",
     "static/index.html", "static/app.js", "static/styles.css", "static/scene.js",
     "static/scene-resources.js", "static/scene-inspection.js", "static/scene-appearance.js",
     "static/scene-materials.js", "static/scene-assets.js", "static/scene-batching.js",
@@ -35,12 +36,21 @@ REQUIRED_PACKAGE_FILES = (
     "assets/household/porcelain_bowl/materials/textures/texture.png",
     "assets/household/porcelain_bowl/metadata.pbtxt", "assets/household/porcelain_bowl/model.config",
     "assets/household/porcelain_bowl/collision/manifest.json",
-    "simready.py", "simready_rack.py", "simready_structures.py", "warehouse_library.py", "gltf_decode.py", "gltf_geometry.py", "gltf_visuals.py", "assets/simready/catalog.json",
+    "simready.py", "simready_rack.py", "simready_structures.py", "simready_conveyor.py",
+    "warehouse_library.py", "workbench_library.py", "living_room_library.py", "living_room_cabinet.py",
+    "kitchen_counter_library.py", "kitchen_dish_library.py",
+    "gltf_decode.py", "gltf_geometry.py", "gltf_visuals.py", "assets/simready/catalog.json",
+    "assets/simready/workbench_catalog.json", "assets/simready/living_room_catalog.json",
+    "assets/simready/kitchen_counter_catalog.json", "assets/simready/kitchen_dish_catalog.json",
     "starter_environments.py", "assets/starters/catalog.json",
     "assets/starters/warehouse/world.zip", "assets/starters/warehouse/thumbnail.png",
     "assets/starters/house/world.zip", "assets/starters/house/thumbnail.png",
     "assets/starters/hospital/world.zip", "assets/starters/hospital/thumbnail.png",
     "assets/starters/bookstore/world.zip", "assets/starters/bookstore/thumbnail.png",
+    *(f"assets/starters/{starter}/{member}"
+      for starter in ("simready-kitchen", "simready-factory", "simready-living-room")
+      for member in ("world.zip", "thumbnail.png", "generation-plan.json", "task-suite.json",
+                     "semantic-plan.md", "preparation-evidence.json", "release.json")),
     "assets/codecs/decode-glb.mjs", "assets/codecs/meshopt_decoder.mjs",
     "assets/codecs/meshopt-source.json", "assets/codecs/MESHOPT-LICENSE.md",
 )

@@ -209,6 +209,20 @@ def import_mjcf_asset(path: str | Path, *, prefix: str, position=(0, 0, 0), sour
         visit(body, offset)
     if not result.objects:
         raise ValueError("Source contains no supported physical asset")
+    objects = {obj.id: obj for obj in result.objects}
+    for exclusion in tree.findall("./contact/exclude"):
+        first = objects.get(result.body_ids.get(exclusion.get("body1")))
+        second = objects.get(result.body_ids.get(exclusion.get("body2")))
+        if first is not None and second is not None:
+            child = (first if first.joint and first.parent_id == second.id else
+                     second if second.joint and second.parent_id == first.id else None)
+        else:
+            child = None
+        if child is None or set(exclusion.attrib) - {"name", "body1", "body2"}:
+            raise ValueError("Source contact exclusions currently require an adjacent articulated parent/child body pair")
+        child.joint.collide_parent = False
+    if tree.findall("./contact/exclude"):
+        result.disclosures.append("Explicit source adjacent-joint contact exclusions are retained across their parent/child rigid component groups.")
     for obj in result.objects:
         obj.source_notice = str(notice)
         if (root_dir / "source-manifest.json").is_file():

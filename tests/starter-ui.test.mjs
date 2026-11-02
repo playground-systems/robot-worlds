@@ -8,7 +8,7 @@ import vm from 'node:vm';
 const source = (await readFile(new URL('../src/robot_worlds/static/app.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\n/gm, '').replace('\nstart();', '\n');
 const html = await readFile(new URL('../src/robot_worlds/static/index.html', import.meta.url), 'utf8');
-const catalog = ['warehouse', 'house', 'hospital', 'bookstore'].map(id => ({
+const catalog = ['warehouse', 'house', 'hospital', 'bookstore', 'fixture-kitchen', 'fixture-factory', 'fixture-living-room'].map(id => ({
   id, name: `Fixture ${id}`, description: 'Explicitly fake UI fixture', available: true,
   preview_available: true, license: 'MIT-0', source_url: `https://example.invalid/${id}`,
   bounds: [24, 18, 5], components: 2,
@@ -124,13 +124,13 @@ async function settle() {
   for (let index = 0; index < 25; index++) await Promise.resolve();
 }
 
-test('all four starter cards can be chosen without a key or a generation form', async () => {
+test('additive starter cards can all be chosen without a key or a generation form', async () => {
   const { nodes, buttons, requests, run } = fixture({ status: 'queued' });
   assert.equal(nodes.get('generate-button').disabled, true);
   assert.equal(nodes.get('evaluate-button').disabled, true);
   assert.equal(nodes.get('open-starters').disabled, false);
   assert.equal(nodes.get('empty-starters').disabled, false);
-  assert.equal(buttons().length, 4);
+  assert.equal(buttons().length, catalog.length);
   assert(buttons().every(button => !button.disabled));
   assert.deepEqual(buttons().map(button => button.attrs['aria-label']), catalog.map(entry => `Add ${entry.name} to workspace`));
   nodes.get('empty-starters').click();
@@ -142,6 +142,14 @@ test('all four starter cards can be chosen without a key or a generation form', 
   assert.equal(requests[0].path, '/api/starters/warehouse/add');
   assert.deepEqual(JSON.parse(requests[0].body), {});
   assert(requests.every(request => !request.path.includes('/generate') && !request.path.includes('/evaluate')));
+});
+
+test('an appended manipulation starter uses the same keyless import flow', async () => {
+  const { buttons, requests, run } = fixture({ status: 'queued' });
+  await buttons().at(-1).click();
+  assert.equal(requests[0].path, '/api/starters/fixture-living-room/add');
+  assert.equal(run('state.jobId'), 'a'.repeat(32));
+  assert.equal(requests.filter(request => request.method === 'POST').length, 1);
 });
 
 test('a completed starter job opens its full source scene and assets in the layout viewer', async () => {

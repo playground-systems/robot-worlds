@@ -1,0 +1,28 @@
+{
+  "id": "simready-factory",
+  "name": "Tool preparation, inspection and dispatch",
+  "description": "Four connected physical work areas around a compact manual tool-processing cell, with reserve rack storage and a clear loading apron.",
+  "repo": "nvidia/simready-assets",
+  "revision": "4763fbfaa4f8e97658e68b57d01b4c86659e08b5",
+  "optimized_revision": "e52172290393dde80e8d383861db94b8d0e92ec3",
+  "world": "generation-plan.json",
+  "license": "CC BY-4.0",
+  "source_url": "https://huggingface.co/datasets/nvidia/simready-assets",
+  "world_id": "49537f246c6883d84062c36170db5c2a0d47a1d83437efc724412486de759261",
+  "bundle_sha256": "f39b65dd2e340d9397a0402271db5898b22c65217a7cdf69396d7df541f00fda",
+  "bundle_bytes": 35022640,
+  "bounds": [
+    18.0,
+    9.0,
+    4.5
+  ],
+  "components": 684,
+  "source_instances": 18,
+  "task_count": 15,
+  "authored_by": "gpt-6-astra",
+  "native_engine_version": "3.17.0",
+  "thumbnail_view": "Native MuJoCo aerial reset inspection. No geometry hidden; policy camera and world physics unchanged.",
+  "thumbnail_hidden_object_ids": [],
+  "thumbnail_hidden_runtime_geoms": [],
+  "interaction_evidence": "Native reset and task-reference checks; policy completion unverified"
+}
