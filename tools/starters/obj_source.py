@@ -154,8 +154,47 @@ def _zero_surface(points: np.ndarray) -> bool:
                for point in relative for i, j in ((0, 1), (1, 2), (2, 0)))
 
 
+def _skew_quad(points: np.ndarray) -> list[tuple[int, int, int]] | None:
+    """Split a proved noncoplanar quad whose 2D projection falsely crosses.
+
+    Exact nonzero 3D orientation proves that opposite boundary edges cannot
+    intersect: intersecting lines would place all four corners in one plane.
+    Two triangles sharing a diagonal then intersect only on that diagonal.
+    Choose the diagonal using the 3D angle rule used by Assimp's quad path.
+    This preserves the original cyclic boundary and every source corner, rather
+    than repairing/reordering a genuinely intersecting planar polygon.
+    """
+    exact = [[Fraction(float(value)) for value in point] for point in points]
+    a, b, c = [[value-origin for value, origin in zip(point, exact[0])] for point in exact[1:]]
+    determinant = (a[0]*(b[1]*c[2]-b[2]*c[1]) - a[1]*(b[0]*c[2]-b[2]*c[0])
+                   + a[2]*(b[0]*c[1]-b[1]*c[0]))
+    if determinant == 0:
+        return None
+    start = 0
+    for index in range(4):
+        directions = points[[(index-1) % 4, (index+2) % 4, (index+1) % 4]]-points[index]
+        lengths = np.linalg.norm(directions, axis=1)
+        if not np.isfinite(lengths).all() or np.any(lengths == 0):
+            raise ValueError("Invalid 3D OBJ quad edge")
+        left, diagonal, right = directions / lengths[:, None]
+        angle = math.acos(float(np.clip(left @ diagonal, -1, 1))) + math.acos(float(np.clip(right @ diagonal, -1, 1)))
+        if angle > math.pi:
+            start = index
+            break
+    triangles = [(start, (start+1) % 4, (start+2) % 4),
+                 (start, (start+2) % 4, (start+3) % 4)]
+    for triangle in triangles:
+        p, q, r = points[list(triangle)]
+        area = np.linalg.norm(np.cross(q-p, r-p))
+        if not math.isfinite(float(area)) or area == 0:
+            raise ValueError("3D OBJ quad split has an unmeasurable triangle")
+    return triangles
+
+
 def _triangulate(points: np.ndarray, *, allow_nonplanar=False, drop_zero_area=False,
                  diagnostics=None) -> list[tuple[int, int, int]]:
+    if diagnostics is None:
+        diagnostics = {"zero_area_faces": 0, "nonplanar_faces": 0, "max_plane_deviation": 0.}
     count = len(points)
     if count == 3:
         if (drop_zero_area and not np.any(np.cross(points[1]-points[0], points[2]-points[0]))
@@ -170,14 +209,34 @@ def _triangulate(points: np.ndarray, *, allow_nonplanar=False, drop_zero_area=Fa
     normal = np.cross(relative, np.roll(relative, -1, axis=0)).sum(axis=0)
     length = float(np.linalg.norm(normal))
     epsilon = max(1e-20, extent * extent * 1e-10)
+
+    def skew_fallback(*, already_nonplanar=False):
+        if count != 4 or not allow_nonplanar:
+            return None
+        triangles = _skew_quad(points)
+        if triangles is None:
+            return None
+        if not math.isfinite(length) or length == 0:
+            raise ValueError("3D OBJ quad has an unmeasurable Newell normal")
+        if not already_nonplanar:
+            diagnostics["nonplanar_faces"] += 1
+            measured = float(np.max(np.abs(relative @ (normal/np.linalg.norm(normal)))))
+            diagnostics["max_plane_deviation"] = max(diagnostics["max_plane_deviation"], measured)
+        diagnostics["skew_quad_faces"] = diagnostics.get("skew_quad_faces", 0) + 1
+        return triangles
+
     if length <= epsilon:
         if drop_zero_area and _zero_surface(points):
             diagnostics["zero_area_faces"] += 1
             return []
+        triangles = skew_fallback()
+        if triangles is not None:
+            return triangles
         raise ValueError("OBJ polygon has no stable planar area")
     normal /= length
     deviation = float(np.max(np.abs(relative @ normal)))
-    if deviation > max(1e-9, extent * 1e-6):
+    nonplanar = deviation > max(1e-9, extent * 1e-6)
+    if nonplanar:
         if not allow_nonplanar:
             raise ValueError("Nonplanar OBJ polygon needs reviewed source triangulation")
         diagnostics["nonplanar_faces"] += 1
@@ -199,6 +258,9 @@ def _triangulate(points: np.ndarray, *, allow_nonplanar=False, drop_zero_area=Fa
     for i in range(count):
         a, b = projected[i], projected[(i+1) % count]
         if np.linalg.norm(a-b) <= linear_epsilon:
+            triangles = skew_fallback(already_nonplanar=nonplanar)
+            if triangles is not None:
+                return triangles
             raise ValueError("OBJ polygon has repeated adjacent corners")
         for j in range(i+1, count):
             if j == i+1 or (i == 0 and j == count-1):
@@ -208,6 +270,9 @@ def _triangulate(points: np.ndarray, *, allow_nonplanar=False, drop_zero_area=Fa
             if ((ab_c > epsilon and ab_d < -epsilon or ab_c < -epsilon and ab_d > epsilon)
                     and (cd_a > epsilon and cd_b < -epsilon or cd_a < -epsilon and cd_b > epsilon)
                     or any((on_segment(a, b, c), on_segment(a, b, d), on_segment(c, d, a), on_segment(c, d, b)))):
+                triangles = skew_fallback(already_nonplanar=nonplanar)
+                if triangles is not None:
+                    return triangles
                 raise ValueError("Self-intersecting OBJ polygon is unsupported")
     remaining, triangles = list(range(count)), []
     while len(remaining) > 3:
@@ -259,6 +324,7 @@ def read_obj(path: Path, *, root: Path, allow_nonplanar=False, drop_zero_area=Fa
     vertices, normals, texcoords, faces, libraries = [], [], [], [], []
     lines = []
     diagnostics = {"nonplanar_faces": 0, "max_plane_deviation": 0., "zero_area_faces": 0,
+                   "skew_quad_faces": 0,
                    "texture_w": 0, "texture_w_min": math.inf, "texture_w_max": -math.inf}
     material_name = None
     for keyword, value in _lines(_text(path, MAX_OBJ_BYTES)):
@@ -378,10 +444,17 @@ def read_obj(path: Path, *, root: Path, allow_nonplanar=False, drop_zero_area=Fa
         raise ValueError("OBJ source has no nonzero surface after proven-degenerate records")
     if diagnostics["nonplanar_faces"]:
         disclosures.append(f"{path.name}: {diagnostics['nonplanar_faces']} nonplanar source polygons "
-                           "triangulated by Newell dominant-axis projection and checked ear clipping; "
+                           "triangulated using original corner positions; simple Newell dominant-axis "
+                           "projections use checked ear clipping; "
                            "original 3D vertices, corner UVs and normals retained; maximum plane "
                            f"deviation {diagnostics['max_plane_deviation']:.12g} OBJ source units before SDF scaling. "
                            "Warped source polygons do not define a unique triangulated surface; diagonals may differ from another viewer.")
+    if diagnostics["skew_quad_faces"]:
+        disclosures.append(f"{path.name}: {diagnostics['skew_quad_faces']} skew source quads whose "
+                           "2D projection crosses or collapses were split by the Assimp-style 3D angular diagonal rule; "
+                           "exact rational noncoplanarity proves their 3D boundary edges do not intersect. "
+                           "Original cyclic boundary, 3D corner positions, UVs and normals retained; "
+                           "no planar self-intersection was accepted and no surface face was omitted")
     if diagnostics["zero_area_faces"]:
         disclosures.append(f"{path.name}: omitted {diagnostics['zero_area_faces']} proven zero-area source "
                            "faces; exact rational collinearity checked in 3D, no nonzero surface removed")

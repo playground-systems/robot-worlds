@@ -25,6 +25,7 @@ from fuel import acquire_hospital_fuel
 from geometry import prepare_static_collision, prepare_static_envelopes, thicken_planar_visual
 from PIL import Image
 
+from robot_worlds.generator import FIXED_REFERENCE_GROUND_TOLERANCE_M
 from robot_worlds.models import WorldSpec
 
 CATALOG = Path(__file__).resolve().parents[2] / "src/robot_worlds/assets/starters/catalog.json"
@@ -575,10 +576,37 @@ class Adapter:
             raise ValueError("Starter source contains geometry above 100 m; review its saved poses")
         offset = (low + high) / 2
         offset[2] = 0
+        ground = None
+        walk_plane_alignment = None
+        if self.entry["id"] == "warehouse":
+            # This pinned source floor is a 12.4 cm solid whose walking surface
+            # sits 3.4 cm above the world's Z=0. The runtime's robot spawns at
+            # Z=0, so preserve every relative source pose while aligning that
+            # actual walking plane to the runtime floor. Never ignore a raised
+            # collider or move the robot outside the building to pass checks.
+            floors = [o for o in self.objects
+                      if o.get("collision") and o.get("label") ==
+                      "aws_robomaker_warehouse_GroundB_01_001 · source collision"]
+            if (self.entry["revision"] != "ee0af733315e78432408c3cd98d378ecee5f767c"
+                    or len(floors) != 1):
+                raise ValueError("Reviewed warehouse walking-plane source changed; re-review the alignment")
+            ground = floors[0]
+            surface_height = ground["position"][2] + ground["size"][2] / 2
+            if abs(surface_height - 0.03422592) > 1e-5:
+                raise ValueError("Reviewed warehouse walking-plane height changed; re-review the alignment")
+            offset[2] = surface_height
+            walk_plane_alignment = {
+                "source_object": ground["id"],
+                "source_label": ground["label"],
+                "original_top_z_metres": surface_height,
+                "translation_metres": [0, 0, -surface_height],
+                "reason": "Align the pinned warehouse's highest original ground-surface point to runtime Z=0; all source objects receive the same vertical translation, preserving their relative layout.",
+            }
+            self.disclosures.append(walk_plane_alignment["reason"])
         for obj in self.objects:
             obj["position"] = (np.array(obj["position"]) - offset).tolist()
         bounds = np.ceil(high - low + 2)
-        bounds[2] = max(3.0, high[2] + 1)
+        bounds[2] = max(3.0, high[2] - offset[2] + 1)
         blockers = [
             (
                 np.array(o["position"]) - np.array(o["size"]) / 2,
@@ -586,11 +614,20 @@ class Adapter:
             )
             for o in self.objects
             if o["collision"]
-            and o["position"][2] + o["size"][2] / 2 > 0.04
-            and o["position"][2] - o["size"][2] / 2 < 1.8
+            and o["position"][2] + o["size"][2] / 2 > FIXED_REFERENCE_GROUND_TOLERANCE_M
+            and o["position"][2] - o["size"][2] / 2 < 1.6
         ]
 
         def free(point):
+            # Keep both the robot envelope and the arrival outline inside the
+            # world. For the reviewed warehouse also retain the actual source
+            # floor footprint, rather than accepting empty space outdoors.
+            if np.any(np.abs(point) + .85 > bounds[:2] / 2):
+                return False
+            if ground is not None:
+                ground_position, ground_size = np.array(ground["position"]), np.array(ground["size"])
+                if np.any(np.abs(point - ground_position[:2]) + .85 > ground_size[:2] / 2):
+                    return False
             return all(
                 not np.all((point >= a[:2] - 0.85) & (point <= b[:2] + 0.85)) for a, b in blockers
             )
@@ -665,6 +702,9 @@ class Adapter:
                     "Hospital scanned props and disconnected curtain hardware use conservative component envelopes that can fill concavities and spaces under furniture. These fixed navigation props are not manipulation-certified; their original visual meshes remain intact.",
                     "Gazebo plugins, ROS launch code, source lights and dynamic actors are not executed. Robot Worlds supplies robot, ground and lighting. Source ODE-specific contact parameters are replaced by the runtime default isotropic friction 0.7.",
                     "A robot spawn and a short navigation task are added; the arrival volume allows 5 mm for compliant ground contact. Creation checks do not prove task solvability.",
+                    *([
+                        f"The warehouse source walking surface originally reaches Z={offset[2]:.8f} m. Every source object is translated vertically by {-offset[2]:.8f} m to align that surface with runtime Z=0; relative source poses are unchanged."
+                    ] if walk_plane_alignment else []),
                 ],
                 source_prompt="Imported from " + self.entry["source_url"],
             )
@@ -690,7 +730,8 @@ class Adapter:
             source_files=self.inputs,
             external_sources=self.external_sources,
             layout_repairs=self.layout_repairs,
-            coordinate_transform={"translation_metres": (-offset).tolist()},
+            coordinate_transform={"translation_metres": (-offset).tolist(),
+                                  "walking_plane_alignment": walk_plane_alignment},
             acquisition=json.loads((self.source / "acquisition.json").read_text()),
             disclosures=sorted(set(self.disclosures)),
             instances=len(xml(self.source / self.entry["world"]).find("world").findall("model")),

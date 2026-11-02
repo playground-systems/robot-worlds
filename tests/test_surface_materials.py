@@ -69,13 +69,18 @@ def test_native_material_xml_preserves_roles_and_reuses_sources_without_dynamics
     assert add_source_material(root, obj, tmp_path, textures, materials) == name
     material = root.find("asset/material")
     assert material.get("metallic") == "0.8" and material.get("roughness") == "0.25"
-    assert {layer.get("role") for layer in material.findall("layer")} == {"rgba", "normal", "orm", "emissive"}
-    assert len(root.findall("asset/texture")) == 4
+    assert {layer.get("role") for layer in material.findall("layer")} == {"rgb", "rgba", "normal", "orm", "emissive"}
+    assert len(root.findall("asset/texture")) == 5
+    layers = {layer.get("role"): layer.get("texture") for layer in material.findall("layer")}
+    source_textures = {texture.get("name"): texture for texture in root.findall("asset/texture")}
+    rgb, rgba = (source_textures[layers[role]] for role in ("rgb", "rgba"))
+    assert rgb.get("file") == rgba.get("file") == obj.texture_path
+    assert rgb.get("nchannel") == "3" and rgba.get("nchannel") == "4"
     assert len(root.findall("asset/material")) == 1
     changed = obj.model_copy(deep=True)
     changed.surface.roughness = .8
     assert add_source_material(root, changed, tmp_path, textures, materials) != name
-    assert len(root.findall("asset/texture")) == 4
+    assert len(root.findall("asset/texture")) == 5
     assert obj.model_dump() == original
     assert root.find("worldbody") is None  # Only appearance assets were authored.
 

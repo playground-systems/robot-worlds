@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
+from robot_worlds.generator import validate_spec
 from robot_worlds.mesh_assets import convex_volume, read_triangle_obj
 from robot_worlds.models import WorldSpec
 
@@ -413,4 +414,73 @@ def test_other_tall_source_objects_are_not_silently_repaired(adapter):
     adapter.repair_known_source_pose(instance, 0)
     assert not adapter.layout_repairs
     with pytest.raises(ValueError, match="geometry above 100 m"):
+        adapter.finish()
+
+
+def minimal_world(adapter):
+    (adapter.source / adapter.entry["world"]).write_text('<sdf><world name="fixture"/></sdf>')
+
+
+def test_short_physical_obstacle_is_not_ignored_by_starter_spawn_planner(adapter):
+    minimal_world(adapter)
+    adapter.objects = [
+        {"id": "source_floor", "label": "Original floor", "kind": "box", "position": [0, 0, -.00025],
+         "size": [10, 10, .0005], "collision": True, "visible": True},
+        {"id": "short_obstacle", "label": "Low original obstacle", "kind": "box", "position": [0, 0, .01],
+         "size": [.2, .2, .02], "collision": True, "visible": True},
+    ]
+    adapter.finish()
+    spec = WorldSpec.model_validate_json((adapter.output / "spec.json").read_text())
+    x, y, _ = spec.robot_start
+    obstacle = next(o for o in spec.objects if o.id == "short_obstacle")
+    distance = np.linalg.norm(np.maximum(0, np.abs(np.array([x, y]) - obstacle.position[:2]) - np.array(obstacle.size[:2]) / 2))
+    assert distance >= .4
+    assert [x, y] != [0, 0]  # This was the old planner's invalid first choice.
+    assert validate_spec(spec, validation_profile="fixed_reference") == []
+    target = spec.regions[0]
+    assert all(abs(target.position[i]) + target.size[i] / 2 <= spec.bounds[i] / 2 for i in (0, 1))
+
+
+def test_warehouse_walking_plane_alignment_preserves_source_layout_and_safe_route(adapter):
+    adapter.entry.update(id="warehouse", revision="ee0af733315e78432408c3cd98d378ecee5f767c")
+    minimal_world(adapter)
+    floor_position = [0., 0., -.027933659150933543]
+    floor_size = [13.980469703674316, 20.90666389465332, .1243191616980539]
+    original_floor_top = floor_position[2] + floor_size[2] / 2
+    adapter.objects = [
+        {"id": "original_ground", "label": "aws_robomaker_warehouse_GroundB_01_001 · source collision",
+         "kind": "box", "position": floor_position.copy(), "size": floor_size.copy(),
+         "collision": True, "visible": True},
+        {"id": "original_fixture", "label": "Original source fixture", "kind": "box", "position": [3, 3, 1],
+         "size": [1, 1, 2], "collision": True, "visible": True},
+    ]
+    before_relative = np.array(adapter.objects[1]["position"]) - adapter.objects[0]["position"]
+    adapter.finish()
+    spec = WorldSpec.model_validate_json((adapter.output / "spec.json").read_text())
+    ground, fixture = spec.objects[:2]
+    assert validate_spec(spec, validation_profile="fixed_reference") == []
+    assert ground.position[2] + ground.size[2] / 2 == pytest.approx(0, abs=1e-12)
+    np.testing.assert_allclose(np.array(fixture.position) - ground.position, before_relative)
+    assert ground.size == pytest.approx(floor_size)
+    start = np.array(spec.robot_start[:2])
+    target = np.array(spec.regions[0].position[:2])
+    for point in np.linspace(start, target, 9):
+        assert np.all(np.abs(point - np.array(ground.position[:2])) + .85 <= np.array(ground.size[:2]) / 2)
+        delta = np.maximum(0, np.abs(point - np.array(fixture.position[:2])) - np.array(fixture.size[:2]) / 2)
+        assert np.linalg.norm(delta) >= .4
+    record = json.loads((adapter.output / "provenance.json").read_text())
+    alignment = record["coordinate_transform"]["walking_plane_alignment"]
+    assert alignment["source_object"] == "original_ground"
+    assert alignment["original_top_z_metres"] == pytest.approx(original_floor_top)
+    assert alignment["translation_metres"] == pytest.approx([0, 0, -original_floor_top])
+    assert record["coordinate_transform"]["translation_metres"][2] == pytest.approx(-original_floor_top)
+    assert "source walking surface originally reaches Z=" in (adapter.output / "NOTICE.txt").read_text()
+
+
+def test_warehouse_walking_plane_alignment_rejects_unreviewed_source_height(adapter):
+    adapter.entry.update(id="warehouse", revision="ee0af733315e78432408c3cd98d378ecee5f767c")
+    adapter.objects = [{"id": "floor", "label": "aws_robomaker_warehouse_GroundB_01_001 · source collision",
+                        "kind": "box", "position": [0, 0, .5], "size": [14, 21, 1],
+                        "collision": True, "visible": True}]
+    with pytest.raises(ValueError, match="walking-plane height changed"):
         adapter.finish()

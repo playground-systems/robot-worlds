@@ -15,7 +15,12 @@ def add_source_material(root, obj, asset_root, textures, materials):
     surface = obj.surface
     if surface is None:
         raise ValueError("Source material requires explicit surface properties")
-    roles = (("texture_path", "rgba", 4), ("normal_texture_path", "normal", 3),
+    # Classic MuJoCo binds only mjTEXROLE_RGB (render/classic/render_gl3.c).
+    # Keep the complete RGBA source for other renderers, and load its RGB
+    # channels separately for the classic policy/replay renderer. Both bindings
+    # use the same protected source file; no replacement texture is authored.
+    roles = (("texture_path", "rgba", 4), ("texture_path", "rgb", 3),
+             ("normal_texture_path", "normal", 3),
              ("orm_texture_path", "orm", 3), ("emissive_texture_path", "emissive", 4))
     paths = []
     for field, role, channels in roles:

@@ -318,3 +318,58 @@ def test_compatibility_adaptations_require_a_provenance_destination(tmp_path, op
     path.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n")
     with pytest.raises(ValueError, match="require recorded disclosures"):
         obj_source.read_obj(path, root=tmp_path, **{option: True})
+
+
+@pytest.mark.parametrize("scale", [.001, .01, 1., 1000.])
+@pytest.mark.parametrize("warp", [1., .001, 1e-9])
+def test_reviewed_skew_quad_projection_crossing_keeps_3d_boundary_and_attributes(tmp_path, scale, warp):
+    # Four coordinate facts from OpenRobotics Scrubs v2, scrubs.obj:6414
+    # (CC-BY-4.0). Its boundary is simple in 3D; dominant projection crosses.
+    original = np.array([[-.034702, -.129704, 1.223951], [-.042204, -.117155, 1.201725],
+                         [-.073247, -.130194, 1.209793], [-.092561, -.124776, 1.193094]])
+    relative = original-original[0]
+    normal = np.cross(relative, np.roll(relative, -1, axis=0)).sum(axis=0)
+    normal /= np.linalg.norm(normal)
+    # Approach the same projected bow-tie plane without making the actual 3D
+    # edges intersect. Test scale and very small warp independently of tolerances.
+    distance = relative @ normal
+    points = (original-(1-warp)*distance[:, None]*normal) * scale
+    path = tmp_path / "source.obj"
+    text = "".join("v " + " ".join(map(str, point)) + "\n" for point in points)
+    text += "vt 0 0\nvt 1 0\nvt 1 1\nvt 0 1\n"
+    text += "vn 1 0 0\nvn 0 1 0\nvn 0 0 1\nvn 1 1 1\nf 1/1/1 2/2/2 3/3/3 4/4/4\n"
+    path.write_text(text)
+    with pytest.raises(ValueError):
+        obj_source.read_obj(path, root=tmp_path)
+    disclosures = []
+    primitive = obj_source.read_obj(path, root=tmp_path, allow_nonplanar=True, disclosures=disclosures)[0]
+    assert len(primitive) == 2
+    np.testing.assert_array_equal(primitive.vertex, points)
+    uv = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
+    normals = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]])
+    np.testing.assert_array_equal(primitive.texcoordset[0][primitive.texcoord_indexset[0]], uv[primitive.vertex_index])
+    np.testing.assert_array_equal(primitive.normal[primitive.normal_index], normals[primitive.vertex_index])
+    edges = [(int(a), int(b)) for face in primitive.vertex_index for a, b in zip(face, np.roll(face, -1))]
+    boundary = [edge for edge in edges if (edge[1], edge[0]) not in edges]
+    assert sorted(boundary) == [(0, 1), (1, 2), (2, 3), (3, 0)]
+    assert any("1 skew source quads" in note and "exact rational noncoplanarity" in note for note in disclosures)
+    assert all("proven zero-area" not in note for note in disclosures)
+
+
+@pytest.mark.parametrize("points", [
+    [[0, 0, 0], [2, 1, 0], [0, 1, 0], [1, 0, 0]],
+    [[0, 0, 0], [2, 1, 1.5], [0, 1, .5], [1, 0, .5]],
+])
+def test_reviewed_nonplanar_quad_mode_still_rejects_actual_planar_crossings(tmp_path, points):
+    path = tmp_path / "source.obj"
+    path.write_text("".join("v " + " ".join(map(str, point)) + "\n" for point in points) + "f 1 2 3 4\n")
+    with pytest.raises(ValueError, match="Self-intersecting OBJ polygon"):
+        obj_source.read_obj(path, root=tmp_path, allow_nonplanar=True, disclosures=[])
+
+
+def test_skew_fallback_requires_four_corners_instead_of_ignoring_polygon_crossings(tmp_path):
+    points = [[0, 0, 0], [2, 1, .1], [0, 1, 0], [1, 0, 0], [.5, -.5, .1]]
+    path = tmp_path / "source.obj"
+    path.write_text("".join("v " + " ".join(map(str, point)) + "\n" for point in points) + "f 1 2 3 4 5\n")
+    with pytest.raises(ValueError, match="Self-intersecting OBJ polygon"):
+        obj_source.read_obj(path, root=tmp_path, allow_nonplanar=True, disclosures=[])

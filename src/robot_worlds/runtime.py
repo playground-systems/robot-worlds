@@ -143,6 +143,56 @@ class RobotPhysicalFailure(Exception):
     """A simulated robot has physically failed (for example, fallen)."""
 
 
+_MIB = 1024 * 1024
+_MAX_ARENA_BYTES = 512 * _MIB
+
+
+def _scene_arena_bytes(body_count: int, *, revolved: bool = False) -> int | None:
+    """Bound large-scene workspace before native allocation; small scenes stay default.
+
+    MuJoCo's rigid broadphase reserves 4 bytes for every possible body pair,
+    including static and appearance-only bodies. A second pair array is used
+    inside sweep-and-prune. Reserve four pair arrays plus 32 MiB for other
+    collision/contact/solver work, retaining the curved-contact minimum.
+    This is headroom, not a contact-capacity guarantee; native warning and reset
+    checks still apply. See MuJoCo 3.17 engine_collision_driver.c, mj_collision
+    and mj_broadphase, and its Modeling/Memory allocation documentation.
+    """
+    if isinstance(body_count, bool) or not isinstance(body_count, int) or body_count < 1:
+        raise ValueError("Native arena sizing requires a positive body count")
+    if body_count < 512 and not revolved:
+        return None
+    pair_bytes = 4 * body_count * (body_count - 1) // 2
+    required = 4 * pair_bytes + 32 * _MIB
+    if revolved:
+        required = max(required, 128 * _MIB)
+    quantum = 16 * _MIB
+    allocated = ((required + quantum - 1) // quantum) * quantum
+    if allocated > _MAX_ARENA_BYTES:
+        raise ValueError(
+            f"Scene with {body_count} native bodies needs an estimated {allocated // _MIB} MiB "
+            f"arena per simulator state, exceeding the {_MAX_ARENA_BYTES // _MIB} MiB budget. "
+            "Reduce the number of separate bodies; appearance-only source parts also count. "
+            "No contacts or source objects were discarded."
+        )
+    return allocated
+
+
+def _configure_scene_arena(root, body_count: int, *, revolved: bool = False) -> None:
+    memory = _scene_arena_bytes(body_count, revolved=revolved)
+    if memory is not None:
+        size = root.find("size")
+        if size is None:
+            size = ET.SubElement(root, "size")
+        # These legacy attributes also size the arena and conflict with memory.
+        # nconmax is deliberately retained: contact filtering is not changed.
+        size.attrib.pop("njmax", None)
+        size.attrib.pop("nstack", None)
+        size.set("memory", str(memory))
+    if revolved:
+        root.find("option").set("jacobian", "sparse")
+
+
 class Runtime:
     def __new__(cls, spec, **kwargs):
         if cls is Runtime and spec.robot == "g1":
@@ -379,14 +429,11 @@ class Runtime:
     def _append_objects(self, root):
         if sum(collision_count(obj) for obj in self.spec.objects) > MAX_SCENE_COLLIDERS:
             raise ValueError(f"Scene exceeds {MAX_SCENE_COLLIDERS} physical scene colliders")
-        if any(obj.kind == "revolved" for obj in self.spec.objects):
-            # Many wedges can simultaneously rest on one support. MuJoCo's
-            # default arena estimate is too small for this contact pattern.
-            size = root.find("size")
-            if size is None:
-                size = ET.SubElement(root, "size")
-            size.set("memory", "128M")
-            root.find("option").set("jacobian", "sparse")
+        # Every scene object receives one body below, even when it has no
+        # collision geom. Include the world body and all existing robot bodies.
+        body_count = 1 + sum(1 for _ in root.iter("body")) + len(self.spec.objects)
+        _configure_scene_arena(root, body_count,
+                               revolved=any(obj.kind == "revolved" for obj in self.spec.objects))
         world = root.find("worldbody")
         bodies = {}
         # Asset definitions are immutable within this build. Sharing them does
@@ -1266,6 +1313,9 @@ class Runtime:
             "sensor_contract": copy.deepcopy(SENSOR_CONTRACT),
             "implementation": copy.deepcopy(self._implementation),
             "implementation_fingerprint": self._implementation_fingerprint,
+            "arena": {"allocated_bytes": int(self.data.narena),
+                      "peak_used_bytes": int(self.data.maxuse_arena),
+                      "model_bodies": int(self.model.nbody)},
         }
 
     def restore_snapshot(self, snapshot):

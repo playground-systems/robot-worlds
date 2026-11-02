@@ -41,7 +41,9 @@ curtain cloth and architectural openings retain their source contact surfaces.
 Source-specific ODE contact parameters use the runtime's default
 isotropic friction of 0.7. One corrupt upstream bookstore save placed a book
 343,582 metres above the floor. Its original pose is recorded; the unchanged
-assembly is lowered to the floor at its original XY position. Native previews
+assembly is lowered to the floor at its original XY position. The warehouse's
+original raised walking surface is aligned to Z=0 using one recorded translation
+of the entire scene. Native previews
 hide explicitly named roofs and ceilings for inspection, with hidden IDs
 recorded. The saved world retains that geometry.
 
