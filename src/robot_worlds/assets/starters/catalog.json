@@ -1,9 +1,111 @@
 {
   "schema_version": 1,
   "environments": [
-    {"id":"warehouse","name":"Small warehouse","description":"Storage aisles, loaded shelving and logistics equipment.","repo":"aws-robotics/aws-robomaker-small-warehouse-world","revision":"ee0af733315e78432408c3cd98d378ecee5f767c","world":"worlds/no_roof_small_warehouse/no_roof_small_warehouse.world","license":"MIT-0","source_url":"https://github.com/aws-robotics/aws-robomaker-small-warehouse-world/tree/ee0af733315e78432408c3cd98d378ecee5f767c"},
-    {"id":"house","name":"Furnished house","description":"Connected living spaces, kitchen and bedroom furniture.","repo":"aws-robotics/aws-robomaker-small-house-world","revision":"ff9631ca6d1db9c1ba656498151464b5ab74aafe","world":"worlds/small_house.world","license":"MIT-0","source_url":"https://github.com/aws-robotics/aws-robomaker-small-house-world/tree/ff9631ca6d1db9c1ba656498151464b5ab74aafe"},
-    {"id":"hospital","name":"Hospital","description":"Clinical rooms, reception, equipment and connecting corridors.","repo":"aws-robotics/aws-robomaker-hospital-world","revision":"7161eb8448f5cba6a469da7a79ae5d660b0b7f58","world":"worlds/hospital.world","license":"MIT-0 + CC BY-4.0","source_url":"https://github.com/aws-robotics/aws-robomaker-hospital-world/tree/7161eb8448f5cba6a469da7a79ae5d660b0b7f58"},
-    {"id":"bookstore","name":"Bookstore","description":"Book aisles, reading tables and a retail checkout area.","repo":"aws-robotics/aws-robomaker-bookstore-world","revision":"f5a2aaacd5418f9ecfa30f79e788856417f17c13","world":"worlds/bookstore.world","license":"MIT-0","source_url":"https://github.com/aws-robotics/aws-robomaker-bookstore-world/tree/f5a2aaacd5418f9ecfa30f79e788856417f17c13"}
+    {
+      "id": "warehouse",
+      "name": "Small warehouse",
+      "description": "Storage aisles, loaded shelving and logistics equipment.",
+      "repo": "aws-robotics/aws-robomaker-small-warehouse-world",
+      "revision": "ee0af733315e78432408c3cd98d378ecee5f767c",
+      "world": "worlds/no_roof_small_warehouse/no_roof_small_warehouse.world",
+      "license": "MIT-0",
+      "source_url": "https://github.com/aws-robotics/aws-robomaker-small-warehouse-world/tree/ee0af733315e78432408c3cd98d378ecee5f767c",
+      "world_id": "4e6234d57fff0ba655c7dc90263c30012212261f25e880d217edc0f44046d802",
+      "bundle_sha256": "62594bb42b1748b8086183374f2b2cbef387a83ee3b3a71cda0152e6cad9bdbd",
+      "bounds": [
+        17.0,
+        23.0,
+        10.983835716180325
+      ],
+      "components": 692,
+      "source_instances": 25,
+      "native_engine_version": "3.17.0",
+      "thumbnail_view": "Native MuJoCo aerial inspection at reset; all source visible geometry retained. Runtime background ground hidden to show the original source flooring.",
+      "thumbnail_hidden_object_ids": [],
+      "thumbnail_hidden_runtime_geoms": [
+        "floor"
+      ],
+      "bundle_bytes": 4804839
+    },
+    {
+      "id": "house",
+      "name": "Furnished house",
+      "description": "Connected living spaces, kitchen and bedroom furniture.",
+      "repo": "aws-robotics/aws-robomaker-small-house-world",
+      "revision": "ff9631ca6d1db9c1ba656498151464b5ab74aafe",
+      "world": "worlds/small_house.world",
+      "license": "MIT-0",
+      "source_url": "https://github.com/aws-robotics/aws-robomaker-small-house-world/tree/ff9631ca6d1db9c1ba656498151464b5ab74aafe",
+      "world_id": "a4ff3917b725bf2fc90075db836230dea5363183c39aa4fcf87d9bfdf3e208e4",
+      "bundle_sha256": "7a0d17dd634ed3247e509b42a668ab5d82e41e3f0962d4854be85f0664bed02f",
+      "bounds": [
+        22.0,
+        14.0,
+        4.000249999999999
+      ],
+      "components": 1545,
+      "source_instances": 87,
+      "native_engine_version": "3.17.0",
+      "thumbnail_view": "Native MuJoCo aerial inspection at reset; all source visible geometry retained. Runtime background ground hidden to show the original source flooring.",
+      "thumbnail_hidden_object_ids": [],
+      "thumbnail_hidden_runtime_geoms": [
+        "floor"
+      ],
+      "bundle_bytes": 43107616
+    },
+    {
+      "id": "hospital",
+      "name": "Hospital",
+      "description": "Clinical rooms, reception, equipment and connecting corridors.",
+      "repo": "aws-robotics/aws-robomaker-hospital-world",
+      "revision": "7161eb8448f5cba6a469da7a79ae5d660b0b7f58",
+      "world": "worlds/hospital.world",
+      "license": "MIT-0 + CC BY-4.0",
+      "source_url": "https://github.com/aws-robotics/aws-robomaker-hospital-world/tree/7161eb8448f5cba6a469da7a79ae5d660b0b7f58",
+      "world_id": "a6fd9818da89d15f78ba19249152785bc2aff52613c715ad587ea04423bf3e93",
+      "bundle_sha256": "c8dde5f809fcd82bdff3b962cf5e2653a537e74991e80ef04f2c2f33bcd1f4c0",
+      "bounds": [
+        28.0,
+        60.0,
+        4.015379943847656
+      ],
+      "components": 9198,
+      "source_instances": 181,
+      "native_engine_version": "3.17.0",
+      "thumbnail_view": "Native MuJoCo aerial cutaway at reset; 1 explicitly named source ceiling/roof visual objects hidden for the thumbnail only. Runtime background ground hidden to show the original source flooring.",
+      "thumbnail_hidden_object_ids": [
+        "source_5772"
+      ],
+      "thumbnail_hidden_runtime_geoms": [
+        "floor"
+      ],
+      "bundle_bytes": 64864241
+    },
+    {
+      "id": "bookstore",
+      "name": "Bookstore",
+      "description": "Book aisles, reading tables and a retail checkout area.",
+      "repo": "aws-robotics/aws-robomaker-bookstore-world",
+      "revision": "f5a2aaacd5418f9ecfa30f79e788856417f17c13",
+      "world": "worlds/bookstore.world",
+      "license": "MIT-0",
+      "source_url": "https://github.com/aws-robotics/aws-robomaker-bookstore-world/tree/f5a2aaacd5418f9ecfa30f79e788856417f17c13",
+      "world_id": "0b8aa71026346c45f118d3d757ac378646d351ea15d33366681237501aec02d8",
+      "bundle_sha256": "4cab37046ddb5f72c210b057df69e93a93e151c956d0167b373ffd774bcefd46",
+      "bounds": [
+        18.0,
+        17.0,
+        4.441675986831665
+      ],
+      "components": 3243,
+      "source_instances": 139,
+      "native_engine_version": "3.17.0",
+      "thumbnail_view": "Native MuJoCo aerial inspection at reset; all source visible geometry retained. Runtime background ground hidden to show the original source flooring.",
+      "thumbnail_hidden_object_ids": [],
+      "thumbnail_hidden_runtime_geoms": [
+        "floor"
+      ],
+      "bundle_bytes": 15895888
+    }
   ]
 }

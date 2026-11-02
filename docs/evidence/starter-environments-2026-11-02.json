@@ -1,0 +1,263 @@
+{
+  "native_run": "https://github.com/playground-systems/robot-worlds/actions/runs/41492179245",
+  "native_commit": "d187a8afafa25976a6c83d1b709f4d89652c6fa1",
+  "environments": [
+    {
+      "id": "warehouse",
+      "name": "Small warehouse",
+      "source_url": "https://github.com/aws-robotics/aws-robomaker-small-warehouse-world/tree/ee0af733315e78432408c3cd98d378ecee5f767c",
+      "revision": "ee0af733315e78432408c3cd98d378ecee5f767c",
+      "license": "MIT-0",
+      "world_id": "4e6234d57fff0ba655c7dc90263c30012212261f25e880d217edc0f44046d802",
+      "bundle_sha256": "62594bb42b1748b8086183374f2b2cbef387a83ee3b3a71cda0152e6cad9bdbd",
+      "bundle_bytes": 4804839,
+      "components": 692,
+      "source_instances": 25,
+      "bounds": [
+        17.0,
+        23.0,
+        10.983835716180325
+      ],
+      "validation_status": "ready",
+      "native_checks": {
+        "schema": true,
+        "geometry_and_rubric": true,
+        "physics_settling": true,
+        "physics_reset": true,
+        "initial_rubric": true,
+        "render": true
+      },
+      "native_engine_version": "3.17.0",
+      "arena": {
+        "allocated_bytes": 50331648,
+        "peak_used_bytes": 2239020,
+        "model_bodies": 767,
+        "limit_bytes": 1073741824
+      },
+      "full_native_evidence_sha256": "0d5df5a613e753693b47d657511f3ce95eb26fc5c651c8b05951275174c7618e",
+      "thumbnail_view": "Native MuJoCo aerial inspection at reset; all source visible geometry retained. Runtime background ground hidden to show the original source flooring."
+    },
+    {
+      "id": "house",
+      "name": "Furnished house",
+      "source_url": "https://github.com/aws-robotics/aws-robomaker-small-house-world/tree/ff9631ca6d1db9c1ba656498151464b5ab74aafe",
+      "revision": "ff9631ca6d1db9c1ba656498151464b5ab74aafe",
+      "license": "MIT-0",
+      "world_id": "a4ff3917b725bf2fc90075db836230dea5363183c39aa4fcf87d9bfdf3e208e4",
+      "bundle_sha256": "7a0d17dd634ed3247e509b42a668ab5d82e41e3f0962d4854be85f0664bed02f",
+      "bundle_bytes": 43107616,
+      "components": 1545,
+      "source_instances": 87,
+      "bounds": [
+        22.0,
+        14.0,
+        4.000249999999999
+      ],
+      "validation_status": "ready",
+      "native_checks": {
+        "schema": true,
+        "geometry_and_rubric": true,
+        "physics_settling": true,
+        "physics_reset": true,
+        "initial_rubric": true,
+        "render": true
+      },
+      "native_engine_version": "3.17.0",
+      "arena": {
+        "allocated_bytes": 67108864,
+        "peak_used_bytes": 9911860,
+        "model_bodies": 1620,
+        "limit_bytes": 1073741824
+      },
+      "full_native_evidence_sha256": "95f5d69c751338924644664c120b7ca9a99f60334516be02cdc8f2bd0ef04bb8",
+      "thumbnail_view": "Native MuJoCo aerial inspection at reset; all source visible geometry retained. Runtime background ground hidden to show the original source flooring."
+    },
+    {
+      "id": "hospital",
+      "name": "Hospital",
+      "source_url": "https://github.com/aws-robotics/aws-robomaker-hospital-world/tree/7161eb8448f5cba6a469da7a79ae5d660b0b7f58",
+      "revision": "7161eb8448f5cba6a469da7a79ae5d660b0b7f58",
+      "license": "MIT-0 + CC BY-4.0",
+      "world_id": "a6fd9818da89d15f78ba19249152785bc2aff52613c715ad587ea04423bf3e93",
+      "bundle_sha256": "c8dde5f809fcd82bdff3b962cf5e2653a537e74991e80ef04f2c2f33bcd1f4c0",
+      "bundle_bytes": 64864241,
+      "components": 9198,
+      "source_instances": 181,
+      "bounds": [
+        28.0,
+        60.0,
+        4.015379943847656
+      ],
+      "validation_status": "ready",
+      "native_checks": {
+        "schema": true,
+        "geometry_and_rubric": true,
+        "physics_settling": true,
+        "physics_reset": true,
+        "initial_rubric": true,
+        "render": true
+      },
+      "native_engine_version": "3.17.0",
+      "arena": {
+        "allocated_bytes": 721420288,
+        "peak_used_bytes": 333689228,
+        "model_bodies": 9273,
+        "limit_bytes": 1073741824
+      },
+      "full_native_evidence_sha256": "d5c0e191a47eb79b0f356983fe26e4ea5bda1b41562b271a87f910955906f297",
+      "thumbnail_view": "Native MuJoCo aerial cutaway at reset; 1 explicitly named source ceiling/roof visual objects hidden for the thumbnail only. Runtime background ground hidden to show the original source flooring."
+    },
+    {
+      "id": "bookstore",
+      "name": "Bookstore",
+      "source_url": "https://github.com/aws-robotics/aws-robomaker-bookstore-world/tree/f5a2aaacd5418f9ecfa30f79e788856417f17c13",
+      "revision": "f5a2aaacd5418f9ecfa30f79e788856417f17c13",
+      "license": "MIT-0",
+      "world_id": "0b8aa71026346c45f118d3d757ac378646d351ea15d33366681237501aec02d8",
+      "bundle_sha256": "4cab37046ddb5f72c210b057df69e93a93e151c956d0167b373ffd774bcefd46",
+      "bundle_bytes": 15895888,
+      "components": 3243,
+      "source_instances": 139,
+      "bounds": [
+        18.0,
+        17.0,
+        4.441675986831665
+      ],
+      "validation_status": "ready",
+      "native_checks": {
+        "schema": true,
+        "geometry_and_rubric": true,
+        "physics_settling": true,
+        "physics_reset": true,
+        "initial_rubric": true,
+        "render": true
+      },
+      "native_engine_version": "3.17.0",
+      "arena": {
+        "allocated_bytes": 134217728,
+        "peak_used_bytes": 41714424,
+        "model_bodies": 3318,
+        "limit_bytes": 1073741824
+      },
+      "full_native_evidence_sha256": "60222fe183708d13b983a724de98f3af267961d368d7c1aa03c47fed874bf484",
+      "thumbnail_view": "Native MuJoCo aerial inspection at reset; all source visible geometry retained. Runtime background ground hidden to show the original source flooring."
+    }
+  ],
+  "linux_offline_api_sdk": {
+    "status": "passed",
+    "model_calls": 0,
+    "native_runs": 0,
+    "worker": "production spawned process",
+    "application_reopen": "passed",
+    "environments": [
+      {
+        "id": "warehouse",
+        "world_id": "4e6234d57fff0ba655c7dc90263c30012212261f25e880d217edc0f44046d802",
+        "components": 692,
+        "bundle_bytes": 4804839,
+        "api_add_seconds": 0.492,
+        "sdk_reopen_seconds": 0.117,
+        "native_validation": "ready",
+        "requires_native_revalidation": false
+      },
+      {
+        "id": "house",
+        "world_id": "a4ff3917b725bf2fc90075db836230dea5363183c39aa4fcf87d9bfdf3e208e4",
+        "components": 1545,
+        "bundle_bytes": 43107616,
+        "api_add_seconds": 0.651,
+        "sdk_reopen_seconds": 0.405,
+        "native_validation": "ready",
+        "requires_native_revalidation": false
+      },
+      {
+        "id": "hospital",
+        "world_id": "a6fd9818da89d15f78ba19249152785bc2aff52613c715ad587ea04423bf3e93",
+        "components": 9198,
+        "bundle_bytes": 64864241,
+        "api_add_seconds": 2.442,
+        "sdk_reopen_seconds": 1.721,
+        "native_validation": "ready",
+        "requires_native_revalidation": false
+      },
+      {
+        "id": "bookstore",
+        "world_id": "0b8aa71026346c45f118d3d757ac378646d351ea15d33366681237501aec02d8",
+        "components": 3243,
+        "bundle_bytes": 15895888,
+        "api_add_seconds": 0.759,
+        "sdk_reopen_seconds": 0.561,
+        "native_validation": "ready",
+        "requires_native_revalidation": false
+      }
+    ]
+  },
+  "mac_offline_api_sdk": {
+    "status": "passed",
+    "model_calls": 0,
+    "native_runs": 0,
+    "worker": "production spawned process",
+    "application_reopen": "passed",
+    "environments": [
+      {
+        "id": "warehouse",
+        "world_id": "4e6234d57fff0ba655c7dc90263c30012212261f25e880d217edc0f44046d802",
+        "components": 692,
+        "bundle_bytes": 4804839,
+        "api_add_seconds": 0.548,
+        "sdk_reopen_seconds": 0.143,
+        "native_validation": "ready",
+        "requires_native_revalidation": true
+      },
+      {
+        "id": "house",
+        "world_id": "a4ff3917b725bf2fc90075db836230dea5363183c39aa4fcf87d9bfdf3e208e4",
+        "components": 1545,
+        "bundle_bytes": 43107616,
+        "api_add_seconds": 0.781,
+        "sdk_reopen_seconds": 0.614,
+        "native_validation": "ready",
+        "requires_native_revalidation": true
+      },
+      {
+        "id": "hospital",
+        "world_id": "a6fd9818da89d15f78ba19249152785bc2aff52613c715ad587ea04423bf3e93",
+        "components": 9198,
+        "bundle_bytes": 64864241,
+        "api_add_seconds": 3.181,
+        "sdk_reopen_seconds": 1.941,
+        "native_validation": "ready",
+        "requires_native_revalidation": true
+      },
+      {
+        "id": "bookstore",
+        "world_id": "0b8aa71026346c45f118d3d757ac378646d351ea15d33366681237501aec02d8",
+        "components": 3243,
+        "bundle_bytes": 15895888,
+        "api_add_seconds": 0.985,
+        "sdk_reopen_seconds": 0.641,
+        "native_validation": "ready",
+        "requires_native_revalidation": true
+      }
+    ]
+  },
+  "local_http": {
+    "status": "passed",
+    "origin": "http://127.0.0.1:8766",
+    "key_configured": false,
+    "four_available": true,
+    "preview_and_add_and_open": [
+      "warehouse",
+      "house",
+      "hospital",
+      "bookstore"
+    ]
+  },
+  "retrieval_checks": {
+    "authenticated_github_artifact_id": 13164967620,
+    "zip_crc_checked": true,
+    "all_four_bundle_sha256_match_catalog": true,
+    "thumbnails_match_frozen_bundle_previews": true,
+    "public_sdk_asset_integrity": "passed"
+  }
+}

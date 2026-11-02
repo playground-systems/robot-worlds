@@ -15,3 +15,7 @@ runs/
 MUJOCO_LOG.TXT
 dist/
 build/
+/starter-output/
+/starter-bundles/
+/starter-evidence/
+/starter-distributions/

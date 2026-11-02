@@ -19,7 +19,7 @@ from robot_worlds import add_starter, load
 from robot_worlds.server import create_app
 
 
-def check_installed(workspace: Path) -> dict:
+def check_installed(workspace: Path, *, require_current_runtime: bool = False) -> dict:
     os.environ["OPENAI_API_KEY"] = ""
     records = []
     with TestClient(create_app(workspace)) as client:
@@ -51,6 +51,10 @@ def check_installed(workspace: Path) -> dict:
             assert world["manifest"]["runtime"]["engine"] == "mujoco"
             assert len(world["spec"]["objects"]) == entry["components"]
             assert world["manifest"]["id"] == entry["world_id"]
+            if require_current_runtime:
+                assert not world["runtime_compatibility"]["requires_native_revalidation"], (
+                    f"{entry['id']}: native bundle does not match this installation"
+                )
             # Repeat through the public SDK; this checks the existing immutable
             # version instead of extracting a second scene or rebuilding assets.
             repeat_started = time.perf_counter()
@@ -79,12 +83,13 @@ def check_installed(workspace: Path) -> dict:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workspace", type=Path)
+    parser.add_argument("--require-current-runtime", action="store_true")
     args = parser.parse_args()
     if args.workspace:
-        report = check_installed(args.workspace.resolve())
+        report = check_installed(args.workspace.resolve(), require_current_runtime=args.require_current_runtime)
     else:
         with tempfile.TemporaryDirectory(prefix="robot-worlds-starter-check-") as temporary:
-            report = check_installed(Path(temporary))
+            report = check_installed(Path(temporary), require_current_runtime=args.require_current_runtime)
     print(json.dumps(report, indent=2))
 
 

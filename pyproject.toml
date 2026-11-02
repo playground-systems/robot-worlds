@@ -31,6 +31,15 @@ robot-worlds = "robot_worlds.cli:app"
 [dependency-groups]
 dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
 
+[tool.hatch.build]
+# These are release preparation workspaces; the installed copies live in src/.
+exclude = [
+  "/starter-output/",
+  "/starter-bundles/",
+  "/starter-evidence/",
+  "/starter-distributions/",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/robot_worlds"]
 

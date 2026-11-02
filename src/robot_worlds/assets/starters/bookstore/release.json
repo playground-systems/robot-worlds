@@ -1,0 +1,26 @@
+{
+  "id": "bookstore",
+  "name": "Bookstore",
+  "description": "Book aisles, reading tables and a retail checkout area.",
+  "repo": "aws-robotics/aws-robomaker-bookstore-world",
+  "revision": "f5a2aaacd5418f9ecfa30f79e788856417f17c13",
+  "world": "worlds/bookstore.world",
+  "license": "MIT-0",
+  "source_url": "https://github.com/aws-robotics/aws-robomaker-bookstore-world/tree/f5a2aaacd5418f9ecfa30f79e788856417f17c13",
+  "world_id": "0b8aa71026346c45f118d3d757ac378646d351ea15d33366681237501aec02d8",
+  "bundle_sha256": "4cab37046ddb5f72c210b057df69e93a93e151c956d0167b373ffd774bcefd46",
+  "bounds": [
+    18.0,
+    17.0,
+    4.441675986831665
+  ],
+  "components": 3243,
+  "source_instances": 139,
+  "native_engine_version": "3.17.0",
+  "thumbnail_view": "Native MuJoCo aerial inspection at reset; all source visible geometry retained. Runtime background ground hidden to show the original source flooring.",
+  "thumbnail_hidden_object_ids": [],
+  "thumbnail_hidden_runtime_geoms": [
+    "floor"
+  ],
+  "bundle_bytes": 15895888
+}

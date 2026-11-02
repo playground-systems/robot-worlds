@@ -1,0 +1,26 @@
+{
+  "id": "warehouse",
+  "name": "Small warehouse",
+  "description": "Storage aisles, loaded shelving and logistics equipment.",
+  "repo": "aws-robotics/aws-robomaker-small-warehouse-world",
+  "revision": "ee0af733315e78432408c3cd98d378ecee5f767c",
+  "world": "worlds/no_roof_small_warehouse/no_roof_small_warehouse.world",
+  "license": "MIT-0",
+  "source_url": "https://github.com/aws-robotics/aws-robomaker-small-warehouse-world/tree/ee0af733315e78432408c3cd98d378ecee5f767c",
+  "world_id": "4e6234d57fff0ba655c7dc90263c30012212261f25e880d217edc0f44046d802",
+  "bundle_sha256": "62594bb42b1748b8086183374f2b2cbef387a83ee3b3a71cda0152e6cad9bdbd",
+  "bounds": [
+    17.0,
+    23.0,
+    10.983835716180325
+  ],
+  "components": 692,
+  "source_instances": 25,
+  "native_engine_version": "3.17.0",
+  "thumbnail_view": "Native MuJoCo aerial inspection at reset; all source visible geometry retained. Runtime background ground hidden to show the original source flooring.",
+  "thumbnail_hidden_object_ids": [],
+  "thumbnail_hidden_runtime_geoms": [
+    "floor"
+  ],
+  "bundle_bytes": 4804839
+}

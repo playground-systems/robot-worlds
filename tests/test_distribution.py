@@ -4,6 +4,7 @@ import importlib.util
 import io
 import json
 import tarfile
+import tomllib
 import zipfile
 from pathlib import Path
 
@@ -68,6 +69,63 @@ def test_private_local_state_and_unsafe_paths_are_rejected(tmp_path, monkeypatch
     with pytest.raises(checker.DistributionError) as caught:
         checker.inspect_distributions(tmp_path)
     assert "private content" not in str(caught.value)
+
+
+@pytest.mark.parametrize("directory", sorted(checker.PREPARATION_DIRECTORIES))
+@pytest.mark.parametrize("archive_kind", ["source", "wheel"])
+def test_preparation_workspaces_cannot_leak_into_either_archive(
+    tmp_path, monkeypatch, directory, archive_kind,
+):
+    content = b"intermediate native output or duplicate release artifact"
+    path = f"{directory}/warehouse/scene.bin"
+    if archive_kind == "source":
+        archives(tmp_path, monkeypatch, source_extra={path: content})
+    else:
+        # A nested copy is also preparation data, rather than installed assets/starters/.
+        path = "robot_worlds/" + path
+        archives(tmp_path, monkeypatch, wheel_change=lambda files: files.update({path: content}))
+    with pytest.raises(checker.DistributionError, match="Local state") as caught:
+        checker.inspect_distributions(tmp_path)
+    assert content.decode() not in str(caught.value)
+
+
+def test_installed_starter_bundles_remain_in_both_checked_archives(tmp_path, monkeypatch):
+    archives(tmp_path, monkeypatch)
+    wheel = checker._archive_files(tmp_path / "robot_worlds-0.1.0a1-py3-none-any.whl")
+    source = checker._archive_files(tmp_path / "robot_worlds-0.1.0a1.tar.gz")
+    for starter in ("warehouse", "house", "hospital", "bookstore"):
+        path = f"robot_worlds/assets/starters/{starter}/world.zip"
+        assert wheel[path] == source["robot_worlds-0.1.0a1/src/" + path]
+    assert checker.inspect_distributions(tmp_path)["status"] == "passed"
+
+
+@pytest.mark.parametrize("vcs_ignores_present", [False, True])
+def test_build_selection_excludes_preparation_but_keeps_installed_starters(
+    tmp_path, vcs_ignores_present,
+):
+    # Optional build backend: inspect its selection in a tiny fixture, never build
+    # or scan the real conversion outputs. Also cover a source checkout without .gitignore.
+    sdist = pytest.importorskip("hatchling.builders.sdist")
+    wheel = pytest.importorskip("hatchling.builders.wheel")
+    root = CHECKER_PATH.parents[1]
+    config = tomllib.loads((root / "pyproject.toml").read_text())
+    config["tool"]["hatch"]["build"]["ignore-vcs"] = not vcs_ignores_present
+    (tmp_path / "pyproject.toml").write_text((root / "pyproject.toml").read_text())
+    if vcs_ignores_present:
+        (tmp_path / ".gitignore").write_text((root / ".gitignore").read_text())
+    paths = ["src/robot_worlds/__init__.py", "THIRD_PARTY_NOTICES.md"]
+    paths += [f"{directory}/warehouse/unneeded.bin" for directory in checker.PREPARATION_DIRECTORIES]
+    paths += [f"src/robot_worlds/assets/starters/{starter}/world.zip"
+              for starter in ("warehouse", "house", "hospital", "bookstore")]
+    for name in paths:
+        target = tmp_path / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"tiny synthetic resource")
+    for builder_type in (sdist.SdistBuilder, wheel.WheelBuilder):
+        builder = builder_type(str(tmp_path), config=config)
+        selected = {file.relative_path for file in builder.recurse_included_files()}
+        assert all(not set(Path(name).parts) & checker.PREPARATION_DIRECTORIES for name in selected)
+        assert {name for name in paths if name.startswith("src/")} <= selected
 
 
 def test_missing_vendor_file_fails_before_clean_install(tmp_path, monkeypatch):
