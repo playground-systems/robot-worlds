@@ -1,0 +1,1230 @@
+{
+  "schema_version": "1.0",
+  "tasks": [
+    {
+      "id": "store_dish_close",
+      "name": "Put the preparation bowl away",
+      "task": "Pull open the upper deep drawer at the right end of the kitchen counter. Grasp the preparation-island bowl by its rim, carry it over, set it fully inside on the drawer floor, let go, and push the drawer shut.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part150",
+          "target_id": null,
+          "threshold": 0.38,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "holding",
+          "object_id": "prep_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "prep_bowl_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "prep_bowl_part0",
+          "target_id": "counter_part150",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "prep_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part150",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "release"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "prep_bowl_part0",
+          "target_id": "dish_drawer_closed",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "closed_cavity_containment",
+          "description": "closed cavity containment",
+          "duration": 0.4,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "bowl_grasp_return",
+      "name": "Lift and return the preparation bowl",
+      "task": "Grasp the preparation-island bowl by its rim, lift and carry it a short distance, then put it back on the island and let go.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "prep_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "prep_bowl_part0",
+          "target_id": null,
+          "threshold": 0.16,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "prep_bowl_part0",
+          "target_id": "prep_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "prep_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "prep_to_counter",
+      "name": "Move a bowl to the kitchen counter",
+      "task": "Carry the preparation-island bowl to a clear part of the kitchen counter and release it.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "prep_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "prep_bowl_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "prep_bowl_part0",
+          "target_id": "counter_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "prep_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "counter_to_prep",
+      "name": "Bring the counter bowl to preparation",
+      "task": "Carry the bowl from the kitchen counter to a free place on the preparation island, then let it settle.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "counter_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "counter_bowl_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "counter_bowl_part0",
+          "target_id": "prep_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "counter_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "serve_from_sideboard",
+      "name": "Set out a bowl for serving",
+      "task": "Pick up the bowl on top of the wooden sideboard and set it near the front centre of the preparation island.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "serving_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "serving_bowl_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "serving_bowl_part0",
+          "target_id": "prep_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "serving_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "serving_bowl_part0",
+          "target_id": "serving_position",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "contained",
+          "description": "contained",
+          "duration": 0.4,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "recipe_to_counter",
+      "name": "Bring the recipe notebook to the counter",
+      "task": "Pick up the recipe notebook by its thin edge and carry it from the island to a clear part of the kitchen counter. Set it down flat and release it.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "recipe_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "recipe_note_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "recipe_note_part0",
+          "target_id": "counter_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "recipe_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "recipe_to_sideboard",
+      "name": "Put the recipe notebook on the sideboard",
+      "task": "Carry the recipe notebook from the island to the sideboard top and set it down flat.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "recipe_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "recipe_note_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "recipe_note_part0",
+          "target_id": "sideboard_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "recipe_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "open_upper_deep",
+      "name": "Pull open the upper deep drawer at the right end",
+      "task": "Pull the upper deep drawer at the right end of the kitchen counter open by its handle.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part150",
+          "target_id": null,
+          "threshold": 0.38,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "cycle_upper_deep",
+      "name": "Open and shut the upper deep drawer at the right end",
+      "task": "Pull the upper deep drawer at the right end open by its handle, then push it fully shut.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part150",
+          "target_id": null,
+          "threshold": 0.38,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part150",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "open_wide_lower",
+      "name": "Pull open the wide lower drawer in the middle",
+      "task": "Pull the wide lower drawer in the middle of the kitchen counter open by its handle.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part128",
+          "target_id": null,
+          "threshold": 0.38,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "cycle_wide_lower",
+      "name": "Open and shut the wide lower drawer in the middle",
+      "task": "Pull the wide lower drawer in the middle open by its handle, then push it fully shut.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part128",
+          "target_id": null,
+          "threshold": 0.38,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part128",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "open_counter_door",
+      "name": "Swing open the kitchen cabinet door",
+      "task": "Pull the vertical handle on the kitchen cabinet door and swing the door open.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part119",
+          "target_id": null,
+          "threshold": -1.35,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "cycle_counter_door",
+      "name": "Open and close the kitchen cabinet door",
+      "task": "Swing the kitchen cabinet door open by its vertical handle, then push the door shut.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part119",
+          "target_id": null,
+          "threshold": -1.35,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part119",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "fetch_stored_bowl",
+      "name": "Fetch the bowl from the sideboard drawer",
+      "task": "Pull open the wooden sideboard upper drawer. Grasp the bowl inside by its rim, carry it to the preparation island, and set it down.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "sideboard_part19",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "opened",
+          "description": "opened",
+          "duration": 0.3,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "holding",
+          "object_id": "stored_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [
+            "opened"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "stored_bowl_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "stored_bowl_part0",
+          "target_id": "prep_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "stored_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "store_recipe_close",
+      "name": "Put the recipe notebook in the sideboard",
+      "task": "Open the lower sideboard drawer, pick up the recipe notebook from the island, place it fully inside the drawer and let go, then push the drawer shut.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "sideboard_part41",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "holding",
+          "object_id": "recipe_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "recipe_note_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "recipe_note_part0",
+          "target_id": "sideboard_part41",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "recipe_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "sideboard_part41",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "release"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "recipe_note_part0",
+          "target_id": "sideboard_lower_closed",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "closed_cavity_containment",
+          "description": "closed cavity containment",
+          "duration": 0.4,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "clear_prep_close",
+      "name": "Clear the preparation island",
+      "task": "First put the recipe notebook on the sideboard top. Then pull open the upper deep kitchen drawer, carry the preparation bowl into it, release the bowl on its floor, and push the drawer shut.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "recipe_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "recipe_grasp",
+          "description": "recipe grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "recipe_note_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "recipe_carry",
+          "description": "recipe carry",
+          "duration": 0.0,
+          "after": [
+            "recipe_grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "recipe_note_part0",
+          "target_id": "sideboard_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "recipe_support",
+          "description": "recipe support",
+          "duration": 0.25,
+          "after": [
+            "recipe_carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "recipe_note_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "recipe_release",
+          "description": "recipe release",
+          "duration": 0.4,
+          "after": [
+            "recipe_carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part150",
+          "target_id": null,
+          "threshold": 0.38,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [
+            "recipe_release"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "holding",
+          "object_id": "prep_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "prep_bowl_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "prep_bowl_part0",
+          "target_id": "counter_part150",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "prep_bowl_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "counter_part150",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "release"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "prep_bowl_part0",
+          "target_id": "dish_drawer_closed",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "closed_cavity_containment",
+          "description": "closed cavity containment",
+          "duration": 0.4,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    }
+  ],
+  "selected_task_id": "store_dish_close"
+}

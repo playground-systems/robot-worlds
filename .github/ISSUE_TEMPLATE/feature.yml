@@ -1,0 +1,21 @@
+name: Feature proposal
+description: Propose an environment, robot, controller or workflow improvement.
+body:
+  - type: textarea
+    id: use_case
+    attributes:
+      label: What task should become possible or easier?
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Proposed behavior and success evidence
+      description: Describe the input/output, physical or grading boundary, and how it could be checked.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Relevant assets or primary sources
+      description: Include source revisions and licenses for proposed robot models, controllers or scene assets.

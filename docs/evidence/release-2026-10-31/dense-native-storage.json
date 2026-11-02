@@ -1,0 +1,47 @@
+{
+  "kind": "mocked plan replay and recorded actions; native physics, sensors, grading and portable artifacts",
+  "model_calls": 0,
+  "autonomous": false,
+  "world_id": "bfb93440cf618a0535017f4015f833b6b67d776c9525a0dcb1e474c0b9e8e4eb",
+  "report_id": "03765804f3bf4de8a2874bf0e91db5ea",
+  "components": 3427,
+  "samples": 1168,
+  "trace_bytes": 182130667,
+  "sim_seconds": 58.24000000002521,
+  "summary": {
+    "attempted": 1,
+    "valid": 1,
+    "successes": 0,
+    "invalid_or_interrupted": 0,
+    "success_rate": 0.0,
+    "success_interval_95": [
+      0,
+      0.7934506856227626
+    ]
+  },
+  "portable_reload_and_regrade": true,
+  "elapsed_seconds": 552.281335232,
+  "peak_process_memory_bytes": 4767346688,
+  "ci_run": "https://github.com/playground-systems/robot-worlds/actions/runs/41269459293",
+  "pull_request_head": "f289be1870c2e9d6565b210aaa8245912812e775",
+  "job_conclusion": "success",
+  "timing_scope": "Includes mocked-plan validation, native RGB-D/actions, recorded-state audit, report, export/reload and regrading. No model inference.",
+  "phase_elapsed_seconds": {
+    "evaluation_completed": 350.79,
+    "state_audit_started": 350.8,
+    "state_audit_completed": 456.4,
+    "exports_extracted": 465.75,
+    "portable_regrade_verified": 551.18
+  },
+  "harness_followup": "The green run repeatedly deep-copied World.spec while counting objects during its audit. A subsequent harness-only edit caches the frozen component count once; assertions are unchanged. Recorded timings precede that edit.",
+  "artifact": {
+    "run": "41269459293",
+    "artifact_id": 13069071596,
+    "bytes": 281917654,
+    "sha256": "a4b6fea9ad427e9755fd340d1fe5000d8197d866202bacfb97b618f17d116737",
+    "whole_archive_verified": true
+  },
+  "commit": "5a874ce3dd2ebcdba58e4bd11b1852fe7c23978e",
+  "wheel_content_matches_fresh_mac_package": true,
+  "wheel_content_note": "Every uncompressed wheel member matches the final package tested on Mac (run 41268962945); ZIP container timestamps may differ."
+}

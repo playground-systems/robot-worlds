@@ -1,0 +1,399 @@
+{
+  "scope": "Full acceptance attempts retained under .robot-worlds/live-*; no isolated paid model probes in this sequence",
+  "model": "gpt-6-astra",
+  "codex_calls_attempted": 41,
+  "codex_reported_tokens": 1431223,
+  "codex_billed_usd": null,
+  "notes": [
+    "Codex uses the existing supported sign-in, not an extracted session API key. No API invoice is supplied by this transport.",
+    "A timed-out Codex call did not report token usage; totals are reported usage, not a complete billing total.",
+    "Two exhausted-credit API attempts returned zero reported tokens. Budget reservations are conservative accounting, not confirmed charges.",
+    "No new paid compute was started. Hosted checks made no model calls."
+  ],
+  "api_unreconciled_budget_reservations_usd": 1.040425,
+  "api_billed_usd": null,
+  "attempts": [
+    {
+      "attempt": "live-household-acceptance-01",
+      "workflow_completed": false,
+      "task_success": false,
+      "elapsed_seconds": 4.251648082999964,
+      "world_id": null,
+      "phases": {
+        "run": {
+          "calls": 1,
+          "reported_input_tokens": 0,
+          "reported_output_tokens": 0,
+          "reported_total_tokens": 0,
+          "billing_mode": "usd_budget",
+          "billed_usd": null,
+          "unreconciled_budget_reservation_usd": 0.5202125
+        }
+      },
+      "record_sha256": "996d799b84a073528589a654b0804c8473a50e4ab2cee6e02e598b78587cfae3",
+      "error": {
+        "type": "GenerationError",
+        "message": "World generation request failed; latest candidate retained"
+      }
+    },
+    {
+      "attempt": "live-household-acceptance-02",
+      "workflow_completed": false,
+      "task_success": false,
+      "elapsed_seconds": 2.5083032919992547,
+      "world_id": null,
+      "phases": {
+        "run": {
+          "calls": 1,
+          "reported_input_tokens": 0,
+          "reported_output_tokens": 0,
+          "reported_total_tokens": 0,
+          "billing_mode": "usd_budget",
+          "billed_usd": null,
+          "unreconciled_budget_reservation_usd": 0.5202125
+        }
+      },
+      "record_sha256": "03a85c8ec0f7267470fa8a52f73f33b2ab4ada9b9d37639a33603f54c61b8a14",
+      "error": {
+        "type": "GenerationError",
+        "message": "World generation request failed; latest candidate retained"
+      }
+    },
+    {
+      "attempt": "live-household-codex-01",
+      "workflow_completed": true,
+      "task_success": false,
+      "elapsed_seconds": 167.5245632920014,
+      "world_id": "f02c3581d6e3fa54e481c67bf525936d650767af2b9d48bf2b781c9766a6aea2",
+      "phases": {
+        "generation": {
+          "calls": 1,
+          "reported_input_tokens": 23239,
+          "reported_output_tokens": 2398,
+          "reported_total_tokens": 25637,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        },
+        "policy": {
+          "calls": 9,
+          "reported_input_tokens": 333294,
+          "reported_output_tokens": 762,
+          "reported_total_tokens": 334056,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        }
+      },
+      "record_sha256": "427d5ac778009e27444d3f462ac1acca84c63b6e803fb53ea8cc884e686bd4ab"
+    },
+    {
+      "attempt": "live-warehouse-codex-01",
+      "workflow_completed": false,
+      "task_success": false,
+      "elapsed_seconds": 48.55433391599945,
+      "world_id": null,
+      "phases": {
+        "generation": {
+          "calls": 1,
+          "reported_input_tokens": 25731,
+          "reported_output_tokens": 1785,
+          "reported_total_tokens": 27516,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        },
+        "policy": {
+          "calls": 0,
+          "reported_input_tokens": 0,
+          "reported_output_tokens": 0,
+          "reported_total_tokens": 0,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        }
+      },
+      "record_sha256": "b2589ac0255ed35b98abacc505185acd89b3ea96a3020bef60cc3a2accefc18a",
+      "error": {
+        "type": "GenerationError",
+        "message": "Source asset resolution failed; no procedural fallback"
+      }
+    },
+    {
+      "attempt": "live-warehouse-codex-02",
+      "workflow_completed": false,
+      "task_success": false,
+      "elapsed_seconds": 58.70057374999669,
+      "world_id": null,
+      "phases": {
+        "generation": {
+          "calls": 1,
+          "reported_input_tokens": 25780,
+          "reported_output_tokens": 2176,
+          "reported_total_tokens": 27956,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        },
+        "policy": {
+          "calls": 0,
+          "reported_input_tokens": 0,
+          "reported_output_tokens": 0,
+          "reported_total_tokens": 0,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        }
+      },
+      "record_sha256": "7491d3864fdb80d394e6fd6cdcc4569283c03587693225784f57b0b80940455e",
+      "error": {
+        "type": "GenerationError",
+        "message": "Source asset resolution failed; no procedural fallback"
+      }
+    },
+    {
+      "attempt": "live-warehouse-codex-03",
+      "workflow_completed": false,
+      "task_success": false,
+      "elapsed_seconds": 302.1557294580016,
+      "world_id": "cec7b9914429fbc6e8c564e6adc97a283f10d239321891531c20f6662f073b4f",
+      "phases": {
+        "generation": {
+          "calls": 3,
+          "reported_input_tokens": 118642,
+          "reported_output_tokens": 21115,
+          "reported_total_tokens": 139757,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        },
+        "policy": {
+          "calls": 0,
+          "reported_input_tokens": 0,
+          "reported_output_tokens": 0,
+          "reported_total_tokens": 0,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        }
+      },
+      "record_sha256": "f70d947351653a02ea316a879b0999827ba1cb679b6542348fb241faac554947",
+      "error": {
+        "type": "RuntimeError",
+        "message": "Generated environment did not pass physical validation"
+      }
+    },
+    {
+      "attempt": "live-warehouse-codex-04",
+      "workflow_completed": true,
+      "task_success": false,
+      "elapsed_seconds": 363.9848176669984,
+      "world_id": "b54104868318cfcdd9e6c802113de102a9714f584e25ad95b4dd806fef4d558c",
+      "phases": {
+        "generation": {
+          "calls": 3,
+          "reported_input_tokens": 119973,
+          "reported_output_tokens": 19443,
+          "reported_total_tokens": 139416,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        },
+        "policy": {
+          "calls": 3,
+          "reported_input_tokens": 78532,
+          "reported_output_tokens": 129,
+          "reported_total_tokens": 78661,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        }
+      },
+      "record_sha256": "f43e0fff9ca32b042a2cac0c31672d161acbca879d883cdfe6b541707d88e5ed"
+    },
+    {
+      "attempt": "live-warehouse-dense-01",
+      "workflow_completed": true,
+      "task_success": true,
+      "elapsed_seconds": 251.84818637499848,
+      "world_id": "e034c4a539fe9f36e1b1eea6c63c45dbf688ae1f1f3f518457f013273cb6a477",
+      "phases": {
+        "generation": {
+          "calls": 1,
+          "reported_input_tokens": 36965,
+          "reported_output_tokens": 7669,
+          "reported_total_tokens": 44634,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        },
+        "policy": {
+          "calls": 3,
+          "reported_input_tokens": 78709,
+          "reported_output_tokens": 100,
+          "reported_total_tokens": 78809,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        }
+      },
+      "record_sha256": "7e018688536d0d5dc5216d4a47829ef2a99cbe39dd66b85d69a97e3ed81cbc4c"
+    },
+    {
+      "attempt": "live-warehouse-edit-01",
+      "workflow_completed": true,
+      "task_success": true,
+      "elapsed_seconds": 140.5187625409999,
+      "world_id": "da51b8054487acc81fb5b2d46c6c5a485eda09b90a1d72c0243b4e8a0f4eb57a",
+      "phases": {
+        "edit": {
+          "calls": 1,
+          "reported_input_tokens": 34051,
+          "reported_output_tokens": 47,
+          "reported_total_tokens": 34098,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        },
+        "policy": {
+          "calls": 3,
+          "reported_input_tokens": 79569,
+          "reported_output_tokens": 74,
+          "reported_total_tokens": 79643,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        }
+      },
+      "record_sha256": "fb182b76ac092c487ec9750abab87c7e345c317c56c74a685c9987a72e0923d7"
+    },
+    {
+      "attempt": "live-warehouse-presentation-01",
+      "workflow_completed": false,
+      "task_success": false,
+      "elapsed_seconds": 180.2801760000002,
+      "world_id": null,
+      "phases": {
+        "generation": {
+          "calls": 1,
+          "reported_input_tokens": 36945,
+          "reported_output_tokens": 13357,
+          "reported_total_tokens": 50302,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        },
+        "policy": {
+          "calls": 0,
+          "reported_input_tokens": 0,
+          "reported_output_tokens": 0,
+          "reported_total_tokens": 0,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        }
+      },
+      "record_sha256": "944cb2b9e728608a00f62dcaed7819b091dd8dea6be56fd60565120f9ec6e161",
+      "error": {
+        "type": "GenerationError",
+        "message": "World generation request failed: The Codex input exceeds its text-size limit; no candidate created"
+      }
+    },
+    {
+      "attempt": "live-warehouse-presentation-02",
+      "workflow_completed": false,
+      "task_success": false,
+      "elapsed_seconds": 180.49032333300056,
+      "world_id": null,
+      "phases": {
+        "generation": {
+          "calls": 1,
+          "reported_input_tokens": 0,
+          "reported_output_tokens": 0,
+          "reported_total_tokens": 0,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": true
+        },
+        "policy": {
+          "calls": 0,
+          "reported_input_tokens": 0,
+          "reported_output_tokens": 0,
+          "reported_total_tokens": 0,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        }
+      },
+      "record_sha256": "a21f5becea8137b680ad83274e1d91ae30d138336fbb8e48bf5e3aefb3630913",
+      "error": {
+        "type": "GenerationError",
+        "message": "World generation request failed: Codex decision exceeded its wall-time limit; no candidate created"
+      }
+    },
+    {
+      "attempt": "live-warehouse-presentation-03",
+      "workflow_completed": false,
+      "task_success": false,
+      "elapsed_seconds": 363.27076733300055,
+      "world_id": "bd64c5048f73b99c19970b643b004d33a877827e3cdf448977ae0834096e8722",
+      "phases": {
+        "generation": {
+          "calls": 2,
+          "reported_input_tokens": 86792,
+          "reported_output_tokens": 21709,
+          "reported_total_tokens": 108501,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        },
+        "policy": {
+          "calls": 1,
+          "reported_input_tokens": 22386,
+          "reported_output_tokens": 101,
+          "reported_total_tokens": 22487,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        }
+      },
+      "record_sha256": "969e84c1759b4d26ee7f0ad7efc16e10af765705d4b9346989b661f009df2d70",
+      "error": {
+        "type": "OSError",
+        "message": "[Errno 28] No space left on device"
+      }
+    },
+    {
+      "attempt": "live-warehouse-visual-repair-01",
+      "workflow_completed": false,
+      "task_success": false,
+      "elapsed_seconds": 303.5668946249971,
+      "world_id": "2bb6f3fd50b889278c828a7e9c6b732847e3aee62470e5a88d508e230c8228f7",
+      "phases": {
+        "edit": {
+          "calls": 1,
+          "reported_input_tokens": 33160,
+          "reported_output_tokens": 805,
+          "reported_total_tokens": 33965,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        },
+        "policy": {
+          "calls": 6,
+          "reported_input_tokens": 205311,
+          "reported_output_tokens": 474,
+          "reported_total_tokens": 205785,
+          "billing_mode": "codex_plan",
+          "billed_usd": null,
+          "usage_missing_for_attempted_call": false
+        }
+      },
+      "record_sha256": "8ba2d6f7efada1de899b77c9e9cf9e16bc94171953c842c486d9e4aed4f74c6e",
+      "error": {
+        "type": "IncompleteProcess",
+        "message": "Exited with code 120 before report finalization after six recorded decisions. Dense trace reached 1.2 GiB during disk/memory pressure. Exact OS failure was not retained; no task verdict is claimed."
+      }
+    }
+  ]
+}

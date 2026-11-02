@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "robot-worlds"
+version = "0.1.0a1"
+description = "Text-generated robot worlds with tool-using agents and executable rubrics"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+  "mujoco>=3.3,<4",
+  "numpy>=2,<3",
+  "onnxruntime>=1.20,<2",
+  "pydantic>=2.10,<3",
+  "openai>=2,<3",
+  "pillow>=11,<13",
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.34,<1",
+  "typer>=0.15,<1",
+  "httpx>=0.28,<1",
+]
+
+[project.optional-dependencies]
+preparation = ["coacd==1.0.14"]
+
+[project.scripts]
+robot-worlds = "robot_worlds.cli:app"
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
+
+[tool.hatch.build]
+# These are release preparation workspaces; the installed copies live in src/.
+exclude = [
+  "/starter-output/",
+  "/starter-bundles/",
+  "/starter-evidence/",
+  "/starter-distributions/",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/robot_worlds"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"THIRD_PARTY_NOTICES.md" = "robot_worlds/THIRD_PARTY_NOTICES.md"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]

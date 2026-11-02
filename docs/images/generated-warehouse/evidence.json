@@ -1,0 +1,15 @@
+{
+  "world_id": "b54104868318cfcdd9e6c802113de102a9714f584e25ad95b4dd806fef4d558c",
+  "run_id": "f7549b0dc6bd4ff9a14d0a439c182c90",
+  "capture": "Actual local application via computer use, 2026-10-31",
+  "view": "Reference layout with enclosure hidden using Cutaway; not a robot rollout",
+  "generated_by": "gpt-6-astra through CodexClient; not a scripted layout",
+  "limitations": [
+    "Layout is sparse compared with the supplied visual reference.",
+    "Navigation failed because the generated zero-tolerance region excluded the base origin 1mm below the floor, despite reaching the XY target. New validation now rejects this rule; the recorded score is unchanged."
+  ],
+  "files": {
+    "floor-plan.png": "a56d77831ae2fcd4bc568b9d3ab4cdfe6e0cc28210eb5befc09ed58174a367c9",
+    "overview.png": "92352442c4c18ec89d0bf543afee7cba6af572fee9db79a144da93c48d6330d9"
+  }
+}

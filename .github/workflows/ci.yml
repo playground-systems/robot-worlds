@@ -1,0 +1,50 @@
+name: checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    # A one-off household acceptance request must not start the full suite.
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'run-household-acceptance') && !contains(github.event.pull_request.labels.*.name, 'run-package-acceptance') && !contains(github.event.pull_request.labels.*.name, 'run-warehouse-acceptance') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Install Python tooling
+        run: python -m pip install uv==0.11.28
+      - name: Install locked dependencies
+        run: uv sync --frozen --dev
+      - name: Install Linux rendering dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgl1 libegl1 xvfb xauth
+      - name: Lint
+        run: uv run --frozen ruff check src tests
+      - name: Viewer interaction and resource checks
+        run: node --test tests/*.test.mjs
+      - name: Original asset preparation benchmark and bounds equivalence
+        if: runner.os == 'Linux'
+        run: uv run --frozen python tools/benchmark_asset_preparation.py
+      - name: Shared native asset compilation and physical equivalence
+        if: runner.os == 'Linux'
+        run: uv run --frozen python tools/benchmark_native_assets.py
+      - name: Generation timing with mocked model and native validation
+        if: runner.os == 'Linux'
+        run: xvfb-run -a uv run --frozen python tools/benchmark_generation.py
+      - name: Test on macOS
+        if: runner.os == 'macOS'
+        run: uv run --frozen pytest -q -ra
+      - name: Test on Linux
+        if: runner.os == 'Linux'
+        run: xvfb-run -a uv run --frozen pytest -q -ra
+      - name: Build distribution
+        run: uv build

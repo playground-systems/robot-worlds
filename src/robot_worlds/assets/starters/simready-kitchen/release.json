@@ -1,0 +1,28 @@
+{
+  "id": "simready-kitchen",
+  "name": "Dish preparation and kitchen storage",
+  "description": "A real rear-wall kitchenette faces an open preparation island; a wooden sideboard provides accessible household storage.",
+  "repo": "nvidia/simready-assets",
+  "revision": "4763fbfaa4f8e97658e68b57d01b4c86659e08b5",
+  "optimized_revision": "e52172290393dde80e8d383861db94b8d0e92ec3",
+  "world": "generation-plan.json",
+  "license": "CC BY-4.0",
+  "source_url": "https://huggingface.co/datasets/nvidia/simready-assets",
+  "world_id": "41e48f70b53c8f9cf5315632a653d708120d1c773eae43ba3b7f54de3820d93b",
+  "bundle_sha256": "5ff168e903837ac2ec34374794781aab2642dad4a4b0370b80d7891e4718080e",
+  "bundle_bytes": 32324773,
+  "bounds": [
+    9.0,
+    7.0,
+    3.2
+  ],
+  "components": 436,
+  "source_instances": 8,
+  "task_count": 16,
+  "authored_by": "gpt-6-astra",
+  "native_engine_version": "3.17.0",
+  "thumbnail_view": "Native MuJoCo aerial reset inspection. No geometry hidden; policy camera and world physics unchanged.",
+  "thumbnail_hidden_object_ids": [],
+  "thumbnail_hidden_runtime_geoms": [],
+  "interaction_evidence": "Native reset and task-reference checks; policy completion unverified"
+}

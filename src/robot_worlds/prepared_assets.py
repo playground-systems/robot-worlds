@@ -1,0 +1,286 @@
+"""Pinned source assets available without a network request or conversion job.
+
+References are generation input only. Saved worlds contain ordinary physical
+objects and copied assets, so loading/exporting never depends on this catalog.
+"""
+from __future__ import annotations
+
+import copy
+import json
+import math
+from itertools import product
+from pathlib import Path
+from typing import Annotated, Literal
+
+import numpy as np
+from pydantic import Field
+
+from .asset_import import import_convex_mesh_asset, import_mjcf_asset
+from .asset_library import resolve_asset_library
+from .asset_resolution import SourceAssetRequest
+from .asset_sourcing import AssetCandidate, AssetSearch, source_asset
+from .generated_assets import CreatedAssetGroup
+from .large_scene import _rotate
+from .models import Identifier, Model, Number, Positive, Vec3, WorldSpec
+
+PreparedAssetId = Identifier
+MAX_EXPANDED_REGIONS = 10_000
+_ROOT = Path(__file__).parent / "assets/household"
+_FOLDERS = {"google-porcelain-bowl": "porcelain_bowl", "nvidia-microwave079": "microwave079"}
+
+
+class PreparedJointInitial(Model):
+    name: Identifier
+    initial: Number
+
+
+class PreparedAssetInstance(Model):
+    id: Identifier = Field(description="Instance prefix. Materialized IDs are listed in the prepared asset catalog.")
+    asset_id: PreparedAssetId = Field(description="An exact ID from the supplied prepared asset catalog; never invent an ID.")
+    position: Vec3 = Field(description="World position of the asset's full XY bounds center and lowest Z point, metres. Put Z just above the support top.")
+    quarter_turns: Literal[0, 1, 2, 3] = Field(default=0, description="Rotate the whole asset counterclockwise about world Z by this many 90-degree turns, around its bottom-center. Source scale, mass, joint mechanisms and UVs stay unchanged.")
+    repeat: tuple[Annotated[int, Field(ge=1, le=1000)], Annotated[int, Field(ge=1, le=1000)], Annotated[int, Field(ge=1, le=1000)]] = Field(default=(1, 1, 1), description="XYZ copy counts. For more than one copy, substitute {prefix} in catalog IDs with id_ix_iy_iz, using zero-based grid indices. A single copy retains the plain id prefix.")
+    spacing: Vec3 = Field(default=(0, 0, 0), description="Spacing between copies in WORLD xyz metres, not rotated by quarter_turns. Each repeated axis needs nonzero spacing and sufficient physical clearance. Position is the first copy's bottom-center.")
+    mass: Positive | None = Field(default=None, description="Mass per copy. Set only when the catalog requires an explicit estimated mass; otherwise leave null.")
+    joint_initials: list[PreparedJointInitial] = Field(default_factory=list, max_length=16, description="Optional source joint names and initial values in radians/metres. Only catalog joints are accepted, with no duplicate names.")
+
+
+class GenerationSpec(WorldSpec):
+    created_assets: list[CreatedAssetGroup] = Field(default_factory=list, max_length=100,
+        description="Group generated object/cavity IDs only for assets authorized by the supplied completed empty-search evidence. Components live in objects or expanded assemblies.")
+    asset_requests: list[SourceAssetRequest] = Field(default_factory=list, max_length=8,
+        description="Request missing online assets before final scene planning. Resolved dimensions/IDs arrive in the next catalog; leave empty when using installed assets.")
+    prepared_assets: list[PreparedAssetInstance] = Field(default_factory=list, max_length=100,
+                                                       description="Reuse pinned source assets instead of emitting their component geometry. Surrounding layout remains freely generated.")
+
+
+def _place(asset, instance):
+    lower = np.min([np.array(o.position)-np.array(o.size)/2 for o in asset.objects], axis=0)
+    upper = np.max([np.array(o.position)+np.array(o.size)/2 for o in asset.objects], axis=0)
+    origin = np.array([(lower[0]+upper[0])/2, (lower[1]+upper[1])/2, lower[2]])
+    def point(value):
+        return np.array(_rotate(np.array(value)-origin, instance.quarter_turns))+instance.position
+    objects = {o.id: o for o in asset.objects}
+    names = [item.name for item in instance.joint_initials]
+    if len(names) != len(set(names)):
+        raise ValueError("Prepared asset joint overrides must have unique names")
+    for item in instance.joint_initials:
+        name, initial = item.name, item.initial
+        if name not in asset.joint_ids:
+            raise ValueError(f"Unknown prepared asset joint: {name}")
+        objects[asset.joint_ids[name]].joint.initial = initial
+    for obj in asset.objects:
+        obj.position = point(obj.position)
+        if instance.quarter_turns % 2:
+            obj.size = (obj.size[1], obj.size[0], obj.size[2])
+        if obj.kind == "mesh":
+            obj.mesh_quarter_turns = (obj.mesh_quarter_turns+instance.quarter_turns) % 4
+        if obj.joint:
+            obj.joint.anchor = point(obj.joint.anchor)
+            obj.joint.axis = _rotate(obj.joint.axis, instance.quarter_turns)
+    for region in asset.regions:
+        region.position = point(region.position)
+        if instance.quarter_turns % 2:
+            region.size = (region.size[1], region.size[0], region.size[2])
+    return asset
+
+
+def _library(value):
+    library = resolve_asset_library(value)
+    if library is not None and set(library.asset_ids) & set(_FOLDERS):
+        raise ValueError("Registered library IDs cannot replace built-in source assets")
+    return library
+
+
+def load_prepared_asset(asset_id: str, *, prefix: str, position=(0, 0, 0), quarter_turns=0, mass=None, joint_initials=None, asset_library=None):
+    """Return a SourcedAsset using retained online-source evidence and local files.
+
+    Placement uses the zero-joint configuration's bottom-center. Original size,
+    UVs and geometry are preserved. Quarter turns rotate all parts, joints and
+    cavities together; arbitrary-angle rotation/scaling remains unsupported.
+    Unknown assets or import failures never trigger procedural replacement.
+    """
+    instance = PreparedAssetInstance(id=prefix, asset_id=asset_id, position=position,
+                                     quarter_turns=quarter_turns, mass=mass, joint_initials=joint_initials or [])
+    library = _library(asset_library)
+    if library is not None and asset_id in library.asset_ids:
+        if mass is not None:
+            raise ValueError("Registered assets preserve source/import mass; per-instance mass override is unsupported")
+        sourced = library.load(asset_id, prefix=prefix)
+        _place(sourced.asset, instance)
+        return sourced
+    if asset_id not in _FOLDERS:
+        raise ValueError(f"Unknown prepared asset: {asset_id}")
+    root = _ROOT / _FOLDERS[instance.asset_id]
+    metadata = json.loads((root / "source-manifest.json").read_text())
+    candidate = AssetCandidate(id=metadata["id"], source_url=metadata["source_url"],
+                               revision=metadata["revision"], license=metadata["license"],
+                               metadata={"archive_sha256": metadata["archive_sha256"]})
+    report = AssetSearch(query=asset_id, sources=(metadata["source_url"],), candidates=(candidate,), completed=True,
+                         evidence={"kind": "pinned_local_source", "scope": "Previously selected source; not a fresh internet search",
+                                   "archive_sha256": metadata["archive_sha256"]})
+
+    def import_local(_candidate):
+        if instance.asset_id == "google-porcelain-bowl":
+            if instance.mass is None:
+                raise ValueError("Prepared bowl requires an explicit estimated mass")
+            asset = import_convex_mesh_asset(root / "meshes/model.obj", root / "collision/manifest.json",
+                                            prefix=prefix, mass=instance.mass, source_notice=root / "ATTRIBUTION.md",
+                                            texture_path=root / "materials/textures/texture.png")
+        else:
+            if instance.mass is not None:
+                raise ValueError("Fixed microwave uses source density estimates; mass override is unsupported")
+            asset = import_mjcf_asset(root / "model.xml", prefix=prefix)
+        return _place(asset, instance)
+
+    def no_creation(*_args):
+        raise ValueError("Prepared asset could not be resolved; creation is not a fallback")
+
+    return source_asset(asset_id, search=lambda _: report, import_asset=import_local, create_asset=no_creation)
+
+
+def _catalog_entry(asset_id, sourced, requirements):
+    """Describe a verified asset placed at zero with the standard asset prefix."""
+    asset = sourced.asset
+    lower = np.min([np.array(o.position)-np.array(o.size)/2 for o in asset.objects], axis=0)
+    upper = np.max([np.array(o.position)+np.array(o.size)/2 for o in asset.objects], axis=0)
+    def ids(mapping):
+        return {key: value.replace("asset_", "{prefix}_", 1) for key, value in mapping.items()}
+    from .rubric import rigid_members
+
+    objects = {obj.id: obj for obj in asset.objects}
+    references = set(asset.body_ids.values()) | set(asset.geom_ids.values()) | set(asset.joint_ids.values())
+    geometry = {}
+    for identifier in sorted(references):
+        obj = objects[identifier]
+        members = [objects[name] for name in rigid_members(objects, identifier)]
+        low = np.min([np.array(member.position)-np.array(member.size)/2 for member in members], axis=0)
+        high = np.max([np.array(member.position)+np.array(member.size)/2 for member in members], axis=0)
+        geometry[identifier.replace("asset_", "{prefix}_", 1)] = {
+            "kind": obj.kind, "position": list(obj.position), "size": list(obj.size),
+            "movable": obj.movable, "collision": obj.collision,
+            "parent_id": obj.parent_id.replace("asset_", "{prefix}_", 1) if obj.parent_id else None,
+            "rigid_bounds": {"min": low.tolist(), "max": high.tolist()},
+        }
+    return {"asset_id": asset_id, "size": (upper-lower).tolist(), "components": len(asset.objects),
+                    "movable": any(obj.movable for obj in asset.objects),
+                    "physical_mass_kg": (None if asset_id == "google-porcelain-bowl" else
+                                         sum(obj.mass for obj in asset.objects if obj.collision)),
+                    "mass_policy": "caller_estimate" if asset_id == "google-porcelain-bowl" else "preserve_import",
+                    "source_url": sourced.selected.source_url, "revision": sourced.selected.revision,
+                    "license": sourced.selected.license,
+                    "placement": "position is bottom-center of zero-joint bounds; quarter_turns=0/1/2/3 rotates the whole asset 0/90/180/270 degrees counterclockwise about Z; original scale preserved",
+                    "repetition": "repeat=[nx,ny,nz] with world-space spacing; for multiple copies substitute {prefix}=id_ix_iy_iz (zero-based), otherwise {prefix}=id. All copied components count against the object budget.",
+                    "requirements": requirements,
+                    "reference_geometry": geometry,
+                    "geometry_frame": "Metres relative to the asset bottom-center at zero joint angles, before placement/quarter-turn. position/size describe the named component; rigid_bounds include welded children but stop at articulated/movable children. Bounding geometry is not proof of contact, support, access or task solvability.",
+                    "body_ids": ids(asset.body_ids), "geom_ids": ids(asset.geom_ids), "joint_ids": ids(asset.joint_ids),
+                    "joints": {name: next(o.joint.model_dump(mode="json") for o in asset.objects if o.id == oid)
+                               for name, oid in asset.joint_ids.items()},
+                    "regions": [{**r.model_dump(mode="json"), "id": r.id.replace("asset_", "{prefix}_", 1),
+                                 "interior_of": r.interior_of.replace("asset_", "{prefix}_", 1) if r.interior_of else None}
+                                for r in asset.regions]}
+
+
+def prepared_asset_catalog(asset_library=None):
+    """Compact grounded geometry/ID contract for model planning and SDK callers."""
+    catalog = []
+    library = _library(asset_library)
+    for asset_id in [*_FOLDERS, *(library.asset_ids if library is not None else ())]:
+        sourced = load_prepared_asset(asset_id, prefix="asset", mass=.6 if asset_id == "google-porcelain-bowl" else None,
+                                      asset_library=library)
+        requirements = ("explicit estimated mass; movable hollow bowl" if asset_id == "google-porcelain-bowl" else
+                        "fixed microwave; front faces -Y; passive door; no simulated heating unless a process cycle is defined" if asset_id == "nvidia-microwave079" else
+                        library.description(asset_id) + "; preserve imported masses and scale; whole-asset quarter turns supported; mass override unsupported")
+        catalog.append(_catalog_entry(asset_id, sourced, requirements))
+    if len(json.dumps(catalog)) > 200000:
+        raise ValueError("Prepared asset catalog exceeds the 200,000-character planning budget; select fewer assets")
+    return catalog
+
+
+def _copy_with_prefix(asset, prefix):
+    """Copy a verified canonical import without reading its source files again."""
+    asset = copy.deepcopy(asset)
+    entries = [*asset.objects, *asset.regions]
+    if any(not entry.id.startswith("asset_") for entry in entries):
+        raise ValueError("Prepared source contains an entity outside its canonical namespace")
+    names = {entry.id: prefix+entry.id[len("asset"):] for entry in entries}
+    if len(names) != len(entries):
+        raise ValueError("Prepared source contains duplicate entity IDs")
+    for obj in asset.objects:
+        obj.id = names[obj.id]
+        if obj.parent_id:
+            obj.parent_id = names[obj.parent_id]
+    for region in asset.regions:
+        region.id = names[region.id]
+        if region.interior_of:
+            region.interior_of = names[region.interior_of]
+    for field in ("body_ids", "geom_ids", "joint_ids"):
+        setattr(asset, field, {name: names[oid] for name, oid in getattr(asset, field).items()})
+    return asset
+
+
+def append_prepared_asset(payload: dict, instance: PreparedAssetInstance, *, max_objects: int, event_callback=None, asset_library=None):
+    """Append checked source components to a caller-owned candidate payload.
+
+    Generation and typed edits share collision/budget/provenance rules. Callers
+    work on private copies and validate/protect the complete result before saving.
+    """
+    copies = math.prod(instance.repeat)
+    if copies > max_objects-len(payload["objects"]):
+        raise ValueError(f"Prepared assets exceed the {max_objects}-object resource budget")
+    if any(count > 1 and abs(spacing) < 1e-9 for count, spacing in zip(instance.repeat, instance.spacing)):
+        raise ValueError("Repeated prepared assets require nonzero world-space spacing on each repeated axis")
+    used = {entry["id"] for field in ("objects", "regions", "process_cycles") for entry in payload.get(field, [])}
+    if event_callback:
+        event_callback({"type": "asset_loading", "asset_id": instance.asset_id, "message": f"Reusing {instance.asset_id}"})
+    # Verify/import one canonical source per repeated group. Every copy retains
+    # separate physics/identity; only immutable mesh/texture files are shared.
+    sourced = load_prepared_asset(instance.asset_id, prefix="asset", mass=instance.mass,
+                                  joint_initials=instance.joint_initials, asset_library=asset_library)
+    if len(payload["objects"])+len(sourced.asset.objects)*copies > max_objects:
+        raise ValueError(f"Prepared assets exceed the {max_objects}-object resource budget")
+    if len(payload.get("regions", []))+len(sourced.asset.regions)*copies > MAX_EXPANDED_REGIONS:
+        raise ValueError(f"Prepared assets exceed the {MAX_EXPANDED_REGIONS}-region resource budget")
+    added_objects, added_regions = [], []
+    for index in product(*(range(count) for count in instance.repeat)):
+        prefix = instance.id if copies == 1 else instance.id+"_"+"_".join(map(str, index))
+        placed = PreparedAssetInstance(id=prefix, asset_id=instance.asset_id,
+            position=tuple(instance.position[i]+index[i]*instance.spacing[i] for i in range(3)),
+            quarter_turns=instance.quarter_turns)
+        asset = _place(_copy_with_prefix(sourced.asset, prefix), placed)
+        ids = {entry.id for entry in [*asset.objects, *asset.regions]}
+        if used & ids:
+            raise ValueError("Prepared asset IDs conflict with scene objects or regions: " + ", ".join(sorted(used & ids)))
+        used.update(ids)
+        added_objects.extend(o.model_dump(mode="json") for o in asset.objects)
+        added_regions.extend(r.model_dump(mode="json") for r in asset.regions)
+    # Publish only after every ID, placement and resource check succeeds.
+    payload["objects"].extend(added_objects)
+    payload.setdefault("regions", []).extend(added_regions)
+    assumptions = payload.setdefault("assumptions", [])
+    for disclosure in sourced.asset.disclosures:
+        if disclosure not in assumptions:
+            assumptions.append(disclosure)
+    assumptions.append(f"Prepared asset {instance.id} ({copies} copies): {sourced.selected.id}, revision {sourced.selected.revision}, {sourced.selected.license}; {sourced.selected.source_url}")
+    if instance.mass is not None:
+        assumptions.append(f"{instance.id} mass per copy {instance.mass:g} kg is an estimate, not a measured source property.")
+    if event_callback:
+        event_callback({"type": "asset_loaded", "asset_id": instance.asset_id, "instance_id": instance.id,
+                        "source_url": sourced.selected.source_url, "revision": sourced.selected.revision,
+                        "license": sourced.selected.license, "components": len(added_objects), "copies": copies,
+                        "message": f"Reused {instance.asset_id} for {copies} copies; original geometry and texture retained"})
+
+
+def materialize_prepared_assets(plan: GenerationSpec, *, max_objects: int, event_callback=None, asset_library=None):
+    """Expand references atomically before geometry validation or preview saving."""
+    if plan.asset_requests:
+        raise ValueError("Resolve online asset requests before materializing a scene")
+    payload = plan.model_dump(mode="json", exclude={"prepared_assets", "asset_requests", "created_assets"})
+    prefixes = [instance.id for instance in plan.prepared_assets]
+    if len(prefixes) != len(set(prefixes)):
+        raise ValueError("Prepared asset instance prefixes must be unique")
+    library = _library(asset_library) if plan.prepared_assets else None
+    for instance in plan.prepared_assets:
+        append_prepared_asset(payload, instance, max_objects=max_objects, event_callback=event_callback, asset_library=library)
+    return WorldSpec.model_validate(payload)

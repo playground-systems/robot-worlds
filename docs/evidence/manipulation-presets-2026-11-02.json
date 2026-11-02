@@ -1,0 +1,440 @@
+{
+  "date": "2026-11-02",
+  "authorship": "gpt-6-astra through an explicitly selected Codex subagent",
+  "scenes": [
+    {
+      "id": "simready-kitchen",
+      "world_id": "41e48f70b53c8f9cf5315632a653d708120d1c773eae43ba3b7f54de3820d93b",
+      "tasks": 16,
+      "objects": 436,
+      "bounds": [
+        9.0,
+        7.0,
+        3.2
+      ],
+      "bundle_sha256": "5ff168e903837ac2ec34374794781aab2642dad4a4b0370b80d7891e4718080e",
+      "bundle_bytes": 32324773,
+      "thumbnail_sha256": "4f4ac75f11c47eb6e35362cdfbe53bb6bfd14140aecb65d777e77d270eec74ab",
+      "sdk_reopen_seconds": 0.14552599999296945,
+      "validation_profile": "strict",
+      "native_checks": [
+        {
+          "check": "schema",
+          "passed": true
+        },
+        {
+          "check": "geometry_and_rubric",
+          "passed": true
+        },
+        {
+          "check": "physics_settling",
+          "passed": true
+        },
+        {
+          "check": "physics_reset",
+          "passed": true
+        },
+        {
+          "check": "initial_rubric",
+          "passed": true
+        },
+        {
+          "check": "render",
+          "passed": true
+        }
+      ],
+      "task_reset_checks": [
+        {
+          "task_id": "store_dish_close",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "bowl_grasp_return",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "prep_to_counter",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "counter_to_prep",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "serve_from_sideboard",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "recipe_to_counter",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "recipe_to_sideboard",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "open_upper_deep",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "cycle_upper_deep",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "open_wide_lower",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "cycle_wide_lower",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "open_counter_door",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "cycle_counter_door",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "fetch_stored_bowl",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "store_recipe_close",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "clear_prep_close",
+          "passed": true,
+          "errors": []
+        }
+      ],
+      "source_asset_ids": [
+        "fixture_cabinet_b01",
+        "misc_notebook_a01",
+        "fixture_counter_a01",
+        "kitchenware_bowl_b01",
+        "table_packing_heavyduty_c01"
+      ],
+      "implementation_fingerprint": "b4b6f7fac5c96e9377d99d9a09e2618965f20f63b03907f8165cb1757f65cc47",
+      "source_metadata": "Per-package license hashes and collision adaptations in bundled preparation-evidence.json"
+    },
+    {
+      "id": "simready-factory",
+      "world_id": "49537f246c6883d84062c36170db5c2a0d47a1d83437efc724412486de759261",
+      "tasks": 15,
+      "objects": 684,
+      "bounds": [
+        18.0,
+        9.0,
+        4.5
+      ],
+      "bundle_sha256": "f39b65dd2e340d9397a0402271db5898b22c65217a7cdf69396d7df541f00fda",
+      "bundle_bytes": 35022640,
+      "thumbnail_sha256": "8a46e6092ac2ab88346451bf02cef2c7c14990861fb8ca704f659191cbe09d49",
+      "sdk_reopen_seconds": 0.10326587500458118,
+      "validation_profile": "strict",
+      "native_checks": [
+        {
+          "check": "schema",
+          "passed": true
+        },
+        {
+          "check": "geometry_and_rubric",
+          "passed": true
+        },
+        {
+          "check": "physics_settling",
+          "passed": true
+        },
+        {
+          "check": "physics_reset",
+          "passed": true
+        },
+        {
+          "check": "initial_rubric",
+          "passed": true
+        },
+        {
+          "check": "render",
+          "passed": true
+        }
+      ],
+      "task_reset_checks": [
+        {
+          "task_id": "inspect_dispatch",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "grasp_return_tool",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "spare_to_inspection",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "spare_to_dispatch",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "outbound_return",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "work_order_inspection",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "work_order_dispatch",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "open_upper",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "cycle_upper",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "open_lower",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "cycle_lower",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "fetch_stored_tool",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "store_spare_close",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "push_carton",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "inspection_only",
+          "passed": true,
+          "errors": []
+        }
+      ],
+      "source_asset_ids": [
+        "fixture_cabinet_b01",
+        "misc_notebook_a01",
+        "table_packing_heavyduty_c01",
+        "handTool_screwdriver_phillips_ph2_a01",
+        "rack_large_empty_a02",
+        "pallet_a01",
+        "box_corrugated_brown_b20",
+        "barrier_fence_metal_a02"
+      ],
+      "implementation_fingerprint": "b4b6f7fac5c96e9377d99d9a09e2618965f20f63b03907f8165cb1757f65cc47",
+      "source_metadata": "Per-package license hashes and collision adaptations in bundled preparation-evidence.json"
+    },
+    {
+      "id": "simready-living-room",
+      "world_id": "9c680b7443872359da9a5955eaab24c1bc9393be0ccd28bdcd79f7003e154068",
+      "tasks": 13,
+      "objects": 126,
+      "bounds": [
+        5.0,
+        4.6,
+        3.2
+      ],
+      "bundle_sha256": "d329c5bf9c53b9f967f470242e0c91ad56d91161650c257eed609906c9866a1a",
+      "bundle_bytes": 24210745,
+      "thumbnail_sha256": "c048d60083fcb185909f202b42bfe745a0604f8820df0416fd4a3b8c811bf28e",
+      "sdk_reopen_seconds": 0.06298695800069254,
+      "validation_profile": "strict",
+      "native_checks": [
+        {
+          "check": "schema",
+          "passed": true
+        },
+        {
+          "check": "geometry_and_rubric",
+          "passed": true
+        },
+        {
+          "check": "physics_settling",
+          "passed": true
+        },
+        {
+          "check": "physics_reset",
+          "passed": true
+        },
+        {
+          "check": "initial_rubric",
+          "passed": true
+        },
+        {
+          "check": "render",
+          "passed": true
+        }
+      ],
+      "task_reset_checks": [
+        {
+          "task_id": "tidy_note_close",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "note_lift_return",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "book_to_cabinet",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "book_to_reading",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "ball_to_cabinet",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "ball_to_reading",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "open_upper",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "cycle_upper",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "open_lower",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "cycle_lower",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "fetch_stored_note",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "put_ball_away",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "task_id": "two_item_tidy",
+          "passed": true,
+          "errors": []
+        }
+      ],
+      "source_asset_ids": [
+        "sofa_soft_b02",
+        "furniture_table_coffee_low_a01",
+        "fixture_cabinet_b01",
+        "misc_notebook_a01",
+        "book_open_a01",
+        "misc_golfBall_a01"
+      ],
+      "implementation_fingerprint": "b4b6f7fac5c96e9377d99d9a09e2618965f20f63b03907f8165cb1757f65cc47",
+      "source_metadata": "Per-package license hashes and collision adaptations in bundled preparation-evidence.json"
+    }
+  ],
+  "task_count": 44,
+  "policy_runs": 0,
+  "autonomous_task_success_verified": false,
+  "source_rule": "Only NVIDIA SimReady furniture/props; basic room architecture and paint are primitives; robot model separately sourced.",
+  "validation_model_calls": 0,
+  "authoring_note": "Initial bounded Codex CLI request timed out without a candidate; actual scene plans/tasks were subsequently authored by the Astra subagent and replayed for deterministic real native validation. No claim of zero authoring tokens/cost.",
+  "limits": [
+    "Reset, render and rubric checks do not prove physical reachability or task completion.",
+    "API/UI task selection preserves scene physics and needs explicit native checks for the selected instruction.",
+    "SDK reopen timing measures an already installed immutable bundle, excluding browser loading and native simulation.",
+    "No new CI run or robot policy episode was used for this work."
+  ],
+  "app_task_selection": {
+    "method": "Computer use in local workbench",
+    "preset_world_id": "41e48f70b53c8f9cf5315632a653d708120d1c773eae43ba3b7f54de3820d93b",
+    "selected_world_id": "83530b5641944c04de5c1dd7c156f8943491cbfc11e6892a6b229c094823bc3b",
+    "native_revalidated_world_id": "76e3ad3d2b471de6f858c1fe407dcfd582cb832b3a2bb0608b2da996c52b839e",
+    "selected_task_id": "open_upper_deep",
+    "task_count": 16,
+    "geometry_unchanged": true,
+    "physical_id": "d5655b242ec493a2e281288f1e466d0b89668aeaf573152d3b2a6cbaca8c28be",
+    "native_status": "ready",
+    "checks": [
+      {
+        "check": "schema",
+        "passed": true
+      },
+      {
+        "check": "geometry_and_rubric",
+        "passed": true
+      },
+      {
+        "check": "physics_settling",
+        "passed": true
+      },
+      {
+        "check": "physics_reset",
+        "passed": true
+      },
+      {
+        "check": "initial_rubric",
+        "passed": true
+      },
+      {
+        "check": "render",
+        "passed": true
+      }
+    ],
+    "policy_runs": 0,
+    "model_calls": 0
+  }
+}

@@ -1,0 +1,382 @@
+{
+  "status": "source_bytes_verified_not_imported_or_physically_validated",
+  "checked_on": "2026-10-31",
+  "queries": [
+    "site:huggingface.co/datasets/nvidia SimReady warehouse assets",
+    "anxuanng SimReady optimized 3.8 GB github"
+  ],
+  "catalogs": [
+    "nvidia/simready-assets",
+    "codepawl/simready-glb"
+  ],
+  "optimized_revision": "e52172290393dde80e8d383861db94b8d0e92ec3",
+  "upstream_checked_revision": "4763fbfaa4f8e97658e68b57d01b4c86659e08b5",
+  "optimized_derivation_upstream_revision": "not declared in inspected manifest",
+  "manifest_url": "https://huggingface.co/datasets/codepawl/simready-glb/resolve/e52172290393dde80e8d383861db94b8d0e92ec3/manifest.jsonl",
+  "manifest_sha256": "a3801ee46efbfb22fd78ff477023f730b5a1c523fdc02dc152c5c3fb9615f3fd",
+  "selected": [
+    {
+      "asset_id": "rack_large_empty_a02",
+      "optimized_manifest_record": {
+        "asset": "rack_large_empty_a02",
+        "license": "CC-BY-4.0",
+        "source": {
+          "folderBytes": 57309789,
+          "downloadedBytes": 25598729,
+          "files": 82
+        },
+        "blender": {
+          "bytes": 25554924,
+          "triangles": 106256,
+          "drawCalls": 6,
+          "textures": 9,
+          "largestTextureEdge": 2048
+        },
+        "optimized": {
+          "bytes": 870796,
+          "triangles": 53128,
+          "drawCalls": 3,
+          "textures": 9,
+          "largestTextureEdge": 1024
+        },
+        "prototypesRemoved": 1,
+        "duplicateNodesRemoved": 0,
+        "bounds": {
+          "min": [
+            -1.9999886751174927,
+            -0.00010310943778568671,
+            -1.0333506739015497
+          ],
+          "max": [
+            1.9999890327453613,
+            3.01010381515678,
+            1.0333512699479974
+          ]
+        },
+        "blenderSeconds": 9.21,
+        "totalSeconds": 14.861,
+        "physics": {
+          "rigidBodies": 1,
+          "joints": 0,
+          "colliders": 1
+        }
+      },
+      "optimized_url": "https://huggingface.co/datasets/codepawl/simready-glb/resolve/e52172290393dde80e8d383861db94b8d0e92ec3/glb/rack_large_empty_a02.glb",
+      "upstream_license_url": "https://huggingface.co/datasets/nvidia/simready-assets/resolve/4763fbfaa4f8e97658e68b57d01b4c86659e08b5/rack_large_empty_a02/.metadata/LICENSE.txt",
+      "upstream_license_sha256": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
+      "upstream_packaging_url": "https://huggingface.co/datasets/nvidia/simready-assets/resolve/4763fbfaa4f8e97658e68b57d01b4c86659e08b5/rack_large_empty_a02/com.nvidia.simready.packaging.json",
+      "upstream_packaging_sha256": "ae78f7aa0834a9932d82297d2993bac3f77834c6f767b440a34aefb3a6189dc0",
+      "upstream_packaging": {
+        "format_version": "1.0",
+        "package_id": "simready.hf.nvidia.simready-assets.rack_large_empty_a02.2026.10.09_153944858411",
+        "license": "CC-BY-4.0",
+        "metadata": [
+          {
+            "name": "com.nvidia.simready.packaging.bom.json",
+            "hash": {
+              "sha256": "a8ec72dab6a249948681d4cec060f792bd75c5c8e75a79fadff75bf2c37121e1"
+            }
+          }
+        ],
+        "content_hash": {
+          "sha256": "81532f24161ad640eed547058b50618945c7f15b7f293db6c0c9ae8b007b23a5"
+        },
+        "package_hash": {
+          "sha256": "9be0ab880e28fd23026109a78756964d9e808a619977b7e07d98bdf5560281c4"
+        }
+      },
+      "download_sha256": "331d3aa0475183bc9702fbcdd546de60075596f8daeeba12a27dc1149de81b71",
+      "download_bytes": 870796
+    },
+    {
+      "asset_id": "pallet_a01",
+      "optimized_manifest_record": {
+        "asset": "pallet_a01",
+        "license": "CC-BY-4.0",
+        "source": {
+          "folderBytes": 32541783,
+          "downloadedBytes": 13139682,
+          "files": 50
+        },
+        "blender": {
+          "bytes": 12969952,
+          "triangles": 4104,
+          "drawCalls": 2,
+          "textures": 3,
+          "largestTextureEdge": 2048
+        },
+        "optimized": {
+          "bytes": 248380,
+          "triangles": 2052,
+          "drawCalls": 1,
+          "textures": 3,
+          "largestTextureEdge": 1024
+        },
+        "duplicateNodesRemoved": 1,
+        "bounds": {
+          "min": [
+            -0.6021009087562561,
+            2.5066637905912792e-05,
+            -0.40017559101821176
+          ],
+          "max": [
+            0.6021009087562561,
+            0.20862059006699674,
+            0.40017559101821176
+          ]
+        },
+        "blenderSeconds": 3.343,
+        "totalSeconds": 79.369,
+        "physics": {
+          "rigidBodies": 1,
+          "joints": 0,
+          "colliders": 1
+        }
+      },
+      "optimized_url": "https://huggingface.co/datasets/codepawl/simready-glb/resolve/e52172290393dde80e8d383861db94b8d0e92ec3/glb/pallet_a01.glb",
+      "upstream_license_url": "https://huggingface.co/datasets/nvidia/simready-assets/resolve/4763fbfaa4f8e97658e68b57d01b4c86659e08b5/pallet_a01/.metadata/LICENSE.txt",
+      "upstream_license_sha256": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
+      "upstream_packaging_url": "https://huggingface.co/datasets/nvidia/simready-assets/resolve/4763fbfaa4f8e97658e68b57d01b4c86659e08b5/pallet_a01/com.nvidia.simready.packaging.json",
+      "upstream_packaging_sha256": "85f942eca1a8760f851b9e9c5a651a4e21681241fdeb4d4fe1f93ed1474b9350",
+      "upstream_packaging": {
+        "format_version": "1.0",
+        "package_id": "simready.hf.nvidia.simready-assets.pallet_a01.2026.10.09_143330045639",
+        "license": "CC-BY-4.0",
+        "metadata": [
+          {
+            "name": "com.nvidia.simready.packaging.bom.json",
+            "hash": {
+              "sha256": "435e2a55e12ca251e4960a1aae6841e6423842bc27d917bc747f2b195579e37e"
+            }
+          }
+        ],
+        "content_hash": {
+          "sha256": "f354067e9eb1422b5d4bf4c1df26913e07bbf06f5009f224326d97436d0df59b"
+        },
+        "package_hash": {
+          "sha256": "ab5a0d457f2ef9b8a2d398287267c549b0fb95430de32eb37e261108adeadac5"
+        }
+      },
+      "download_sha256": "477e2de5901da209855aa6196180b33cb8da387b732eb27fca259e24bb14b647",
+      "download_bytes": 248380
+    },
+    {
+      "asset_id": "box_corrugated_brown_b20",
+      "optimized_manifest_record": {
+        "asset": "box_corrugated_brown_b20",
+        "license": "CC-BY-4.0",
+        "source": {
+          "folderBytes": 58497904,
+          "downloadedBytes": 28007603,
+          "files": 44
+        },
+        "blender": {
+          "bytes": 27250388,
+          "triangles": 31984,
+          "drawCalls": 14,
+          "textures": 7,
+          "largestTextureEdge": 2048
+        },
+        "optimized": {
+          "bytes": 604864,
+          "triangles": 15992,
+          "drawCalls": 7,
+          "textures": 7,
+          "largestTextureEdge": 1024
+        },
+        "duplicateNodesRemoved": 1,
+        "bounds": {
+          "min": [
+            -0.14947778618167099,
+            1.3486094320086517e-05,
+            -0.3107908070087433
+          ],
+          "max": [
+            0.14950435495207962,
+            0.30203078632847047,
+            0.3107908070087433
+          ]
+        },
+        "blenderSeconds": 4.112,
+        "totalSeconds": 12.316,
+        "physics": {
+          "rigidBodies": 1,
+          "joints": 0,
+          "colliders": 1
+        }
+      },
+      "optimized_url": "https://huggingface.co/datasets/codepawl/simready-glb/resolve/e52172290393dde80e8d383861db94b8d0e92ec3/glb/box_corrugated_brown_b20.glb",
+      "upstream_license_url": "https://huggingface.co/datasets/nvidia/simready-assets/resolve/4763fbfaa4f8e97658e68b57d01b4c86659e08b5/box_corrugated_brown_b20/.metadata/LICENSE.txt",
+      "upstream_license_sha256": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
+      "upstream_packaging_url": "https://huggingface.co/datasets/nvidia/simready-assets/resolve/4763fbfaa4f8e97658e68b57d01b4c86659e08b5/box_corrugated_brown_b20/com.nvidia.simready.packaging.json",
+      "upstream_packaging_sha256": "335eec155d7c7e5ba32db858daa4f934c9baf1e4dd14508ce77719d7258c6728",
+      "upstream_packaging": {
+        "format_version": "1.0",
+        "package_id": "simready.hf.nvidia.simready-assets.box_corrugated_brown_b20.2026.10.09_202102468240",
+        "license": "CC-BY-4.0",
+        "metadata": [
+          {
+            "name": "com.nvidia.simready.packaging.bom.json",
+            "hash": {
+              "sha256": "4a671d2950099f247987e19130e9f98380ae2cf9bf59bfcbd035a86d9f78b837"
+            }
+          }
+        ],
+        "content_hash": {
+          "sha256": "a2a0e842d6cc07146931f1db4c8defe5a23b13c88f0d1440c805f661d961f58d"
+        },
+        "package_hash": {
+          "sha256": "39c7a9c11fba2cad4f1a412b336e2825ba1799a095c187be267dc6d1be8c6a1e"
+        }
+      },
+      "download_sha256": "d5d3f416dfb94e714c3f96687aa56c351b23979ef302869df732b7fe59c876c2",
+      "download_bytes": 604864
+    },
+    {
+      "asset_id": "barrier_fence_metal_a02",
+      "optimized_manifest_record": {
+        "asset": "barrier_fence_metal_a02",
+        "license": "CC-BY-4.0",
+        "source": {
+          "folderBytes": 22695315,
+          "downloadedBytes": 10425959,
+          "files": 35
+        },
+        "blender": {
+          "bytes": 10132176,
+          "triangles": 6776,
+          "drawCalls": 2,
+          "textures": 3,
+          "largestTextureEdge": 2048
+        },
+        "optimized": {
+          "bytes": 203768,
+          "triangles": 3388,
+          "drawCalls": 1,
+          "textures": 3,
+          "largestTextureEdge": 1024
+        },
+        "duplicateNodesRemoved": 0,
+        "bounds": {
+          "min": [
+            -0.11493629217147827,
+            -4.117066367648192e-05,
+            -0.11499701954350938
+          ],
+          "max": [
+            1.1148637533187866,
+            1.0718933005848914,
+            0.11499701954350938
+          ]
+        },
+        "blenderSeconds": 95.571,
+        "totalSeconds": 180.318,
+        "prototypesRemoved": 1,
+        "physics": {
+          "rigidBodies": 1,
+          "joints": 0,
+          "colliders": 1
+        }
+      },
+      "optimized_url": "https://huggingface.co/datasets/codepawl/simready-glb/resolve/e52172290393dde80e8d383861db94b8d0e92ec3/glb/barrier_fence_metal_a02.glb",
+      "upstream_license_url": "https://huggingface.co/datasets/nvidia/simready-assets/resolve/4763fbfaa4f8e97658e68b57d01b4c86659e08b5/barrier_fence_metal_a02/.metadata/LICENSE.txt",
+      "upstream_license_sha256": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
+      "upstream_packaging_url": "https://huggingface.co/datasets/nvidia/simready-assets/resolve/4763fbfaa4f8e97658e68b57d01b4c86659e08b5/barrier_fence_metal_a02/com.nvidia.simready.packaging.json",
+      "upstream_packaging_sha256": "01460d7af4058a3bf89c04fd021625641802fda9c41f70d69a9f69df7f29effc",
+      "upstream_packaging": {
+        "format_version": "1.0",
+        "package_id": "simready.hf.nvidia.simready-assets.barrier_fence_metal_a02.2026.10.08_220144422240",
+        "license": "CC-BY-4.0",
+        "metadata": [
+          {
+            "name": "com.nvidia.simready.packaging.bom.json",
+            "hash": {
+              "sha256": "060962c86d8ae7e3c813afeeca6857d04413d03d56c4e2ffc2ae710be0c226cf"
+            }
+          }
+        ],
+        "content_hash": {
+          "sha256": "d2020d8100c24fed8cf924e3d0c9ceac68de3053c859c3e8572287623895bed2"
+        },
+        "package_hash": {
+          "sha256": "c0a4b245ae0ed59e42790195b839c330e563350219dac07e2177e5ebb1e8454d"
+        }
+      },
+      "download_sha256": "e310efcf28e02389cf4efee1d38c65f4b159a409b692b7935b2365ece5b0ce22",
+      "download_bytes": 203768
+    },
+    {
+      "asset_id": "conveyor_belt_a05",
+      "optimized_manifest_record": {
+        "asset": "conveyor_belt_a05",
+        "license": "CC-BY-4.0",
+        "source": {
+          "folderBytes": 136488279,
+          "downloadedBytes": 72367154,
+          "files": 72
+        },
+        "blender": {
+          "bytes": 70463112,
+          "triangles": 457928,
+          "drawCalls": 74,
+          "textures": 22,
+          "largestTextureEdge": 2048
+        },
+        "optimized": {
+          "bytes": 2129720,
+          "triangles": 228964,
+          "drawCalls": 37,
+          "textures": 22,
+          "largestTextureEdge": 1024
+        },
+        "duplicateNodesRemoved": 0,
+        "bounds": {
+          "min": [
+            -0.4514581263065338,
+            -0.7404228566666873,
+            -0.07230976969003677
+          ],
+          "max": [
+            1.0769666796186061,
+            1.1663984774132998,
+            2.000000514090061
+          ]
+        },
+        "blenderSeconds": 6.723,
+        "totalSeconds": 17.878,
+        "prototypesRemoved": 30,
+        "physics": {
+          "rigidBodies": 30,
+          "joints": 29,
+          "colliders": 30
+        }
+      },
+      "optimized_url": "https://huggingface.co/datasets/codepawl/simready-glb/resolve/e52172290393dde80e8d383861db94b8d0e92ec3/glb/conveyor_belt_a05.glb",
+      "upstream_license_url": "https://huggingface.co/datasets/nvidia/simready-assets/resolve/4763fbfaa4f8e97658e68b57d01b4c86659e08b5/conveyor_belt_a05/.metadata/LICENSE.txt",
+      "upstream_license_sha256": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
+      "upstream_packaging_url": "https://huggingface.co/datasets/nvidia/simready-assets/resolve/4763fbfaa4f8e97658e68b57d01b4c86659e08b5/conveyor_belt_a05/com.nvidia.simready.packaging.json",
+      "upstream_packaging_sha256": "941a00aaa464d02237a6bb42e5e0b738f624b6c0f237261f34d1fefc4c52948f",
+      "upstream_packaging": {
+        "format_version": "1.0",
+        "package_id": "simready.hf.nvidia.simready-assets.conveyor_belt_a05.2026.10.09_001821510634",
+        "license": "CC-BY-4.0",
+        "metadata": [
+          {
+            "name": "com.nvidia.simready.packaging.bom.json",
+            "hash": {
+              "sha256": "7e1591e64d1830668b1b499247247c86895f45e2554e986ad691b984c098becc"
+            }
+          }
+        ],
+        "content_hash": {
+          "sha256": "0df9c739c802bf8bd5d46cdf060140ced3f42138df89ef9a3c3b5faf171fbe35"
+        },
+        "package_hash": {
+          "sha256": "67d15527910b53d38ff5297fd235c9f67e034d8023f717bf372260b773182ffd"
+        }
+      },
+      "download_sha256": "7f8a47747ec043d7e5893d6a420d3276e371752e87018cbd548f31d66f5c95df",
+      "download_bytes": 2129720
+    }
+  ]
+}

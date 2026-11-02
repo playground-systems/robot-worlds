@@ -1,0 +1,10 @@
+# Astra-authored living room
+
+The compact 5 × 4.6 m room replaces the initial oversized 10 × 8 m planning envelope after native visual review; furniture scale and all task identities remain unchanged. This footprint makes the source two-seat sofa and table a believable domestic group.
+
+The west sofa faces east across a 45 cm human leg gap toward the low coffee table and open room. The robot approaches the table from its unobstructed east side, never through the sofa gap. A continuous broad central route connects the 1.4 m south doorway, reading area and north-wall cabinet. The cabinet is rotated 270 degrees so both original drawers pull south; there is over 1.5 m of clear operating space in front. The room is intentionally a reading/play room without invented electronics or industrial furniture.
+
+The source coffee table is 0.60 × 1.20 m and 0.443 m high; all three initial objects are close to its east edge. Two more objects rest on the 0.928 m cabinet top; the sixth, a notebook, rests inside the initially closed lower drawer. Book identities refer to their source open shapes, and the two small balls are golf balls. The upper drawer is empty at reset, enabling the flagship tidy mission. Notebook footprint is 0.229 × 0.170 m and thickness 10 mm, comfortably inside the 0.548 × 0.666 m drawer floor. The score additionally requires full containment inside a conservative fixed closed-cavity volume, measured contact with the actual articulated drawer floor, release, and closure. The moving floor is never replaced by a stationary region.
+
+There are 13 selectable tasks: grasp/return, book and ball carrying, two handle-pulling tasks, two open-then-push-shut tasks, stored-item retrieval and ordered tidying. Each uses the exact same six loose-object reset. Tasks express physical holding, sampled carrying, actual support and release where appropriate. Notebook edge grasping, low-table arm reach, source golf-ball rolling and all native stability remain to be demonstrated. No autonomous execution is claimed.
+

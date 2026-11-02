@@ -1,0 +1,18 @@
+{
+  "world_id": "f02c3581d6e3fa54e481c67bf525936d650767af2b9d48bf2b781c9766a6aea2",
+  "original_run_id": "b55d68a790824665b945c2071b6fd18c",
+  "regraded_report_id": "085fca27052446d3ace2fdd68b1f5d90",
+  "capture": "Actual local application through computer use, 2026-10-31",
+  "task_success": false,
+  "limits": [
+    "Layout views show the reference configuration; the report uses recorded simulation frames.",
+    "Regraded report uses unchanged original state evidence; no replay was regenerated.",
+    "Successful bowl grasp and placement remain unproven."
+  ],
+  "files": {
+    "overview.png": "b2945f08a123d5c8abe4744e0e5837c28f82c39de92ff802afb1de5147636f64",
+    "containment-evidence.png": "999435022cbab1b1c9c9179f192e4b2beda4e93da175e2bcf6b3514201c1c32b",
+    "report.png": "952b2ea680e4799e82355e279b810a1265c1ebc3794af652394bce00d96b60f9",
+    "bowl-detail.png": "40442fc68825be777660684a7005793563249178ec38d19572fe626fcf2a8e93"
+  }
+}

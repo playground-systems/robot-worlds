@@ -1,0 +1,114 @@
+{
+  "evidence_class": "actual application with loopback mocked model; real native physics and jobs",
+  "paid_model_calls": 0,
+  "provider": "http://127.0.0.1:8777/v1",
+  "credential": "documented dummy only; no session credentials used",
+  "jobs": [
+    {
+      "id": "204e813c27fe4dae92fe05a469881fb7",
+      "kind": "generate",
+      "status": "failed",
+      "created_at": "2026-11-01T01:18:12.561089+00:00",
+      "started_at": "2026-11-01T01:18:12.984052+00:00",
+      "finished_at": "2026-11-01T01:18:13.947255+00:00",
+      "world_id": null,
+      "run_id": null,
+      "error": {
+        "type": "GenerationError",
+        "message": "World generation request failed: OpenAI Responses request failed (AuthenticationError, HTTP 401) [invalid_api_key] Check the configured API key and restart the server.; latest candidate retained"
+      }
+    },
+    {
+      "id": "1b87935a8a6f4aa4885fd1182febe1dd",
+      "kind": "generate",
+      "status": "failed",
+      "created_at": "2026-11-01T01:21:15.922728+00:00",
+      "started_at": "2026-11-01T01:21:16.514850+00:00",
+      "finished_at": "2026-11-01T01:21:17.388964+00:00",
+      "world_id": null,
+      "run_id": null,
+      "error": {
+        "type": "GenerationError",
+        "message": "World generation request failed: OpenAI Responses request failed (AuthenticationError, HTTP 401) [invalid_api_key] Check the configured API key and restart the server.; no candidate created"
+      }
+    },
+    {
+      "id": "74e50485fe76433b810f713d46105fef",
+      "kind": "generate",
+      "status": "cancelled",
+      "created_at": "2026-11-01T01:22:32.255396+00:00",
+      "started_at": "2026-11-01T01:22:32.258236+00:00",
+      "finished_at": "2026-11-01T01:22:44.726169+00:00",
+      "world_id": "062a0d6491affcb58909f175ecbb048b872915af20c75abfdb0a296f5267d173",
+      "run_id": null,
+      "error": null
+    },
+    {
+      "id": "b5980d5be2e94446b7c7b85dc8976a24",
+      "kind": "generate",
+      "status": "completed",
+      "created_at": "2026-11-01T01:24:04.127560+00:00",
+      "started_at": "2026-11-01T01:24:04.129794+00:00",
+      "finished_at": "2026-11-01T01:24:08.962298+00:00",
+      "world_id": "6981f107b937b7adea0fa3b1f03660b9d8c78b7581d96099a55428048f7a664a",
+      "run_id": null,
+      "error": null
+    },
+    {
+      "id": "0be1675d50ce4c6a91571ef55ecac5b8",
+      "kind": "generate",
+      "status": "completed",
+      "created_at": "2026-11-01T01:28:53.969879+00:00",
+      "started_at": "2026-11-01T01:28:54.365259+00:00",
+      "finished_at": "2026-11-01T01:29:00.284246+00:00",
+      "world_id": "bb20309dab076b0fa4bf521305a8e131169ab5fdf21196b4bb12c58d261bf56d",
+      "run_id": null,
+      "error": null
+    },
+    {
+      "id": "f29c284efc554252aa36cee5812e05fa",
+      "kind": "evaluate",
+      "status": "cancelled",
+      "created_at": "2026-11-01T01:32:01.299800+00:00",
+      "started_at": "2026-11-01T01:32:01.302538+00:00",
+      "finished_at": "2026-11-01T01:32:30.370332+00:00",
+      "world_id": null,
+      "run_id": "ce9a9ceb853f4f788017f0ce806aa621",
+      "error": null
+    }
+  ],
+  "cancelled_episode": {
+    "run_id": "ce9a9ceb853f4f788017f0ce806aa621",
+    "status": "cancelled",
+    "executed_actions": [
+      "drive",
+      "gripper"
+    ],
+    "summary": {
+      "attempted": 1,
+      "valid": 0,
+      "successes": 0,
+      "invalid_or_interrupted": 1,
+      "success_rate": null,
+      "success_interval_95": null
+    }
+  },
+  "fixes_verified": [
+    "Configured-key label does not claim successful authentication",
+    "Invalid-key HTTP error and recovery step displayed",
+    "Preview retained after generation cancellation",
+    "New world clears previous job notice",
+    "Preview-to-validated transition retains interactive WebGL canvas",
+    "Policy cancellation retains native actions/replay and excludes interrupted trial from success rate"
+  ],
+  "remaining_verification": [],
+  "screenshots": {
+    "invalid-key.png": "86c381445d35c413d16c54db58bc51c181d5813ac9c0629fef87b249ecee173f",
+    "policy-cancelled.png": "0db31e525427c9682eb485512bf2159edcdeb888d8b11a5949fd23693726449a",
+    "validated-world-fixed.png": "43be373805c60527d2fe72b2d328494bfaa4bd231565efc75e00c6b1159a18d7",
+    "generation-cancelled.png": "6fe93d415a3ee36188e0a7a6fbb0aec2ce478d3c799b384a668655b06a442d74",
+    "policy-running.png": "2913426e89f5773f81bc30250d3ae372dd6893d717740bf2b39f3e73e97839fe",
+    "webgl-failure-before-fix.png": "27e90588fe289d226f770ccc405e50efd1983c6cb94ba7c1ba2261c2e86ae086"
+  },
+  "additional_native_check": "Cancellation now records termination=cancelled; focused native SDK regression passed in 3.78 seconds after the UI capture."
+}

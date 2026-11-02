@@ -1,0 +1,1604 @@
+{
+  "schema_version": 1,
+  "purpose": "Internal engineering scenarios and independent acceptance contracts; no generated worlds, scripted policies, or claimed benchmark results.",
+  "scenarios": [
+    {
+      "id": "factory_three_station",
+      "title": "Factory machining surrogate",
+      "prompt": "Carry the same metal workpiece from receiving through a physically loaded inspection station to shipping. Use tiago++. Make an environment at least 20m by 12m with connected spaces under the0.8m-diameter/1.6m navigation clearance contract. Preserve these explicit acceptance IDs and requirements: {\"objects\":[{\"id\":\"metal_workpiece\",\"movable\":true},{\"id\":\"decoy\",\"movable\":true},{\"id\":\"source_support\",\"movable\":false},{\"id\":\"destination_support\",\"movable\":false},{\"id\":\"process_fixture\",\"movable\":false}],\"destination_region\":\"shipping_output\",\"minimum_initial_payload_to_destination_distance_m\":5.0,\"regions\":[\"source_approach\",\"destination_approach\",\"shipping_output\"],\"rubric\":[{\"id\":\"picked\",\"predicate\":\"holding\",\"object_id\":\"metal_workpiece\",\"target_id\":null,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"source_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"source_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"destination_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"destination_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"source_visit\"],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"placed\",\"predicate\":\"in_region\",\"object_id\":\"metal_workpiece\",\"target_id\":\"shipping_output\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried_to_output\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"supported\",\"predicate\":\"on_top\",\"object_id\":\"metal_workpiece\",\"target_id\":\"destination_support\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried_to_output\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"released\",\"predicate\":\"released\",\"object_id\":\"metal_workpiece\",\"target_id\":null,\"mode\":\"final\",\"intent\":\"maintain\",\"after\":[],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"processed\",\"predicate\":\"process_complete\",\"object_id\":\"metal_workpiece\",\"target_id\":\"inspection_cycle\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"carried_to_process\"],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"carried_to_process\",\"predicate\":\"carried_distance\",\"object_id\":\"metal_workpiece\",\"target_id\":null,\"threshold\":1.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"picked\"],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"carried_to_output\",\"predicate\":\"carried_distance\",\"object_id\":\"metal_workpiece\",\"target_id\":null,\"threshold\":1.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"processed\"],\"min_duration\":0.0,\"max_tolerance\":0.03}],\"process\":{\"id\":\"inspection_cycle\",\"fixture_id\":\"process_fixture\",\"workpiece_ids\":[\"metal_workpiece\"],\"duration\":2.0,\"output_state\":\"inspected\",\"prerequisites\":[{\"predicate\":\"on_top\",\"object_id\":\"metal_workpiece\",\"target_id\":\"process_fixture\"},{\"predicate\":\"released\",\"object_id\":\"metal_workpiece\",\"target_id\":null}]},\"joints\":[]}. All listed criteria are required AND clauses, without alternative groups. At delivery require the SAME subject, measured support contact, release, and one continuous second of final stability. Separate source and destination approaches by at least3m. Include real supports and hollow access geometry. Disclose physical approximations. The delivery region must have no side longer than1.5m and must not contain the initial subject. Carried_distance means net XY displacement during one uninterrupted sampled holding interval, not accumulated path length; use positive thresholds exactly as specified. Release the workpiece on the process fixture continuously for the stated duration, then regrasp and carry it onward. Keep that fixture at least2m from both the initial subject and the delivery-region center. The policy-facing task text must describe every required stage and mention these exact identifiers: metal_workpiece, shipping_output, source_approach, destination_approach, inspection_cycle.",
+      "robot": "tiago++",
+      "min_bounds_xy": [
+        20,
+        12
+      ],
+      "subject_id": "metal_workpiece",
+      "destination_region": "shipping_output",
+      "min_transfer_distance_m": 5.0,
+      "required_objects": [
+        {
+          "id": "metal_workpiece",
+          "movable": true
+        },
+        {
+          "id": "decoy",
+          "movable": true
+        },
+        {
+          "id": "source_support",
+          "movable": false
+        },
+        {
+          "id": "destination_support",
+          "movable": false
+        },
+        {
+          "id": "process_fixture",
+          "movable": false
+        }
+      ],
+      "required_regions": [
+        "source_approach",
+        "destination_approach",
+        "shipping_output"
+      ],
+      "min_approach_separation_m": 3.0,
+      "rubric_requirements": [
+        {
+          "id": "picked",
+          "predicate": "holding",
+          "object_id": "metal_workpiece",
+          "target_id": null,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "source_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "source_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "destination_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "destination_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "source_visit"
+          ],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "placed",
+          "predicate": "in_region",
+          "object_id": "metal_workpiece",
+          "target_id": "shipping_output",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried_to_output"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "supported",
+          "predicate": "on_top",
+          "object_id": "metal_workpiece",
+          "target_id": "destination_support",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried_to_output"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "released",
+          "predicate": "released",
+          "object_id": "metal_workpiece",
+          "target_id": null,
+          "mode": "final",
+          "intent": "maintain",
+          "after": [],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "processed",
+          "predicate": "process_complete",
+          "object_id": "metal_workpiece",
+          "target_id": "inspection_cycle",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "carried_to_process"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "carried_to_process",
+          "predicate": "carried_distance",
+          "object_id": "metal_workpiece",
+          "target_id": null,
+          "threshold": 1.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "picked"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "carried_to_output",
+          "predicate": "carried_distance",
+          "object_id": "metal_workpiece",
+          "target_id": null,
+          "threshold": 1.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "processed"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        }
+      ],
+      "process_requirement": {
+        "id": "inspection_cycle",
+        "fixture_id": "process_fixture",
+        "workpiece_ids": [
+          "metal_workpiece"
+        ],
+        "duration": 2.0,
+        "output_state": "inspected",
+        "prerequisites": [
+          {
+            "predicate": "on_top",
+            "object_id": "metal_workpiece",
+            "target_id": "process_fixture"
+          },
+          {
+            "predicate": "released",
+            "object_id": "metal_workpiece",
+            "target_id": null
+          }
+        ]
+      },
+      "joint_requirements": [],
+      "independent_checks": [
+        "Validate named subject identity and destination binding against this file, not generated prose.",
+        "Verify all mandatory criteria, support, release, order, tolerance ceilings and stable-duration minima before simulation.",
+        "Check source/destination separation from the frozen initial geometry.",
+        "Reject no-op, wrong-object, wrong-order, unstable final placement and interrupted-process counterexamples."
+      ],
+      "physical_review_checks": [
+        "Native initial/settling diagnostics must pass without object ejection.",
+        "Inspect connected ground-plane access and actual supports; an optimistic route is not task-solvability proof.",
+        "Run a real policy with sensor-only observations and preserve replay, contact evidence and per-criterion outcomes.",
+        "Check that appearance/geometry matches the named setting; metadata labels alone do not establish fidelity."
+      ],
+      "max_destination_extent_m": 1.5,
+      "min_process_station_separation_m": 2.0,
+      "required_task_mentions": [
+        "metal_workpiece",
+        "shipping_output",
+        "source_approach",
+        "destination_approach",
+        "inspection_cycle"
+      ]
+    },
+    {
+      "id": "warehouse_order_pick",
+      "title": "Warehouse order picking",
+      "prompt": "Pick the requested blue carton from a rack aisle and deliver it to packing; leave the lookalike carton in place. Use tiago++. Make an environment at least 24m by 16m with connected spaces under the0.8m-diameter/1.6m navigation clearance contract. Preserve these explicit acceptance IDs and requirements: {\"objects\":[{\"id\":\"blue_carton\",\"movable\":true},{\"id\":\"decoy\",\"movable\":true},{\"id\":\"source_support\",\"movable\":false},{\"id\":\"destination_support\",\"movable\":false}],\"destination_region\":\"packing_output\",\"minimum_initial_payload_to_destination_distance_m\":6.0,\"regions\":[\"source_approach\",\"destination_approach\",\"packing_output\"],\"rubric\":[{\"id\":\"picked\",\"predicate\":\"holding\",\"object_id\":\"blue_carton\",\"target_id\":null,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"source_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"source_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"destination_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"destination_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"source_visit\"],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"placed\",\"predicate\":\"in_region\",\"object_id\":\"blue_carton\",\"target_id\":\"packing_output\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"supported\",\"predicate\":\"on_top\",\"object_id\":\"blue_carton\",\"target_id\":\"destination_support\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"released\",\"predicate\":\"released\",\"object_id\":\"blue_carton\",\"target_id\":null,\"mode\":\"final\",\"intent\":\"maintain\",\"after\":[],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"carried\",\"predicate\":\"carried_distance\",\"object_id\":\"blue_carton\",\"target_id\":null,\"threshold\":2.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"picked\"],\"min_duration\":0.0,\"max_tolerance\":0.03}],\"process\":null,\"joints\":[]}. All listed criteria are required AND clauses, without alternative groups. At delivery require the SAME subject, measured support contact, release, and one continuous second of final stability. Separate source and destination approaches by at least3m. Include real supports and hollow access geometry. Disclose physical approximations. The delivery region must have no side longer than1.5m and must not contain the initial subject. Carried_distance means net XY displacement during one uninterrupted sampled holding interval, not accumulated path length; use positive thresholds exactly as specified. The policy-facing task text must describe every required stage and mention these exact identifiers: blue_carton, packing_output, source_approach, destination_approach.",
+      "robot": "tiago++",
+      "min_bounds_xy": [
+        24,
+        16
+      ],
+      "subject_id": "blue_carton",
+      "destination_region": "packing_output",
+      "min_transfer_distance_m": 6.0,
+      "required_objects": [
+        {
+          "id": "blue_carton",
+          "movable": true
+        },
+        {
+          "id": "decoy",
+          "movable": true
+        },
+        {
+          "id": "source_support",
+          "movable": false
+        },
+        {
+          "id": "destination_support",
+          "movable": false
+        }
+      ],
+      "required_regions": [
+        "source_approach",
+        "destination_approach",
+        "packing_output"
+      ],
+      "min_approach_separation_m": 3.0,
+      "rubric_requirements": [
+        {
+          "id": "picked",
+          "predicate": "holding",
+          "object_id": "blue_carton",
+          "target_id": null,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "source_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "source_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "destination_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "destination_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "source_visit"
+          ],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "placed",
+          "predicate": "in_region",
+          "object_id": "blue_carton",
+          "target_id": "packing_output",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "supported",
+          "predicate": "on_top",
+          "object_id": "blue_carton",
+          "target_id": "destination_support",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "released",
+          "predicate": "released",
+          "object_id": "blue_carton",
+          "target_id": null,
+          "mode": "final",
+          "intent": "maintain",
+          "after": [],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "carried",
+          "predicate": "carried_distance",
+          "object_id": "blue_carton",
+          "target_id": null,
+          "threshold": 2.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "picked"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        }
+      ],
+      "process_requirement": null,
+      "joint_requirements": [],
+      "independent_checks": [
+        "Validate named subject identity and destination binding against this file, not generated prose.",
+        "Verify all mandatory criteria, support, release, order, tolerance ceilings and stable-duration minima before simulation.",
+        "Check source/destination separation from the frozen initial geometry.",
+        "Reject no-op, wrong-object, wrong-order, unstable final placement and interrupted-process counterexamples."
+      ],
+      "physical_review_checks": [
+        "Native initial/settling diagnostics must pass without object ejection.",
+        "Inspect connected ground-plane access and actual supports; an optimistic route is not task-solvability proof.",
+        "Run a real policy with sensor-only observations and preserve replay, contact evidence and per-criterion outcomes.",
+        "Check that appearance/geometry matches the named setting; metadata labels alone do not establish fidelity."
+      ],
+      "max_destination_extent_m": 1.5,
+      "min_process_station_separation_m": null,
+      "required_task_mentions": [
+        "blue_carton",
+        "packing_output",
+        "source_approach",
+        "destination_approach"
+      ]
+    },
+    {
+      "id": "apartment_room_delivery",
+      "title": "Apartment mobile manipulation",
+      "prompt": "Carry a rigid mug from the kitchen counter into a separate living-room delivery area. Use tiago++. Make an environment at least 12m by 10m with connected spaces under the0.8m-diameter/1.6m navigation clearance contract. Preserve these explicit acceptance IDs and requirements: {\"objects\":[{\"id\":\"mug\",\"movable\":true},{\"id\":\"decoy\",\"movable\":true},{\"id\":\"source_support\",\"movable\":false},{\"id\":\"destination_support\",\"movable\":false}],\"destination_region\":\"living_output\",\"minimum_initial_payload_to_destination_distance_m\":3.0,\"regions\":[\"source_approach\",\"destination_approach\",\"living_output\"],\"rubric\":[{\"id\":\"picked\",\"predicate\":\"holding\",\"object_id\":\"mug\",\"target_id\":null,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"source_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"source_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"destination_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"destination_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"source_visit\"],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"placed\",\"predicate\":\"in_region\",\"object_id\":\"mug\",\"target_id\":\"living_output\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"supported\",\"predicate\":\"on_top\",\"object_id\":\"mug\",\"target_id\":\"destination_support\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"released\",\"predicate\":\"released\",\"object_id\":\"mug\",\"target_id\":null,\"mode\":\"final\",\"intent\":\"maintain\",\"after\":[],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"carried\",\"predicate\":\"carried_distance\",\"object_id\":\"mug\",\"target_id\":null,\"threshold\":2.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"picked\"],\"min_duration\":0.0,\"max_tolerance\":0.03}],\"process\":null,\"joints\":[]}. All listed criteria are required AND clauses, without alternative groups. At delivery require the SAME subject, measured support contact, release, and one continuous second of final stability. Separate source and destination approaches by at least3m. Include real supports and hollow access geometry. Disclose physical approximations. The delivery region must have no side longer than1.5m and must not contain the initial subject. Carried_distance means net XY displacement during one uninterrupted sampled holding interval, not accumulated path length; use positive thresholds exactly as specified. The policy-facing task text must describe every required stage and mention these exact identifiers: mug, living_output, source_approach, destination_approach.",
+      "robot": "tiago++",
+      "min_bounds_xy": [
+        12,
+        10
+      ],
+      "subject_id": "mug",
+      "destination_region": "living_output",
+      "min_transfer_distance_m": 3.0,
+      "required_objects": [
+        {
+          "id": "mug",
+          "movable": true
+        },
+        {
+          "id": "decoy",
+          "movable": true
+        },
+        {
+          "id": "source_support",
+          "movable": false
+        },
+        {
+          "id": "destination_support",
+          "movable": false
+        }
+      ],
+      "required_regions": [
+        "source_approach",
+        "destination_approach",
+        "living_output"
+      ],
+      "min_approach_separation_m": 3.0,
+      "rubric_requirements": [
+        {
+          "id": "picked",
+          "predicate": "holding",
+          "object_id": "mug",
+          "target_id": null,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "source_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "source_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "destination_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "destination_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "source_visit"
+          ],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "placed",
+          "predicate": "in_region",
+          "object_id": "mug",
+          "target_id": "living_output",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "supported",
+          "predicate": "on_top",
+          "object_id": "mug",
+          "target_id": "destination_support",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "released",
+          "predicate": "released",
+          "object_id": "mug",
+          "target_id": null,
+          "mode": "final",
+          "intent": "maintain",
+          "after": [],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "carried",
+          "predicate": "carried_distance",
+          "object_id": "mug",
+          "target_id": null,
+          "threshold": 2.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "picked"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        }
+      ],
+      "process_requirement": null,
+      "joint_requirements": [],
+      "independent_checks": [
+        "Validate named subject identity and destination binding against this file, not generated prose.",
+        "Verify all mandatory criteria, support, release, order, tolerance ceilings and stable-duration minima before simulation.",
+        "Check source/destination separation from the frozen initial geometry.",
+        "Reject no-op, wrong-object, wrong-order, unstable final placement and interrupted-process counterexamples."
+      ],
+      "physical_review_checks": [
+        "Native initial/settling diagnostics must pass without object ejection.",
+        "Inspect connected ground-plane access and actual supports; an optimistic route is not task-solvability proof.",
+        "Run a real policy with sensor-only observations and preserve replay, contact evidence and per-criterion outcomes.",
+        "Check that appearance/geometry matches the named setting; metadata labels alone do not establish fidelity."
+      ],
+      "max_destination_extent_m": 1.5,
+      "min_process_station_separation_m": null,
+      "required_task_mentions": [
+        "mug",
+        "living_output",
+        "source_approach",
+        "destination_approach"
+      ]
+    },
+    {
+      "id": "laboratory_sample_transfer",
+      "title": "Laboratory specimen transfer",
+      "prompt": "Move one sealed rigid sample container through a timed bench inspection surrogate and deliver that same container to storage. No medical or chemical process is simulated. Use tiago++. Make an environment at least 16m by 12m with connected spaces under the0.8m-diameter/1.6m navigation clearance contract. Preserve these explicit acceptance IDs and requirements: {\"objects\":[{\"id\":\"sample_container\",\"movable\":true},{\"id\":\"decoy\",\"movable\":true},{\"id\":\"source_support\",\"movable\":false},{\"id\":\"destination_support\",\"movable\":false},{\"id\":\"process_fixture\",\"movable\":false}],\"destination_region\":\"sample_storage\",\"minimum_initial_payload_to_destination_distance_m\":4.0,\"regions\":[\"source_approach\",\"destination_approach\",\"sample_storage\"],\"rubric\":[{\"id\":\"picked\",\"predicate\":\"holding\",\"object_id\":\"sample_container\",\"target_id\":null,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"source_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"source_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"destination_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"destination_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"source_visit\"],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"placed\",\"predicate\":\"in_region\",\"object_id\":\"sample_container\",\"target_id\":\"sample_storage\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried_to_output\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"supported\",\"predicate\":\"on_top\",\"object_id\":\"sample_container\",\"target_id\":\"destination_support\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried_to_output\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"released\",\"predicate\":\"released\",\"object_id\":\"sample_container\",\"target_id\":null,\"mode\":\"final\",\"intent\":\"maintain\",\"after\":[],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"processed\",\"predicate\":\"process_complete\",\"object_id\":\"sample_container\",\"target_id\":\"bench_cycle\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"carried_to_process\"],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"carried_to_process\",\"predicate\":\"carried_distance\",\"object_id\":\"sample_container\",\"target_id\":null,\"threshold\":1.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"picked\"],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"carried_to_output\",\"predicate\":\"carried_distance\",\"object_id\":\"sample_container\",\"target_id\":null,\"threshold\":1.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"processed\"],\"min_duration\":0.0,\"max_tolerance\":0.03}],\"process\":{\"id\":\"bench_cycle\",\"fixture_id\":\"process_fixture\",\"workpiece_ids\":[\"sample_container\"],\"duration\":3.0,\"output_state\":\"inspected\",\"prerequisites\":[{\"predicate\":\"on_top\",\"object_id\":\"sample_container\",\"target_id\":\"process_fixture\"},{\"predicate\":\"released\",\"object_id\":\"sample_container\",\"target_id\":null}]},\"joints\":[]}. All listed criteria are required AND clauses, without alternative groups. At delivery require the SAME subject, measured support contact, release, and one continuous second of final stability. Separate source and destination approaches by at least3m. Include real supports and hollow access geometry. Disclose physical approximations. The delivery region must have no side longer than1.5m and must not contain the initial subject. Carried_distance means net XY displacement during one uninterrupted sampled holding interval, not accumulated path length; use positive thresholds exactly as specified. Release the workpiece on the process fixture continuously for the stated duration, then regrasp and carry it onward. Keep that fixture at least2m from both the initial subject and the delivery-region center. The policy-facing task text must describe every required stage and mention these exact identifiers: sample_container, sample_storage, source_approach, destination_approach, bench_cycle.",
+      "robot": "tiago++",
+      "min_bounds_xy": [
+        16,
+        12
+      ],
+      "subject_id": "sample_container",
+      "destination_region": "sample_storage",
+      "min_transfer_distance_m": 4.0,
+      "required_objects": [
+        {
+          "id": "sample_container",
+          "movable": true
+        },
+        {
+          "id": "decoy",
+          "movable": true
+        },
+        {
+          "id": "source_support",
+          "movable": false
+        },
+        {
+          "id": "destination_support",
+          "movable": false
+        },
+        {
+          "id": "process_fixture",
+          "movable": false
+        }
+      ],
+      "required_regions": [
+        "source_approach",
+        "destination_approach",
+        "sample_storage"
+      ],
+      "min_approach_separation_m": 3.0,
+      "rubric_requirements": [
+        {
+          "id": "picked",
+          "predicate": "holding",
+          "object_id": "sample_container",
+          "target_id": null,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "source_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "source_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "destination_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "destination_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "source_visit"
+          ],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "placed",
+          "predicate": "in_region",
+          "object_id": "sample_container",
+          "target_id": "sample_storage",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried_to_output"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "supported",
+          "predicate": "on_top",
+          "object_id": "sample_container",
+          "target_id": "destination_support",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried_to_output"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "released",
+          "predicate": "released",
+          "object_id": "sample_container",
+          "target_id": null,
+          "mode": "final",
+          "intent": "maintain",
+          "after": [],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "processed",
+          "predicate": "process_complete",
+          "object_id": "sample_container",
+          "target_id": "bench_cycle",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "carried_to_process"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "carried_to_process",
+          "predicate": "carried_distance",
+          "object_id": "sample_container",
+          "target_id": null,
+          "threshold": 1.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "picked"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "carried_to_output",
+          "predicate": "carried_distance",
+          "object_id": "sample_container",
+          "target_id": null,
+          "threshold": 1.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "processed"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        }
+      ],
+      "process_requirement": {
+        "id": "bench_cycle",
+        "fixture_id": "process_fixture",
+        "workpiece_ids": [
+          "sample_container"
+        ],
+        "duration": 3.0,
+        "output_state": "inspected",
+        "prerequisites": [
+          {
+            "predicate": "on_top",
+            "object_id": "sample_container",
+            "target_id": "process_fixture"
+          },
+          {
+            "predicate": "released",
+            "object_id": "sample_container",
+            "target_id": null
+          }
+        ]
+      },
+      "joint_requirements": [],
+      "independent_checks": [
+        "Validate named subject identity and destination binding against this file, not generated prose.",
+        "Verify all mandatory criteria, support, release, order, tolerance ceilings and stable-duration minima before simulation.",
+        "Check source/destination separation from the frozen initial geometry.",
+        "Reject no-op, wrong-object, wrong-order, unstable final placement and interrupted-process counterexamples."
+      ],
+      "physical_review_checks": [
+        "Native initial/settling diagnostics must pass without object ejection.",
+        "Inspect connected ground-plane access and actual supports; an optimistic route is not task-solvability proof.",
+        "Run a real policy with sensor-only observations and preserve replay, contact evidence and per-criterion outcomes.",
+        "Check that appearance/geometry matches the named setting; metadata labels alone do not establish fidelity."
+      ],
+      "max_destination_extent_m": 1.5,
+      "min_process_station_separation_m": 2.0,
+      "required_task_mentions": [
+        "sample_container",
+        "sample_storage",
+        "source_approach",
+        "destination_approach",
+        "bench_cycle"
+      ]
+    },
+    {
+      "id": "clinic_supply_courier",
+      "title": "Clinic supply courier",
+      "prompt": "Carry a rigid nonmedical supply box from the stockroom to a reception counter across connected corridors. Use g1. Make an environment at least 24m by 14m with connected spaces under the0.8m-diameter/1.6m navigation clearance contract. Preserve these explicit acceptance IDs and requirements: {\"objects\":[{\"id\":\"supply_box\",\"movable\":true},{\"id\":\"decoy\",\"movable\":true},{\"id\":\"source_support\",\"movable\":false},{\"id\":\"destination_support\",\"movable\":false}],\"destination_region\":\"reception_output\",\"minimum_initial_payload_to_destination_distance_m\":6.0,\"regions\":[\"source_approach\",\"destination_approach\",\"reception_output\"],\"rubric\":[{\"id\":\"picked\",\"predicate\":\"holding\",\"object_id\":\"supply_box\",\"target_id\":null,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"source_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"source_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"destination_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"destination_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"source_visit\"],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"placed\",\"predicate\":\"in_region\",\"object_id\":\"supply_box\",\"target_id\":\"reception_output\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"supported\",\"predicate\":\"on_top\",\"object_id\":\"supply_box\",\"target_id\":\"destination_support\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"released\",\"predicate\":\"released\",\"object_id\":\"supply_box\",\"target_id\":null,\"mode\":\"final\",\"intent\":\"maintain\",\"after\":[],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"carried\",\"predicate\":\"carried_distance\",\"object_id\":\"supply_box\",\"target_id\":null,\"threshold\":2.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"picked\"],\"min_duration\":0.0,\"max_tolerance\":0.03}],\"process\":null,\"joints\":[]}. All listed criteria are required AND clauses, without alternative groups. At delivery require the SAME subject, measured support contact, release, and one continuous second of final stability. Separate source and destination approaches by at least3m. Include real supports and hollow access geometry. Disclose physical approximations. The delivery region must have no side longer than1.5m and must not contain the initial subject. Carried_distance means net XY displacement during one uninterrupted sampled holding interval, not accumulated path length; use positive thresholds exactly as specified. The policy-facing task text must describe every required stage and mention these exact identifiers: supply_box, reception_output, source_approach, destination_approach.",
+      "robot": "g1",
+      "min_bounds_xy": [
+        24,
+        14
+      ],
+      "subject_id": "supply_box",
+      "destination_region": "reception_output",
+      "min_transfer_distance_m": 6.0,
+      "required_objects": [
+        {
+          "id": "supply_box",
+          "movable": true
+        },
+        {
+          "id": "decoy",
+          "movable": true
+        },
+        {
+          "id": "source_support",
+          "movable": false
+        },
+        {
+          "id": "destination_support",
+          "movable": false
+        }
+      ],
+      "required_regions": [
+        "source_approach",
+        "destination_approach",
+        "reception_output"
+      ],
+      "min_approach_separation_m": 3.0,
+      "rubric_requirements": [
+        {
+          "id": "picked",
+          "predicate": "holding",
+          "object_id": "supply_box",
+          "target_id": null,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "source_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "source_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "destination_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "destination_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "source_visit"
+          ],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "placed",
+          "predicate": "in_region",
+          "object_id": "supply_box",
+          "target_id": "reception_output",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "supported",
+          "predicate": "on_top",
+          "object_id": "supply_box",
+          "target_id": "destination_support",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "released",
+          "predicate": "released",
+          "object_id": "supply_box",
+          "target_id": null,
+          "mode": "final",
+          "intent": "maintain",
+          "after": [],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "carried",
+          "predicate": "carried_distance",
+          "object_id": "supply_box",
+          "target_id": null,
+          "threshold": 2.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "picked"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        }
+      ],
+      "process_requirement": null,
+      "joint_requirements": [],
+      "independent_checks": [
+        "Validate named subject identity and destination binding against this file, not generated prose.",
+        "Verify all mandatory criteria, support, release, order, tolerance ceilings and stable-duration minima before simulation.",
+        "Check source/destination separation from the frozen initial geometry.",
+        "Reject no-op, wrong-object, wrong-order, unstable final placement and interrupted-process counterexamples."
+      ],
+      "physical_review_checks": [
+        "Native initial/settling diagnostics must pass without object ejection.",
+        "Inspect connected ground-plane access and actual supports; an optimistic route is not task-solvability proof.",
+        "Run a real policy with sensor-only observations and preserve replay, contact evidence and per-criterion outcomes.",
+        "Check that appearance/geometry matches the named setting; metadata labels alone do not establish fidelity."
+      ],
+      "max_destination_extent_m": 1.5,
+      "min_process_station_separation_m": null,
+      "required_task_mentions": [
+        "supply_box",
+        "reception_output",
+        "source_approach",
+        "destination_approach"
+      ]
+    },
+    {
+      "id": "office_service_route",
+      "title": "Office service route",
+      "prompt": "Pick up a rigid package at the mailroom and deliver it to a meeting-room drop-off across the office. Use tiago++. Make an environment at least 20m by 14m with connected spaces under the0.8m-diameter/1.6m navigation clearance contract. Preserve these explicit acceptance IDs and requirements: {\"objects\":[{\"id\":\"mail_package\",\"movable\":true},{\"id\":\"decoy\",\"movable\":true},{\"id\":\"source_support\",\"movable\":false},{\"id\":\"destination_support\",\"movable\":false}],\"destination_region\":\"meeting_output\",\"minimum_initial_payload_to_destination_distance_m\":5.0,\"regions\":[\"source_approach\",\"destination_approach\",\"meeting_output\"],\"rubric\":[{\"id\":\"picked\",\"predicate\":\"holding\",\"object_id\":\"mail_package\",\"target_id\":null,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"source_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"source_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"destination_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"destination_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"source_visit\"],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"placed\",\"predicate\":\"in_region\",\"object_id\":\"mail_package\",\"target_id\":\"meeting_output\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"supported\",\"predicate\":\"on_top\",\"object_id\":\"mail_package\",\"target_id\":\"destination_support\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"released\",\"predicate\":\"released\",\"object_id\":\"mail_package\",\"target_id\":null,\"mode\":\"final\",\"intent\":\"maintain\",\"after\":[],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"carried\",\"predicate\":\"carried_distance\",\"object_id\":\"mail_package\",\"target_id\":null,\"threshold\":2.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"picked\"],\"min_duration\":0.0,\"max_tolerance\":0.03}],\"process\":null,\"joints\":[]}. All listed criteria are required AND clauses, without alternative groups. At delivery require the SAME subject, measured support contact, release, and one continuous second of final stability. Separate source and destination approaches by at least3m. Include real supports and hollow access geometry. Disclose physical approximations. The delivery region must have no side longer than1.5m and must not contain the initial subject. Carried_distance means net XY displacement during one uninterrupted sampled holding interval, not accumulated path length; use positive thresholds exactly as specified. The policy-facing task text must describe every required stage and mention these exact identifiers: mail_package, meeting_output, source_approach, destination_approach.",
+      "robot": "tiago++",
+      "min_bounds_xy": [
+        20,
+        14
+      ],
+      "subject_id": "mail_package",
+      "destination_region": "meeting_output",
+      "min_transfer_distance_m": 5.0,
+      "required_objects": [
+        {
+          "id": "mail_package",
+          "movable": true
+        },
+        {
+          "id": "decoy",
+          "movable": true
+        },
+        {
+          "id": "source_support",
+          "movable": false
+        },
+        {
+          "id": "destination_support",
+          "movable": false
+        }
+      ],
+      "required_regions": [
+        "source_approach",
+        "destination_approach",
+        "meeting_output"
+      ],
+      "min_approach_separation_m": 3.0,
+      "rubric_requirements": [
+        {
+          "id": "picked",
+          "predicate": "holding",
+          "object_id": "mail_package",
+          "target_id": null,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "source_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "source_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "destination_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "destination_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "source_visit"
+          ],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "placed",
+          "predicate": "in_region",
+          "object_id": "mail_package",
+          "target_id": "meeting_output",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "supported",
+          "predicate": "on_top",
+          "object_id": "mail_package",
+          "target_id": "destination_support",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "released",
+          "predicate": "released",
+          "object_id": "mail_package",
+          "target_id": null,
+          "mode": "final",
+          "intent": "maintain",
+          "after": [],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "carried",
+          "predicate": "carried_distance",
+          "object_id": "mail_package",
+          "target_id": null,
+          "threshold": 2.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "picked"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        }
+      ],
+      "process_requirement": null,
+      "joint_requirements": [],
+      "independent_checks": [
+        "Validate named subject identity and destination binding against this file, not generated prose.",
+        "Verify all mandatory criteria, support, release, order, tolerance ceilings and stable-duration minima before simulation.",
+        "Check source/destination separation from the frozen initial geometry.",
+        "Reject no-op, wrong-object, wrong-order, unstable final placement and interrupted-process counterexamples."
+      ],
+      "physical_review_checks": [
+        "Native initial/settling diagnostics must pass without object ejection.",
+        "Inspect connected ground-plane access and actual supports; an optimistic route is not task-solvability proof.",
+        "Run a real policy with sensor-only observations and preserve replay, contact evidence and per-criterion outcomes.",
+        "Check that appearance/geometry matches the named setting; metadata labels alone do not establish fidelity."
+      ],
+      "max_destination_extent_m": 1.5,
+      "min_process_station_separation_m": null,
+      "required_task_mentions": [
+        "mail_package",
+        "meeting_output",
+        "source_approach",
+        "destination_approach"
+      ]
+    },
+    {
+      "id": "retail_restock",
+      "title": "Retail restocking",
+      "prompt": "Carry the specified cereal box from the storeroom to a physically supported display location; a nearby decoy must not count. Use tiago++. Make an environment at least 20m by 12m with connected spaces under the0.8m-diameter/1.6m navigation clearance contract. Preserve these explicit acceptance IDs and requirements: {\"objects\":[{\"id\":\"cereal_box\",\"movable\":true},{\"id\":\"decoy\",\"movable\":true},{\"id\":\"source_support\",\"movable\":false},{\"id\":\"destination_support\",\"movable\":false}],\"destination_region\":\"display_output\",\"minimum_initial_payload_to_destination_distance_m\":4.0,\"regions\":[\"source_approach\",\"destination_approach\",\"display_output\"],\"rubric\":[{\"id\":\"picked\",\"predicate\":\"holding\",\"object_id\":\"cereal_box\",\"target_id\":null,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"source_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"source_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"destination_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"destination_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"source_visit\"],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"placed\",\"predicate\":\"in_region\",\"object_id\":\"cereal_box\",\"target_id\":\"display_output\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"supported\",\"predicate\":\"on_top\",\"object_id\":\"cereal_box\",\"target_id\":\"destination_support\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"released\",\"predicate\":\"released\",\"object_id\":\"cereal_box\",\"target_id\":null,\"mode\":\"final\",\"intent\":\"maintain\",\"after\":[],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"carried\",\"predicate\":\"carried_distance\",\"object_id\":\"cereal_box\",\"target_id\":null,\"threshold\":2.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"picked\"],\"min_duration\":0.0,\"max_tolerance\":0.03}],\"process\":null,\"joints\":[]}. All listed criteria are required AND clauses, without alternative groups. At delivery require the SAME subject, measured support contact, release, and one continuous second of final stability. Separate source and destination approaches by at least3m. Include real supports and hollow access geometry. Disclose physical approximations. The delivery region must have no side longer than1.5m and must not contain the initial subject. Carried_distance means net XY displacement during one uninterrupted sampled holding interval, not accumulated path length; use positive thresholds exactly as specified. The policy-facing task text must describe every required stage and mention these exact identifiers: cereal_box, display_output, source_approach, destination_approach.",
+      "robot": "tiago++",
+      "min_bounds_xy": [
+        20,
+        12
+      ],
+      "subject_id": "cereal_box",
+      "destination_region": "display_output",
+      "min_transfer_distance_m": 4.0,
+      "required_objects": [
+        {
+          "id": "cereal_box",
+          "movable": true
+        },
+        {
+          "id": "decoy",
+          "movable": true
+        },
+        {
+          "id": "source_support",
+          "movable": false
+        },
+        {
+          "id": "destination_support",
+          "movable": false
+        }
+      ],
+      "required_regions": [
+        "source_approach",
+        "destination_approach",
+        "display_output"
+      ],
+      "min_approach_separation_m": 3.0,
+      "rubric_requirements": [
+        {
+          "id": "picked",
+          "predicate": "holding",
+          "object_id": "cereal_box",
+          "target_id": null,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "source_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "source_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "destination_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "destination_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "source_visit"
+          ],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "placed",
+          "predicate": "in_region",
+          "object_id": "cereal_box",
+          "target_id": "display_output",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "supported",
+          "predicate": "on_top",
+          "object_id": "cereal_box",
+          "target_id": "destination_support",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "released",
+          "predicate": "released",
+          "object_id": "cereal_box",
+          "target_id": null,
+          "mode": "final",
+          "intent": "maintain",
+          "after": [],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "carried",
+          "predicate": "carried_distance",
+          "object_id": "cereal_box",
+          "target_id": null,
+          "threshold": 2.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "picked"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        }
+      ],
+      "process_requirement": null,
+      "joint_requirements": [],
+      "independent_checks": [
+        "Validate named subject identity and destination binding against this file, not generated prose.",
+        "Verify all mandatory criteria, support, release, order, tolerance ceilings and stable-duration minima before simulation.",
+        "Check source/destination separation from the frozen initial geometry.",
+        "Reject no-op, wrong-object, wrong-order, unstable final placement and interrupted-process counterexamples."
+      ],
+      "physical_review_checks": [
+        "Native initial/settling diagnostics must pass without object ejection.",
+        "Inspect connected ground-plane access and actual supports; an optimistic route is not task-solvability proof.",
+        "Run a real policy with sensor-only observations and preserve replay, contact evidence and per-criterion outcomes.",
+        "Check that appearance/geometry matches the named setting; metadata labels alone do not establish fidelity."
+      ],
+      "max_destination_extent_m": 1.5,
+      "min_process_station_separation_m": null,
+      "required_task_mentions": [
+        "cereal_box",
+        "display_output",
+        "source_approach",
+        "destination_approach"
+      ]
+    },
+    {
+      "id": "hotel_rigid_tote_delivery",
+      "title": "Hotel service logistics",
+      "prompt": "Transport a rigid empty tote from service storage to a guest-service desk across a hallway. No cloth or deformable laundry is required. Use g1. Make an environment at least 24m by 16m with connected spaces under the0.8m-diameter/1.6m navigation clearance contract. Preserve these explicit acceptance IDs and requirements: {\"objects\":[{\"id\":\"service_tote\",\"movable\":true},{\"id\":\"decoy\",\"movable\":true},{\"id\":\"source_support\",\"movable\":false},{\"id\":\"destination_support\",\"movable\":false}],\"destination_region\":\"guest_output\",\"minimum_initial_payload_to_destination_distance_m\":6.0,\"regions\":[\"source_approach\",\"destination_approach\",\"guest_output\"],\"rubric\":[{\"id\":\"picked\",\"predicate\":\"holding\",\"object_id\":\"service_tote\",\"target_id\":null,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"source_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"source_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"destination_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"destination_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"source_visit\"],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"placed\",\"predicate\":\"in_region\",\"object_id\":\"service_tote\",\"target_id\":\"guest_output\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"supported\",\"predicate\":\"on_top\",\"object_id\":\"service_tote\",\"target_id\":\"destination_support\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"released\",\"predicate\":\"released\",\"object_id\":\"service_tote\",\"target_id\":null,\"mode\":\"final\",\"intent\":\"maintain\",\"after\":[],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"carried\",\"predicate\":\"carried_distance\",\"object_id\":\"service_tote\",\"target_id\":null,\"threshold\":2.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"picked\"],\"min_duration\":0.0,\"max_tolerance\":0.03}],\"process\":null,\"joints\":[]}. All listed criteria are required AND clauses, without alternative groups. At delivery require the SAME subject, measured support contact, release, and one continuous second of final stability. Separate source and destination approaches by at least3m. Include real supports and hollow access geometry. Disclose physical approximations. The delivery region must have no side longer than1.5m and must not contain the initial subject. Carried_distance means net XY displacement during one uninterrupted sampled holding interval, not accumulated path length; use positive thresholds exactly as specified. The policy-facing task text must describe every required stage and mention these exact identifiers: service_tote, guest_output, source_approach, destination_approach.",
+      "robot": "g1",
+      "min_bounds_xy": [
+        24,
+        16
+      ],
+      "subject_id": "service_tote",
+      "destination_region": "guest_output",
+      "min_transfer_distance_m": 6.0,
+      "required_objects": [
+        {
+          "id": "service_tote",
+          "movable": true
+        },
+        {
+          "id": "decoy",
+          "movable": true
+        },
+        {
+          "id": "source_support",
+          "movable": false
+        },
+        {
+          "id": "destination_support",
+          "movable": false
+        }
+      ],
+      "required_regions": [
+        "source_approach",
+        "destination_approach",
+        "guest_output"
+      ],
+      "min_approach_separation_m": 3.0,
+      "rubric_requirements": [
+        {
+          "id": "picked",
+          "predicate": "holding",
+          "object_id": "service_tote",
+          "target_id": null,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "source_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "source_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "destination_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "destination_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "source_visit"
+          ],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "placed",
+          "predicate": "in_region",
+          "object_id": "service_tote",
+          "target_id": "guest_output",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "supported",
+          "predicate": "on_top",
+          "object_id": "service_tote",
+          "target_id": "destination_support",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "released",
+          "predicate": "released",
+          "object_id": "service_tote",
+          "target_id": null,
+          "mode": "final",
+          "intent": "maintain",
+          "after": [],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "carried",
+          "predicate": "carried_distance",
+          "object_id": "service_tote",
+          "target_id": null,
+          "threshold": 2.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "picked"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        }
+      ],
+      "process_requirement": null,
+      "joint_requirements": [],
+      "independent_checks": [
+        "Validate named subject identity and destination binding against this file, not generated prose.",
+        "Verify all mandatory criteria, support, release, order, tolerance ceilings and stable-duration minima before simulation.",
+        "Check source/destination separation from the frozen initial geometry.",
+        "Reject no-op, wrong-object, wrong-order, unstable final placement and interrupted-process counterexamples."
+      ],
+      "physical_review_checks": [
+        "Native initial/settling diagnostics must pass without object ejection.",
+        "Inspect connected ground-plane access and actual supports; an optimistic route is not task-solvability proof.",
+        "Run a real policy with sensor-only observations and preserve replay, contact evidence and per-criterion outcomes.",
+        "Check that appearance/geometry matches the named setting; metadata labels alone do not establish fidelity."
+      ],
+      "max_destination_extent_m": 1.5,
+      "min_process_station_separation_m": null,
+      "required_task_mentions": [
+        "service_tote",
+        "guest_output",
+        "source_approach",
+        "destination_approach"
+      ]
+    },
+    {
+      "id": "recycling_identity_sort",
+      "title": "Recycling identity sorting",
+      "prompt": "Carry the designated rigid red block to the matching physical output bay; reject delivery of the blue distractor. Use tiago++. Make an environment at least 18m by 12m with connected spaces under the0.8m-diameter/1.6m navigation clearance contract. Preserve these explicit acceptance IDs and requirements: {\"objects\":[{\"id\":\"red_block\",\"movable\":true},{\"id\":\"decoy\",\"movable\":true},{\"id\":\"source_support\",\"movable\":false},{\"id\":\"destination_support\",\"movable\":false}],\"destination_region\":\"red_output\",\"minimum_initial_payload_to_destination_distance_m\":4.0,\"regions\":[\"source_approach\",\"destination_approach\",\"red_output\"],\"rubric\":[{\"id\":\"picked\",\"predicate\":\"holding\",\"object_id\":\"red_block\",\"target_id\":null,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"source_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"source_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"destination_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"destination_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"source_visit\"],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"placed\",\"predicate\":\"in_region\",\"object_id\":\"red_block\",\"target_id\":\"red_output\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"supported\",\"predicate\":\"on_top\",\"object_id\":\"red_block\",\"target_id\":\"destination_support\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"released\",\"predicate\":\"released\",\"object_id\":\"red_block\",\"target_id\":null,\"mode\":\"final\",\"intent\":\"maintain\",\"after\":[],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"carried\",\"predicate\":\"carried_distance\",\"object_id\":\"red_block\",\"target_id\":null,\"threshold\":2.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"picked\"],\"min_duration\":0.0,\"max_tolerance\":0.03}],\"process\":null,\"joints\":[]}. All listed criteria are required AND clauses, without alternative groups. At delivery require the SAME subject, measured support contact, release, and one continuous second of final stability. Separate source and destination approaches by at least3m. Include real supports and hollow access geometry. Disclose physical approximations. The delivery region must have no side longer than1.5m and must not contain the initial subject. Carried_distance means net XY displacement during one uninterrupted sampled holding interval, not accumulated path length; use positive thresholds exactly as specified. The policy-facing task text must describe every required stage and mention these exact identifiers: red_block, red_output, source_approach, destination_approach.",
+      "robot": "tiago++",
+      "min_bounds_xy": [
+        18,
+        12
+      ],
+      "subject_id": "red_block",
+      "destination_region": "red_output",
+      "min_transfer_distance_m": 4.0,
+      "required_objects": [
+        {
+          "id": "red_block",
+          "movable": true
+        },
+        {
+          "id": "decoy",
+          "movable": true
+        },
+        {
+          "id": "source_support",
+          "movable": false
+        },
+        {
+          "id": "destination_support",
+          "movable": false
+        }
+      ],
+      "required_regions": [
+        "source_approach",
+        "destination_approach",
+        "red_output"
+      ],
+      "min_approach_separation_m": 3.0,
+      "rubric_requirements": [
+        {
+          "id": "picked",
+          "predicate": "holding",
+          "object_id": "red_block",
+          "target_id": null,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "source_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "source_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "destination_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "destination_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "source_visit"
+          ],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "placed",
+          "predicate": "in_region",
+          "object_id": "red_block",
+          "target_id": "red_output",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "supported",
+          "predicate": "on_top",
+          "object_id": "red_block",
+          "target_id": "destination_support",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "released",
+          "predicate": "released",
+          "object_id": "red_block",
+          "target_id": null,
+          "mode": "final",
+          "intent": "maintain",
+          "after": [],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "carried",
+          "predicate": "carried_distance",
+          "object_id": "red_block",
+          "target_id": null,
+          "threshold": 2.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "picked"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        }
+      ],
+      "process_requirement": null,
+      "joint_requirements": [],
+      "independent_checks": [
+        "Validate named subject identity and destination binding against this file, not generated prose.",
+        "Verify all mandatory criteria, support, release, order, tolerance ceilings and stable-duration minima before simulation.",
+        "Check source/destination separation from the frozen initial geometry.",
+        "Reject no-op, wrong-object, wrong-order, unstable final placement and interrupted-process counterexamples."
+      ],
+      "physical_review_checks": [
+        "Native initial/settling diagnostics must pass without object ejection.",
+        "Inspect connected ground-plane access and actual supports; an optimistic route is not task-solvability proof.",
+        "Run a real policy with sensor-only observations and preserve replay, contact evidence and per-criterion outcomes.",
+        "Check that appearance/geometry matches the named setting; metadata labels alone do not establish fidelity."
+      ],
+      "max_destination_extent_m": 1.5,
+      "min_process_station_separation_m": null,
+      "required_task_mentions": [
+        "red_block",
+        "red_output",
+        "source_approach",
+        "destination_approach"
+      ]
+    },
+    {
+      "id": "workshop_door_delivery",
+      "title": "Workshop articulated access",
+      "prompt": "Physically open an unactuated hinged cabinet door before retrieving a rigid tool case and delivering it to the assembly station. Use tiago++. Make an environment at least 16m by 12m with connected spaces under the0.8m-diameter/1.6m navigation clearance contract. Preserve these explicit acceptance IDs and requirements: {\"objects\":[{\"id\":\"tool_case\",\"movable\":true},{\"id\":\"decoy\",\"movable\":true},{\"id\":\"source_support\",\"movable\":false},{\"id\":\"destination_support\",\"movable\":false},{\"id\":\"cabinet_door\",\"movable\":false}],\"destination_region\":\"assembly_output\",\"minimum_initial_payload_to_destination_distance_m\":4.0,\"regions\":[\"source_approach\",\"destination_approach\",\"assembly_output\"],\"rubric\":[{\"id\":\"picked\",\"predicate\":\"holding\",\"object_id\":\"tool_case\",\"target_id\":null,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"opened\"],\"min_duration\":0.0,\"max_tolerance\":0.03},{\"id\":\"source_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"source_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"destination_visit\",\"predicate\":\"robot_in_region\",\"object_id\":null,\"target_id\":\"destination_approach\",\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"source_visit\"],\"min_duration\":0.2,\"max_tolerance\":0.03},{\"id\":\"placed\",\"predicate\":\"in_region\",\"object_id\":\"tool_case\",\"target_id\":\"assembly_output\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"supported\",\"predicate\":\"on_top\",\"object_id\":\"tool_case\",\"target_id\":\"destination_support\",\"mode\":\"final\",\"intent\":\"achieve\",\"after\":[\"carried\"],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"released\",\"predicate\":\"released\",\"object_id\":\"tool_case\",\"target_id\":null,\"mode\":\"final\",\"intent\":\"maintain\",\"after\":[],\"min_duration\":1.0,\"max_tolerance\":0.03},{\"id\":\"opened\",\"predicate\":\"joint_at\",\"object_id\":\"cabinet_door\",\"target_id\":null,\"threshold\":1.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[],\"min_duration\":0.2,\"max_tolerance\":0.05},{\"id\":\"carried\",\"predicate\":\"carried_distance\",\"object_id\":\"tool_case\",\"target_id\":null,\"threshold\":2.0,\"mode\":\"eventually\",\"intent\":\"achieve\",\"after\":[\"picked\"],\"min_duration\":0.0,\"max_tolerance\":0.03}],\"process\":null,\"joints\":[{\"object_id\":\"cabinet_door\",\"type\":\"hinge\",\"threshold\":1.0}]}. All listed criteria are required AND clauses, without alternative groups. At delivery require the SAME subject, measured support contact, release, and one continuous second of final stability. Separate source and destination approaches by at least3m. Include real supports and hollow access geometry. Disclose physical approximations. The delivery region must have no side longer than1.5m and must not contain the initial subject. Carried_distance means net XY displacement during one uninterrupted sampled holding interval, not accumulated path length; use positive thresholds exactly as specified. The policy-facing task text must describe every required stage and mention these exact identifiers: tool_case, assembly_output, source_approach, destination_approach.",
+      "robot": "tiago++",
+      "min_bounds_xy": [
+        16,
+        12
+      ],
+      "subject_id": "tool_case",
+      "destination_region": "assembly_output",
+      "min_transfer_distance_m": 4.0,
+      "required_objects": [
+        {
+          "id": "tool_case",
+          "movable": true
+        },
+        {
+          "id": "decoy",
+          "movable": true
+        },
+        {
+          "id": "source_support",
+          "movable": false
+        },
+        {
+          "id": "destination_support",
+          "movable": false
+        },
+        {
+          "id": "cabinet_door",
+          "movable": false
+        }
+      ],
+      "required_regions": [
+        "source_approach",
+        "destination_approach",
+        "assembly_output"
+      ],
+      "min_approach_separation_m": 3.0,
+      "rubric_requirements": [
+        {
+          "id": "picked",
+          "predicate": "holding",
+          "object_id": "tool_case",
+          "target_id": null,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "opened"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "source_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "source_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "destination_visit",
+          "predicate": "robot_in_region",
+          "object_id": null,
+          "target_id": "destination_approach",
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "source_visit"
+          ],
+          "min_duration": 0.2,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "placed",
+          "predicate": "in_region",
+          "object_id": "tool_case",
+          "target_id": "assembly_output",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "supported",
+          "predicate": "on_top",
+          "object_id": "tool_case",
+          "target_id": "destination_support",
+          "mode": "final",
+          "intent": "achieve",
+          "after": [
+            "carried"
+          ],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "released",
+          "predicate": "released",
+          "object_id": "tool_case",
+          "target_id": null,
+          "mode": "final",
+          "intent": "maintain",
+          "after": [],
+          "min_duration": 1.0,
+          "max_tolerance": 0.03
+        },
+        {
+          "id": "opened",
+          "predicate": "joint_at",
+          "object_id": "cabinet_door",
+          "target_id": null,
+          "threshold": 1.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [],
+          "min_duration": 0.2,
+          "max_tolerance": 0.05
+        },
+        {
+          "id": "carried",
+          "predicate": "carried_distance",
+          "object_id": "tool_case",
+          "target_id": null,
+          "threshold": 2.0,
+          "mode": "eventually",
+          "intent": "achieve",
+          "after": [
+            "picked"
+          ],
+          "min_duration": 0.0,
+          "max_tolerance": 0.03
+        }
+      ],
+      "process_requirement": null,
+      "joint_requirements": [
+        {
+          "object_id": "cabinet_door",
+          "type": "hinge",
+          "threshold": 1.0
+        }
+      ],
+      "independent_checks": [
+        "Validate named subject identity and destination binding against this file, not generated prose.",
+        "Verify all mandatory criteria, support, release, order, tolerance ceilings and stable-duration minima before simulation.",
+        "Check source/destination separation from the frozen initial geometry.",
+        "Reject no-op, wrong-object, wrong-order, unstable final placement and interrupted-process counterexamples."
+      ],
+      "physical_review_checks": [
+        "Native initial/settling diagnostics must pass without object ejection.",
+        "Inspect connected ground-plane access and actual supports; an optimistic route is not task-solvability proof.",
+        "Run a real policy with sensor-only observations and preserve replay, contact evidence and per-criterion outcomes.",
+        "Check that appearance/geometry matches the named setting; metadata labels alone do not establish fidelity."
+      ],
+      "max_destination_extent_m": 1.5,
+      "min_process_station_separation_m": null,
+      "required_task_mentions": [
+        "tool_case",
+        "assembly_output",
+        "source_approach",
+        "destination_approach"
+      ]
+    }
+  ]
+}

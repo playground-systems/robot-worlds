@@ -1,0 +1,182 @@
+{
+  "ci_run": "https://github.com/playground-systems/robot-worlds/actions/runs/41268399353",
+  "commit": "29d8f03b753f85f9f2f8de8501e4bece50b3f0c1",
+  "job_conclusion": "failure: evaluation completed; duplicate full trace read exceeded the separate warehouse step timeout",
+  "focused_tests": {
+    "tests": "235",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "141.011"
+  },
+  "native_audit": {
+    "schema_version": 1,
+    "scope": "native household SDK integration, concavity and pre-placed support",
+    "status": "passed",
+    "full_release_accepted": false,
+    "does_not_establish": [
+      "Successful robot grasp, door opening, transport, insertion and release",
+      "Live model generation or autonomous policy success",
+      "Generated warehouse visual acceptance or current application screenshots",
+      "Clean package installation or macOS execution"
+    ],
+    "checks": [
+      {
+        "module": "test_household_sdk_flow",
+        "name": "test_household_cancel_between_actions_preserves_partial_report",
+        "status": "passed"
+      },
+      {
+        "module": "test_household_sdk_flow",
+        "name": "test_household_remote_failure_preserves_evidence_without_task_verdict[disconnect]",
+        "status": "passed"
+      },
+      {
+        "module": "test_household_sdk_flow",
+        "name": "test_household_remote_failure_preserves_evidence_without_task_verdict[invalid_action]",
+        "status": "passed"
+      },
+      {
+        "module": "test_household_sdk_flow",
+        "name": "test_household_remote_failure_preserves_evidence_without_task_verdict[timeout]",
+        "status": "passed"
+      },
+      {
+        "module": "test_household_sdk_flow",
+        "name": "test_household_sensor_action_report_and_portable_reload[http]",
+        "status": "passed"
+      },
+      {
+        "module": "test_household_sdk_flow",
+        "name": "test_household_sensor_action_report_and_portable_reload[in_process]",
+        "status": "passed"
+      },
+      {
+        "module": "test_asset_import_physics",
+        "name": "test_original_textured_microwave_keeps_empty_cavity_and_passive_joints",
+        "status": "passed"
+      },
+      {
+        "module": "test_sourced_household_physics",
+        "name": "test_native_brief_recontact_does_not_pass_stable_support_duration",
+        "status": "passed"
+      },
+      {
+        "module": "test_sourced_household_physics",
+        "name": "test_native_partial_insertion_is_not_full_containment",
+        "status": "passed"
+      },
+      {
+        "module": "test_sourced_household_physics",
+        "name": "test_native_wrong_bowl_inside_does_not_satisfy_target_identity",
+        "status": "passed"
+      },
+      {
+        "module": "test_sourced_household_physics",
+        "name": "test_original_bowl_arm_search_does_not_overflow_contact_solver",
+        "status": "passed"
+      },
+      {
+        "module": "test_sourced_household_physics",
+        "name": "test_original_bowl_fits_and_stays_supported_inside_original_appliance",
+        "status": "passed"
+      },
+      {
+        "module": "test_sourced_household_physics",
+        "name": "test_original_bowl_lifts_with_two_hands_and_public_torso_actuation",
+        "status": "passed"
+      },
+      {
+        "module": "test_sourced_household_physics",
+        "name": "test_rotated_original_round_bowl_keeps_exact_physical_containment_and_support",
+        "status": "passed"
+      },
+      {
+        "module": "test_sourced_household_physics",
+        "name": "test_sdk_runs_original_assets_from_mocked_generation_through_export",
+        "status": "passed"
+      },
+      {
+        "module": "test_sourced_household_physics",
+        "name": "test_sphere_settles_in_scanned_bowl_not_on_a_filled_collision_hull",
+        "status": "passed"
+      }
+    ],
+    "case_count": 235,
+    "failed_or_error_count": 0
+  },
+  "engineering": {
+    "world_id": "bb7b3fa9d3b9fa651853ce00bfe23006a3df3ac5d7be6b8c1bdabc51a0287d24",
+    "run_id": "4b50b9dd9d16466f9ab8edeed43e844f",
+    "summary": {
+      "attempted": 1,
+      "valid": 1,
+      "successes": 1,
+      "invalid_or_interrupted": 0,
+      "success_rate": 1.0,
+      "success_interval_95": [
+        0.20654931437723745,
+        1
+      ]
+    },
+    "elapsed_seconds": 184.59538300099996,
+    "evaluation_seconds": 154.90596123,
+    "portable_seconds": 26.790835828000013,
+    "portable_reload_and_regrade": true,
+    "peak_process_memory_bytes": 2753617920,
+    "inspection_views": [
+      {
+        "name": "grasp",
+        "path": "episode-000/inspection-grasp.png",
+        "time": 26.199999999996358,
+        "requested_camera": {
+          "lookat": [
+            0.8,
+            0,
+            1.0
+          ],
+          "azimuth": 135,
+          "elevation": -25,
+          "distance": 1.6
+        },
+        "note": "Actual native state; camera clearance may adjust the requested eye."
+      },
+      {
+        "name": "microwave-interior",
+        "path": "episode-000/inspection-microwave-interior.png",
+        "time": 111.77999999992089,
+        "requested_camera": {
+          "lookat": [
+            1.18,
+            0,
+            0.75
+          ],
+          "azimuth": 45,
+          "elevation": -10,
+          "distance": 0.45
+        },
+        "note": "Actual native state; camera clearance may adjust the requested eye."
+      }
+    ],
+    "application_captures": [
+      "docs/images/engineering-household/report-current.png",
+      "docs/images/engineering-household/microwave-interior-current.png"
+    ]
+  },
+  "artifact": {
+    "run": "41268399353",
+    "artifact_id": 13068631823,
+    "bytes": 165836772,
+    "sha256": "3521fd32668d751a8a67b00945ac2c0cc2e3a858141f701cefa1d1815b3ac0b3",
+    "whole_archive_verified": true
+  },
+  "runtime_source_equivalence": "git diff 04ee497 cd94d46 -- src/robot_worlds, except the separately browser-verified index.html/styles.css panel sizing fix; Python runtime unchanged.",
+  "warehouse_failure_diagnosis": {
+    "components": 3427,
+    "evaluation_completed_seconds": 333.1,
+    "timeout_seconds": 420,
+    "phase": "redundant full trace decode in acceptance harness before export/regrade",
+    "followup": "Audit complete recorded states from the closed native runtime; verify persisted bytes in portable regrade, without a duplicate decode."
+  },
+  "pull_request_head": "04ee4974e42f40b2c70c7d3e8fda4dc180d7ff23"
+}

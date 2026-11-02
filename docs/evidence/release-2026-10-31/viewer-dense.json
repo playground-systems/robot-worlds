@@ -1,0 +1,46 @@
+{
+  "world_id": "e034c4a539fe9f36e1b1eea6c63c45dbf688ae1f1f3f518457f013273cb6a477",
+  "components": 3046,
+  "ready_seconds": 2.19560000000149,
+  "viewport_css": [
+    684,
+    720
+  ],
+  "pixel_ratio": 1.5,
+  "batching": {
+    "meshesBefore": 606,
+    "meshesAfter": 98,
+    "batches": 24,
+    "batchedInstances": 532,
+    "cellSize": 8
+  },
+  "source_error_groups": 0,
+  "additional_source_errors": 0,
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "frame_interval_ms": {
+    "samples": 89,
+    "median": 16.69999999999891,
+    "p95": 17.5,
+    "max": 18.600000000000364
+  },
+  "render_submission_ms": {
+    "samples": 90,
+    "median": 0.6000000014901161,
+    "p95": 0.9000000022351742,
+    "max": 1.0999999977648258
+  },
+  "draw_calls": 145,
+  "triangles": 1954896,
+  "gpu_resources": {
+    "geometries": 94,
+    "textures": 50
+  },
+  "note": "Warm orbit after loading. Frame intervals include browser scheduling. CPU submission is not GPU duration. No simulation or model calls.",
+  "hardware_note": "Measured in the in-app Chromium browser on this Apple silicon Mac; UA reports a compatibility Intel Mac string.",
+  "cache_note": "Previously visited assets; first-view timing is not a cold-network benchmark.",
+  "hardware": {
+    "chip": "Apple M1 Pro",
+    "memory_bytes": 17179869184
+  },
+  "measurement_limits": "One short orbit; background application load was uncontrolled. Not a sustained GPU benchmark or cold-network result."
+}

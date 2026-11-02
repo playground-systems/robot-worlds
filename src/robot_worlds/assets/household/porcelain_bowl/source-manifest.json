@@ -1,0 +1,65 @@
+{
+  "id": "google-porcelain-bowl",
+  "source_url": "https://fuel.gazebosim.org/1.0/GoogleResearch/models/Threshold_Porcelain_Serving_Bowl_Coupe_White/1/Threshold_Porcelain_Serving_Bowl_Coupe_White.zip",
+  "revision": "1",
+  "license": "CC-BY-4.0",
+  "archive_bytes": 3324041,
+  "archive_sha256": "9f18958313212a56edb33948cf4ec89eae7bd7392293ab27a6ca50ba7ef14098",
+  "files": [
+    {
+      "path": "materials/textures/texture.png",
+      "bytes": 7541215,
+      "sha256": "b93445b91dc7c717e482c4934b1e14889f1395ed600f45dd66db7b556d794bbf"
+    },
+    {
+      "path": "meshes/model.mtl",
+      "bytes": 410,
+      "sha256": "857543aabcc8a25b1c200b087d6bbe7395cd865666930960fa0f0aec421ea6aa"
+    },
+    {
+      "path": "meshes/model.obj",
+      "bytes": 507190,
+      "sha256": "87a4abb33e8127f7fd940f06eeb6507bb0fa816b10452a5c95c4ea78aacfbc4c"
+    },
+    {
+      "path": "metadata.pbtxt",
+      "bytes": 580,
+      "sha256": "28874d13f34db54e0930633c517932cd19bc7cca72c7c518141d885750a52ebe"
+    },
+    {
+      "path": "model.config",
+      "bytes": 596,
+      "sha256": "82c9d4ea2b01836581a0e52fb4d866fecb3b22bb6b3566bb7bca3638bf38ac67"
+    },
+    {
+      "path": "model.sdf",
+      "bytes": 777,
+      "sha256": "0bb4acf4e5f2e7a4be77134f857979fc22835a68f95d7e0d1f719a3e1330e444"
+    },
+    {
+      "path": "thumbnails/0.jpg",
+      "bytes": 8585,
+      "sha256": "6019fc00fb797b3b39934c18baa0d45645f52150ced9e77b269bbdbd0a226961"
+    },
+    {
+      "path": "thumbnails/1.jpg",
+      "bytes": 7124,
+      "sha256": "f1ff5dbbbecd4db0d7d3d9329399ba0bee7288ea856b89ae5dd6705a2c6b032d"
+    },
+    {
+      "path": "thumbnails/2.jpg",
+      "bytes": 7002,
+      "sha256": "a15fcf746297a3d0a9625c3c342c2e423cae8f25bb412e25534c682c27de08bc"
+    },
+    {
+      "path": "thumbnails/3.jpg",
+      "bytes": 7182,
+      "sha256": "ed4bb27e060c8288b17261c754d7b67ca4fe94aea81ef1b279077f66f899f2f9"
+    },
+    {
+      "path": "thumbnails/4.jpg",
+      "bytes": 7069,
+      "sha256": "628cfe5b71b179a573d3874d02013f2ecf968ad844e1d891356a3fc59164d6fb"
+    }
+  ]
+}

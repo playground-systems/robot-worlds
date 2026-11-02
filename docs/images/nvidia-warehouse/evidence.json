@@ -1,0 +1,99 @@
+{
+  "world_id": "f2ddc0823584e7999773d6c096d3a01fd9fc2fd54203e9eb376d27087d772a50",
+  "components": 3227,
+  "planning": "deterministic",
+  "physical_validation": false,
+  "paid_model_calls": 0,
+  "seconds": 3.940333708000253,
+  "asset_ids": [
+    "rack_large_empty_a02",
+    "pallet_a01",
+    "box_corrugated_brown_b20",
+    "barrier_fence_metal_a02",
+    "conveyor_belt_a05"
+  ],
+  "captured_at": "2026-10-31T18:26:37.174110+00:00",
+  "capture": "Actual Robot Worlds in-app browser; default 1280x720 viewport",
+  "viz3d_revision": "0e514213b811fc6ffb8e5a7e33891f201f415fff",
+  "validation": {
+    "status": "preview",
+    "profile": "strict",
+    "checks": [
+      {
+        "check": "schema",
+        "passed": true
+      },
+      {
+        "check": "geometry_and_rubric",
+        "passed": true,
+        "errors": []
+      }
+    ],
+    "connectivity": {
+      "status": "unknown",
+      "contract": {
+        "radius_m": 0.4,
+        "height_m": 1.6,
+        "motion": "planar"
+      },
+      "method": "optimistic rectangle arrangement with exact coordinate compression",
+      "errors": [],
+      "criteria": {
+        "arrive": {
+          "status": "unknown",
+          "reason": "Not analyzed"
+        }
+      },
+      "limits": {
+        "max_cells": 250000,
+        "max_objects": 10000,
+        "max_criteria": 10000
+      },
+      "statistics": {
+        "fixed_box_count": 1754,
+        "rectangle_count": 3508,
+        "x_intervals": 514,
+        "y_intervals": 1264,
+        "cells": 649696
+      },
+      "limitations": [
+        "Checks the configured 0.8m-diameter/1.6m-high planar clearance contract, not physical impossibility for every robot posture.",
+        "Only world-fixed boxes are blockers; movable/articulated ancestry, meshes, spheres and cylinders are omitted from obstruction proofs.",
+        "Rounded box-expansion corners are omitted and collision rectangles are relaxed by 1e-7m; possible routes are optimistic and never certified feasible.",
+        "Declared world bounds are not invisible walls; the exterior of all finite geometry is included.",
+        "Does not verify manipulation, stairs, climbing, door operation, temporal task execution, or general policy solvability."
+      ],
+      "reason": "Exact arrangement cell budget exceeded; no coarse-grid rejection attempted"
+    },
+    "skipped_fixed_overlap_pairs": [],
+    "skipped_fixed_overlap_count": 0,
+    "limitations": [
+      "Static geometry and a reset probe do not prove task reachability, completeness of natural-language interpretation, or policy solvability.",
+      "Material properties are estimated unless independently measured; temporal measurements have the recorded sampling resolution.",
+      "Surface finishes, floor pattern and studio lighting are visual estimates, not measured materials."
+    ]
+  },
+  "screenshots": {
+    "rack-detail.jpg": {
+      "sha256": "e632a59f8632677f9514e61ad9810d676892f9e9887410ed247cf29a9e1b3c17",
+      "bytes": 113544
+    },
+    "overview.jpg": {
+      "sha256": "59d078f3409e59d59727d499ba3bbf730eb23b783ab667eeb6b6209e2891b455",
+      "bytes": 81272
+    }
+  },
+  "viewer_files": {
+    "scene.js": "12ff04e6333689d7cd93bbf80c3261ae88bc49ce02b21dcda4ad9eb0b48f8930",
+    "app.js": "a527d140bb98fefa3fd46659965efefedd1566fb0d2c0d254e17901d1002b32b",
+    "styles.css": "b5874d4f3e196d0a7c9c8a09234d05c338f8a69d739aa519630b8493b861081f",
+    "index.html": "8c7798a24e671b67625c083410cbc1cf23153f2fd6def5972dc48855de72ce11"
+  },
+  "review": [
+    "Overview: all five source asset types visible; no missing-resource markers.",
+    "Rack detail: source carton printing, rack braces and source materials visible.",
+    "Caption contrast corrected after first visual inspection.",
+    "No new browser errors/warnings after replacing deprecated shadow setting.",
+    "Deterministic preview only; not live-model generation, native contact validation or visual parity with the full reference warehouse."
+  ]
+}

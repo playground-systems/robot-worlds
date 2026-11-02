@@ -1,0 +1,263 @@
+import copy
+
+import pytest
+from pydantic import ValidationError
+
+from robot_worlds.models import WorldSpec
+from robot_worlds.rubric import grade, measure_predicate, validate_rubric
+
+
+def world(rubric=None):
+    return WorldSpec.model_validate({
+        "name": "two stations", "description": "test geometry", "task": "Move part to output",
+        "bounds": [10, 10, 3], "objects": [
+            {"id": "part", "label": "part", "kind": "box", "position": [2, 0, .1], "size": [.2, .2, .2], "movable": True},
+            {"id": "wrong", "label": "other part", "kind": "box", "position": [2, 1, .1], "size": [.2, .2, .2], "movable": True},
+            {"id": "table", "label": "support", "kind": "box", "position": [-2, 0, .5], "size": [1, 1, 1]},
+        ], "regions": [{"id": "output", "label": "output", "position": [-2, 0, 1.3], "size": [1, 1, .6]}],
+        "rubric": rubric or [{"id": "place", "description": "Part at output", "predicate": "in_region", "object_id": "part", "target_id": "output"}],
+    })
+
+
+def frame(time, *, output=False, holding=None, missing=False):
+    objects = {o.id: {"position": list(o.position), "size": list(o.size), "quaternion": [1, 0, 0, 0], "contacts": [], "held_by": None} for o in world().objects}
+    objects["part"]["held_by"] = holding
+    if output:
+        objects["part"]["position"] = [-2, 0, 1.1]
+        objects["part"]["contacts"] = ["table"]
+    if missing:
+        del objects["part"]
+    return {"time": time, "objects": objects, "robot": {"position": [0, 0, 0]}}
+
+
+def test_noop_wrong_object_and_valid_placement():
+    spec = world()
+    assert grade(spec, [frame(0), frame(1)])["status"] == "failed"
+    wrong = frame(1)
+    wrong["objects"]["wrong"]["position"] = [-2, 0, 1.1]
+    assert not grade(spec, [frame(0), wrong])["success"]
+    assert grade(spec, [frame(0), frame(1, output=True)])["success"]
+
+
+def test_stable_duration_breaks_on_regression_and_is_not_accumulated():
+    spec = world()
+    spec.rubric[0].duration = 1
+    assert not grade(spec, [frame(0), frame(1, output=True), frame(1.6, output=True), frame(1.8), frame(2, output=True), frame(2.6, output=True)])["success"]
+    assert grade(spec, [frame(0), frame(1, output=True), frame(2.1, output=True)])["success"]
+    assert not grade(spec, [frame(0), frame(1, output=True), frame(2.1, output=True), frame(3)])["success"]
+
+
+def test_eventual_does_not_require_final_persistence():
+    spec = world()
+    spec.rubric[0].mode = "eventually"
+    assert grade(spec, [frame(0), frame(1, output=True), frame(2)])["success"]
+
+
+def test_order_requires_distinct_earlier_witness():
+    spec = world([
+        {"id": "grasp", "description": "grasp", "predicate": "holding", "object_id": "part", "mode": "eventually"},
+        {"id": "place", "description": "place", "predicate": "in_region", "object_id": "part", "target_id": "output", "after": ["grasp"]},
+    ])
+    assert not grade(spec, [frame(0), frame(1, output=True, holding="left")])["success"]
+    assert not grade(spec, [frame(0), frame(1, output=True), frame(2, holding="left")])["success"]
+    assert grade(spec, [frame(0), frame(1, holding="left"), frame(2, output=True)])["success"]
+
+
+def test_missing_evidence_is_unscorable_not_task_failure():
+    result = grade(world(), [frame(0), frame(1, missing=True)])
+    assert result["status"] == "unscorable"
+    assert result["criteria"][0]["evidence"]["missing_measurements"]
+    assert grade(world(), [])["status"] == "unscorable"
+
+
+def test_support_requires_contacts_and_geometry():
+    spec = world([{"id": "supported", "description": "support", "predicate": "on_top", "object_id": "part", "target_id": "table"}])
+    state = frame(1, output=True)
+    assert grade(spec, [frame(0), state])["success"]
+    state["objects"]["part"]["contacts"] = []
+    assert grade(spec, [state])["status"] == "failed"
+    del state["objects"]["part"]["contacts"]
+    assert grade(spec, [state])["status"] == "unscorable"
+
+
+def test_rotated_object_must_fit_not_just_its_center():
+    spec = world()
+    state = frame(1, output=True)
+    spec.objects[0].size = (.8, .8, .2)
+    state["objects"]["part"]["size"] = [.8, .8, .2]
+    state["objects"]["part"]["quaternion"] = [.9238795325, 0, 0, .3826834324]
+    assert not grade(spec, [state])["success"]
+
+
+def test_alternatives_are_or_and_ungrouped_requirements_remain_and():
+    spec = world([
+        {"id": "a", "description": "a", "predicate": "in_region", "object_id": "part", "target_id": "output", "alternative_group": "destination"},
+        {"id": "b", "description": "b", "predicate": "in_region", "object_id": "wrong", "target_id": "output", "alternative_group": "destination"},
+        {"id": "release", "description": "release", "predicate": "released", "object_id": "part", "intent": "maintain"},
+    ])
+    assert grade(spec, [frame(0), frame(1, output=True)])["success"]
+    assert not grade(spec, [frame(0), frame(1, output=True, holding="left")])["success"]
+
+
+def test_unsupported_predicate_and_cycles_rejected():
+    data = world().model_dump()
+    data["rubric"][0]["predicate"] = "looks_finished"
+    with pytest.raises(ValidationError):
+        WorldSpec.model_validate(data)
+    spec = world()
+    second = copy.deepcopy(spec.rubric[0])
+    second.id = "second"
+    second.after = ["place"]
+    spec.rubric[0].after = ["second"]
+    spec.rubric.append(second)
+    assert any("cycle" in e for e in validate_rubric(spec))
+    with pytest.raises(ValueError, match="cycle"):
+        grade(spec, [])
+
+
+def test_invalid_time_and_nonfinite_measurement_are_unscorable():
+    assert grade(world(), [frame(1), frame(0)])["status"] == "unscorable"
+    state = frame(1, output=True)
+    state["objects"]["part"]["position"][0] = float("nan")
+    assert measure_predicate(world(), world().rubric[0], state)["satisfied"] is None
+
+
+def test_always_violation_cannot_be_repaired_by_final_success():
+    spec = world([{"id": "safe", "description": "released throughout", "predicate": "released", "object_id": "part", "mode": "always", "intent": "maintain"}])
+    assert not grade(spec, [frame(0), frame(1, holding="left"), frame(2)])["success"]
+
+
+def test_process_completion_is_identity_specific_and_not_claimed_event():
+    data = world().model_dump()
+    data["process_cycles"] = [{"id": "heat", "label": "timed surrogate", "fixture_id": "table", "workpiece_ids": ["part"], "duration": 2, "output_state": "processed", "prerequisites": [{"predicate": "on_top", "object_id": "part", "target_id": "table"}]}]
+    data["rubric"] = [{"id": "done", "description": "processed", "predicate": "process_complete", "object_id": "part", "target_id": "heat"}]
+    spec = WorldSpec.model_validate(data)
+    state = frame(1)
+    state["objects"]["part"]["process_states"] = {}
+    state["events"] = [{"type": "process_complete", "object_id": "part", "target_id": "heat"}]
+    assert not grade(spec, [state])["success"]
+    initial = copy.deepcopy(state)
+    initial["time"] = 0
+    state["objects"]["part"]["process_states"] = {"heat": "processed"}
+    assert grade(spec, [initial, state])["success"]
+
+
+def test_achievement_cannot_start_satisfied_and_wait_out_duration():
+    spec = world()
+    spec.rubric[0].duration = 1
+    assert not grade(spec, [frame(0, output=True), frame(2, output=True)])["success"]
+    assert grade(spec, [frame(0, output=True), frame(1), frame(2, output=True), frame(3.1, output=True)])["success"]
+
+
+def test_already_satisfied_later_stage_cannot_gain_ordering_credit():
+    spec = world([
+        {"id": "grasp", "description": "grasp", "predicate": "holding", "object_id": "part", "mode": "eventually"},
+        {"id": "place", "description": "place", "predicate": "in_region", "object_id": "part", "target_id": "output", "after": ["grasp"]},
+    ])
+    assert not grade(spec, [frame(0), frame(1, output=True), frame(2, output=True, holding="left"), frame(3, output=True)])["success"]
+    assert not grade(spec, [frame(0), frame(1, output=True, holding="left"), frame(2, output=True)])["success"]
+
+
+def test_independent_achievements_allow_both_valid_orders():
+    spec = world([
+        {"id": "one", "description": "first part", "predicate": "in_region", "object_id": "part", "target_id": "output"},
+        {"id": "two", "description": "second part", "predicate": "in_region", "object_id": "wrong", "target_id": "output"},
+    ])
+    part_first = frame(1, output=True)
+    other_first = frame(1)
+    other_first["objects"]["wrong"]["position"] = [-2, 0, 1.1]
+    final = frame(2, output=True)
+    final["objects"]["wrong"]["position"] = [-2, 0, 1.1]
+    assert grade(spec, [frame(0), part_first, final])["success"]
+    assert grade(spec, [frame(0), other_first, final])["success"]
+
+
+def test_unvalidated_requirement_prevents_a_misleading_pass():
+    spec = world()
+    spec.unvalidated_requirements = ["Measure weld strength, which this runtime does not simulate"]
+    result = grade(spec, [frame(0), frame(1, output=True)])
+    assert result["criteria"][0]["status"] == "passed"
+    assert result["status"] == "unscorable"
+    assert not result["success"]
+
+
+@pytest.mark.parametrize("predicate", ["holding", "released"])
+@pytest.mark.parametrize("subject", ["table", "part_visual"])
+def test_gripper_predicates_reject_fixed_or_visual_child_subjects(predicate, subject):
+    from robot_worlds.models import SceneObject
+
+    spec = world([{"id": "grip", "description": "gripper state", "predicate": predicate,
+                   "object_id": subject, "intent": "maintain"}])
+    spec.objects.append(SceneObject(id="part_visual", label="part appearance", kind="mesh", mesh_path="part.obj",
+                                    parent_id="part", position=(2, 0, .1), size=(.2, .2, .2),
+                                    collision=False))
+    state = frame(1, holding="left")
+    # Runtime records holding on the movable body, not its fixed appearance child.
+    state["objects"]["part_visual"] = {**state["objects"]["part"], "held_by": None}
+    assert any("movable workpiece" in error for error in validate_rubric(spec))
+    assert measure_predicate(spec, spec.rubric[0], state)["satisfied"] is None
+    with pytest.raises(ValueError, match="movable workpiece"):
+        grade(spec, [state])
+
+
+def test_process_prerequisites_reject_unmeasurable_release_subject():
+    data = world().model_dump()
+    data["process_cycles"] = [{
+        "id": "cycle", "label": "timed surrogate", "fixture_id": "table",
+        "workpiece_ids": ["part"], "duration": 2, "output_state": "processed",
+        "prerequisites": [{"predicate": "released", "object_id": "table"}],
+    }]
+    spec = WorldSpec.model_validate(data)
+    assert any("process cycle" in error and "movable workpiece" in error
+               for error in validate_rubric(spec))
+
+
+@pytest.mark.parametrize('bounds', [
+    {'source': 'invented', 'lower': [-2.1, -.1, 1], 'upper': [-1.9, .1, 1.2]},
+    {'source': 'native_collision_vertices_v1', 'lower': [-3, -.1, 1], 'upper': [-1.9, .1, 1.2]},
+    {'source': 'native_collision_vertices_v1', 'lower': [-1.9, -.1, 1], 'upper': [-2.1, .1, 1.2]},
+    {'source': 'native_collision_vertices_v1', 'lower': [float('nan'), 0, 1], 'upper': [-1.9, .1, 1.2]},
+])
+def test_malformed_or_out_of_shape_mesh_measurements_are_unscorable(bounds):
+    spec = world()
+    spec.objects[0] = spec.objects[0].model_copy(update={'kind': 'mesh', 'mesh_path': 'fixture.obj'})
+    state = frame(1, output=True)
+    state['objects']['part']['geometry_bounds'] = bounds
+    assert measure_predicate(spec, spec.rubric[0], state)['satisfied'] is None
+
+
+def test_incremental_progress_measures_only_new_snapshots_and_matches_full_grading(monkeypatch):
+    from robot_worlds import rubric
+    spec = world([
+        dict(id='place', description='place', predicate='in_region', object_id='part', target_id='output', duration=.2),
+        dict(id='release', description='release', predicate='released', object_id='part', after=['place'], duration=.1),
+    ])
+    full = [frame(0, holding='right'), frame(.1, output=True, holding='right'),
+            frame(.3, output=True, holding='right'), frame(.4, output=True), frame(.6, output=True)]
+    expected = [grade(spec, full[:i]) for i in range(1, len(full)+1)]
+    calls = []
+    original = rubric.measure_predicate
+    def measured(*args):
+        calls.append(args[1].id)
+        return original(*args)
+    monkeypatch.setattr(rubric, 'measure_predicate', measured)
+    monitor = rubric._ProgressGrader(spec)
+    for i in range(1, len(full)+1):
+        # A new list with the same owned snapshots is still append-only.
+        assert monitor.score(full[:i]) == expected[i-1]
+        assert len(calls) == i*len(spec.rubric)
+    assert monitor.score(full) == expected[-1]
+    assert len(calls) == len(full)*len(spec.rubric)
+    replaced = [frame(0), frame(1)]
+    assert monitor.score(replaced) == grade(spec, replaced)
+
+
+def test_progress_cache_handles_missing_measurements_and_carried_distance():
+    from robot_worlds.rubric import _ProgressGrader
+    spec = world([dict(id='carry', description='carry', predicate='carried_distance',
+                       object_id='part', threshold=.5)])
+    trace = [frame(0, holding='right'), frame(1, output=True, holding='right'), frame(2, missing=True)]
+    monitor = _ProgressGrader(spec)
+    for i in range(1, len(trace)+1):
+        assert monitor.score(trace[:i]) == grade(spec, trace[:i])
+    assert monitor.score(trace[:1]) == grade(spec, trace[:1])  # Truncation starts a new trace.

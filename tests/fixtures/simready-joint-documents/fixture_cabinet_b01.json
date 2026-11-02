@@ -1,0 +1,381 @@
+{
+  "asset_id": "fixture_cabinet_b01",
+  "source": "Metadata-only extraction from pinned CodePawl optimized NVIDIA SimReady GLB, no mesh/texture payload",
+  "optimized_revision": "e52172290393dde80e8d383861db94b8d0e92ec3",
+  "source_license": "CC-BY-4.0",
+  "document": {
+    "asset": {
+      "generator": "glTF-Transform v4.5.1",
+      "version": "2.0"
+    },
+    "scene": 0,
+    "scenes": [
+      {
+        "name": "Scene",
+        "nodes": [
+          6
+        ]
+      }
+    ],
+    "nodes": [
+      {
+        "name": "body_01_mesh_00",
+        "translation": [
+          -0.015457049012184143,
+          0.4642288535833359,
+          -4.3213367462158203e-07
+        ],
+        "scale": [
+          0.46422888338565826,
+          0.46422888338565826,
+          0.46422888338565826
+        ],
+        "mesh": 0,
+        "extensions": {
+          "KHR_physics_rigid_bodies": {
+            "collider": {
+              "geometry": {
+                "node": 0,
+                "convexHull": true
+              },
+              "physicsMaterial": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "body_01_obj_00",
+        "translation": [
+          0,
+          0.0007016621530056,
+          0
+        ],
+        "children": [
+          0,
+          8,
+          10
+        ],
+        "extensions": {
+          "KHR_physics_rigid_bodies": {
+            "motion": {
+              "mass": 36.19102,
+              "centerOfMass": [
+                -0.005239,
+                0.128807,
+                -1e-06
+              ],
+              "inertiaDiagonal": [
+                9.327771,
+                5.475579,
+                6.587709
+              ],
+              "inertiaOrientation": [
+                0,
+                0,
+                0,
+                1
+              ]
+            }
+          }
+        },
+        "extras": {
+          "density": 950,
+          "mass": 36.19102
+        }
+      },
+      {
+        "name": "part_01_mesh_00",
+        "translation": [
+          -0.317561823874712,
+          0.003506988286972046,
+          -0.00028978288173675537
+        ],
+        "scale": [
+          0.38099952042102814,
+          0.38099952042102814,
+          0.38099952042102814
+        ],
+        "mesh": 1,
+        "extensions": {
+          "KHR_physics_rigid_bodies": {
+            "collider": {
+              "geometry": {
+                "node": 2,
+                "convexHull": true
+              },
+              "physicsMaterial": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "part_01_obj_00",
+        "translation": [
+          0.3328700065612793,
+          0.8086622357368469,
+          0.0002899058163166046
+        ],
+        "children": [
+          2,
+          9
+        ],
+        "extensions": {
+          "KHR_physics_rigid_bodies": {
+            "motion": {
+              "mass": 5.978667,
+              "centerOfMass": [
+                -0.10143,
+                -0.011274,
+                0.000163
+              ],
+              "inertiaDiagonal": [
+                0.356784,
+                0.761303,
+                0.419586
+              ],
+              "inertiaOrientation": [
+                0,
+                0,
+                0,
+                1
+              ]
+            }
+          }
+        },
+        "extras": {
+          "density": 950,
+          "mass": 5.978667,
+          "joints": [
+            {
+              "name": "joint_part_01_joint_00",
+              "type": "prismatic",
+              "parent": "body_01_obj_00",
+              "pivot": [
+                0.33287,
+                0.808662,
+                0.00029
+              ],
+              "axis": [
+                1,
+                0,
+                0
+              ],
+              "min": 0,
+              "max": 0.46218,
+              "unit": "meters"
+            }
+          ]
+        }
+      },
+      {
+        "name": "part_02_mesh_00",
+        "translation": [
+          -0.31756411865353584,
+          0.003340691328048706,
+          -0.00028876960277557373
+        ],
+        "scale": [
+          0.38099952042102814,
+          0.38099952042102814,
+          0.38099952042102814
+        ],
+        "mesh": 2,
+        "extensions": {
+          "KHR_physics_rigid_bodies": {
+            "collider": {
+              "geometry": {
+                "node": 4,
+                "convexHull": true
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "part_02_obj_00",
+        "translation": [
+          0.33287423849105835,
+          0.6518323421478271,
+          0.0002898871898651123
+        ],
+        "children": [
+          4,
+          7
+        ],
+        "extensions": {
+          "KHR_physics_rigid_bodies": {
+            "motion": {
+              "mass": 2.69783,
+              "centerOfMass": [
+                -0.10143,
+                -0.00151,
+                0.00016
+              ],
+              "inertiaDiagonal": [
+                0.276433,
+                0.457003,
+                0.182742
+              ],
+              "inertiaOrientation": [
+                0,
+                0,
+                0,
+                1
+              ]
+            }
+          }
+        },
+        "extras": {
+          "mass": 2.69783,
+          "joints": [
+            {
+              "name": "joint_part_02_joint_00",
+              "type": "prismatic",
+              "parent": "body_01_obj_00",
+              "pivot": [
+                0.332874,
+                0.651832,
+                0.00029
+              ],
+              "axis": [
+                1,
+                0,
+                0
+              ],
+              "min": -4e-06,
+              "max": 0.462176,
+              "unit": "meters"
+            }
+          ]
+        }
+      },
+      {
+        "name": "Geometry",
+        "children": [
+          1,
+          3,
+          5
+        ]
+      },
+      {
+        "name": "joint_part_02_joint_00_frame1"
+      },
+      {
+        "name": "joint_part_02_joint_00_frame0",
+        "translation": [
+          0.33287424,
+          0.6511307,
+          0.0002898872
+        ],
+        "extensions": {
+          "KHR_physics_rigid_bodies": {
+            "joint": {
+              "connectedNode": 7,
+              "joint": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "joint_part_01_joint_00_frame1"
+      },
+      {
+        "name": "joint_part_01_joint_00_frame0",
+        "translation": [
+          0.33287,
+          0.80796057,
+          0.00028990582
+        ],
+        "extensions": {
+          "KHR_physics_rigid_bodies": {
+            "joint": {
+              "connectedNode": 9,
+              "joint": 1
+            }
+          }
+        }
+      }
+    ],
+    "extensions": {
+      "KHR_physics_rigid_bodies": {
+        "physicsMaterials": [
+          {
+            "staticFriction": 0.4,
+            "dynamicFriction": 0.4,
+            "restitution": 0.4
+          }
+        ],
+        "physicsJoints": [
+          {
+            "limits": [
+              {
+                "linearAxes": [
+                  1,
+                  2
+                ],
+                "min": 0,
+                "max": 0
+              },
+              {
+                "angularAxes": [
+                  0
+                ],
+                "min": 0,
+                "max": 0
+              },
+              {
+                "angularAxes": [
+                  1,
+                  2
+                ],
+                "min": 0,
+                "max": 0
+              },
+              {
+                "linearAxes": [
+                  0
+                ],
+                "min": -4e-06,
+                "max": 0.462176
+              }
+            ]
+          },
+          {
+            "limits": [
+              {
+                "linearAxes": [
+                  1,
+                  2
+                ],
+                "min": 0,
+                "max": 0
+              },
+              {
+                "angularAxes": [
+                  0
+                ],
+                "min": 0,
+                "max": 0
+              },
+              {
+                "angularAxes": [
+                  1,
+                  2
+                ],
+                "min": 0,
+                "max": 0
+              },
+              {
+                "linearAxes": [
+                  0
+                ],
+                "min": 0,
+                "max": 0.46218
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

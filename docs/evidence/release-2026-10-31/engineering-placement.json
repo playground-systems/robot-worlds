@@ -1,0 +1,277 @@
+{
+  "evidence_class": {
+    "evidence_class": "privileged engineering fixture",
+    "autonomous": false,
+    "privileged_reads": [
+      "robot base transform"
+    ],
+    "object_pose_writes": false,
+    "actions": "public SDK controller actions only",
+    "initial_door": "open",
+    "task": "grasp, short carry, guided insertion, release and stable support"
+  },
+  "world_id": "b00db3c7549f5ae2878cb86dd5fc015461c79e92e9733c21f440489ecc4dc617",
+  "validation": {
+    "status": "ready",
+    "checks": [
+      {
+        "check": "schema",
+        "passed": true,
+        "errors": []
+      },
+      {
+        "check": "geometry_and_rubric",
+        "passed": true,
+        "errors": []
+      },
+      {
+        "check": "physics_settling",
+        "passed": true,
+        "errors": []
+      },
+      {
+        "check": "physics_reset",
+        "passed": true,
+        "errors": []
+      },
+      {
+        "check": "initial_rubric",
+        "passed": true,
+        "errors": []
+      },
+      {
+        "check": "render",
+        "passed": true,
+        "errors": []
+      }
+    ]
+  },
+  "paid_model_calls": 0,
+  "run_id": "7701c902d7524ad5991d93ff8535cccb",
+  "summary": {
+    "attempted": 1,
+    "valid": 1,
+    "successes": 1,
+    "invalid_or_interrupted": 0,
+    "success_rate": 1.0,
+    "success_interval_95": [
+      0.20654931437723745,
+      1
+    ]
+  },
+  "validation_seconds": 1.5694724999993923,
+  "evaluation_seconds": 120.64030249999996,
+  "portable_reload_and_regrade": true,
+  "portable_seconds": 14.999454500000866,
+  "elapsed_seconds": 137.2102545839989,
+  "peak_process_memory_bytes": 2093072384,
+  "rendered": false,
+  "executed_decisions": 37,
+  "simulation_seconds": 111.8199999999208,
+  "criterion_results": [
+    {
+      "id": "inside",
+      "description": "Entire bowl inside cavity",
+      "status": "passed",
+      "satisfied": true,
+      "required": true,
+      "alternative_group": null,
+      "completion_time": 108.88999999992762,
+      "evidence": {
+        "predicate": "in_region",
+        "object_id": "bowl_body",
+        "target_id": "oven_interior0",
+        "mode": "final",
+        "intent": "achieve",
+        "duration_required": 0.2,
+        "after": [],
+        "decisive_failure": null,
+        "initial": {
+          "satisfied": false,
+          "measured": {
+            "position": [
+              0.8995176239593226,
+              0.000524382054681749,
+              0.7137331004572338
+            ],
+            "containment_margins": [
+              -0.4136634670879578,
+              0.09259362345995935,
+              0.006318220591128743
+            ]
+          },
+          "reason": null
+        },
+        "final": {
+          "satisfied": true,
+          "measured": {
+            "position": [
+              1.3257937412966727,
+              0.03601854642278271,
+              0.7083631004739934
+            ],
+            "containment_margins": [
+              0.012273959602788348,
+              0.05772182365716613,
+              0.0009502301503052646
+            ]
+          },
+          "reason": null
+        },
+        "intervals": [
+          [
+            108.68999999992809,
+            111.8199999999208
+          ]
+        ],
+        "missing_measurements": []
+      }
+    },
+    {
+      "id": "supported",
+      "description": "Bowl contacts tray",
+      "status": "passed",
+      "satisfied": true,
+      "required": true,
+      "alternative_group": null,
+      "completion_time": 46.910000000011365,
+      "evidence": {
+        "predicate": "on_top",
+        "object_id": "bowl_body",
+        "target_id": "oven_part0",
+        "mode": "final",
+        "intent": "achieve",
+        "duration_required": 0.2,
+        "after": [],
+        "decisive_failure": null,
+        "initial": {
+          "satisfied": false,
+          "measured": {
+            "vertical_gap": 0.005318216015151478,
+            "overlap": [
+              -0.20194034309272912,
+              0.20100730324509591
+            ],
+            "contact": false
+          },
+          "reason": null
+        },
+        "final": {
+          "satisfied": true,
+          "measured": {
+            "vertical_gap": -4.977442567200008e-05,
+            "overlap": [
+              0.19103679710226706,
+              0.1790154584328001
+            ],
+            "contact": true
+          },
+          "reason": null
+        },
+        "intervals": [
+          [
+            46.71000000001112,
+            46.910000000011365
+          ],
+          [
+            47.01000000001149,
+            47.16000000001167
+          ],
+          [
+            47.26000000001179,
+            49.01000000001393
+          ],
+          [
+            49.160000000014115,
+            57.170000000023904
+          ],
+          [
+            57.32000000002409,
+            58.520000000025554
+          ],
+          [
+            58.67000000002574,
+            58.7200000000258
+          ],
+          [
+            58.82000000002592,
+            59.12000000002629
+          ],
+          [
+            59.22000000002641,
+            106.93999999993217
+          ],
+          [
+            107.03999999993194,
+            107.03999999993194
+          ],
+          [
+            107.1399999999317,
+            107.1399999999317
+          ],
+          [
+            107.23999999993147,
+            107.33999999993124
+          ],
+          [
+            107.439999999931,
+            108.83999999992774
+          ],
+          [
+            108.98999999992739,
+            111.8199999999208
+          ]
+        ],
+        "missing_measurements": []
+      }
+    },
+    {
+      "id": "released",
+      "description": "No gripper holding",
+      "status": "passed",
+      "satisfied": true,
+      "required": true,
+      "alternative_group": null,
+      "completion_time": 0.20000000000000015,
+      "evidence": {
+        "predicate": "released",
+        "object_id": "bowl_body",
+        "target_id": null,
+        "mode": "final",
+        "intent": "maintain",
+        "duration_required": 0.2,
+        "after": [],
+        "decisive_failure": null,
+        "initial": {
+          "satisfied": true,
+          "measured": null,
+          "reason": null
+        },
+        "final": {
+          "satisfied": true,
+          "measured": null,
+          "reason": null
+        },
+        "intervals": [
+          [
+            0.0,
+            16.620000000001667
+          ],
+          [
+            54.35000000002046,
+            111.8199999999208
+          ]
+        ],
+        "missing_measurements": []
+      }
+    }
+  ],
+  "termination": "policy_finished",
+  "raw_record_sha256": "7f2e9c38d2d47a352ba298e5b5bdbaa8a16a1d44b51284b2d11e280b0ffd78f8",
+  "limitations": [
+    "Engineering controller reads the base transform; not autonomous sensor-only manipulation.",
+    "Door starts open; this sequence does not prove autonomous door opening.",
+    "Short carry followed by guided insertion and a final push; not a long-distance carrying benchmark.",
+    "This Mac run is headless; rendered installed-package acceptance remains open."
+  ]
+}

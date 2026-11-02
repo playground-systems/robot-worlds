@@ -1,0 +1,1201 @@
+{
+  "schema_version": "1.0",
+  "tasks": [
+    {
+      "id": "inspect_dispatch",
+      "name": "Inspect and dispatch the preparation tool",
+      "task": "Pick up the screwdriver at the left end of the preparation table by its handle and carry it to the inspection table. Lay it near the front centre and release it for the three-second inspection dwell. After inspection, pick it up again, carry it to the clear left-hand kit position on the outbound table, and release it.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "inspect_grasp",
+          "description": "inspect grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": 1.0,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "inspect_carry",
+          "description": "inspect carry",
+          "duration": 0.0,
+          "after": [
+            "inspect_grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "primary_tool_part0",
+          "target_id": "inspection_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "inspect_support",
+          "description": "inspect support",
+          "duration": 0.25,
+          "after": [
+            "inspect_carry"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "inspect_release",
+          "description": "inspect release",
+          "duration": 0.4,
+          "after": [
+            "inspect_carry"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "primary_tool_part0",
+          "target_id": "inspection_loading",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "inspection_position",
+          "description": "inspection position",
+          "duration": 0.3,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "process_complete",
+          "object_id": "primary_tool_part0",
+          "target_id": "inspection_cycle",
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": "inspected",
+          "id": "inspection_finished",
+          "description": "inspection finished",
+          "duration": 0.0,
+          "after": [
+            "inspect_release"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "holding",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "dispatch_grasp",
+          "description": "dispatch grasp",
+          "duration": 0.0,
+          "after": [
+            "inspection_finished"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": 1.0,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "dispatch_carry",
+          "description": "dispatch carry",
+          "duration": 0.0,
+          "after": [
+            "dispatch_grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "primary_tool_part0",
+          "target_id": "dispatch_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "dispatch_support",
+          "description": "dispatch support",
+          "duration": 0.25,
+          "after": [
+            "dispatch_carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "dispatch_release",
+          "description": "dispatch release",
+          "duration": 0.4,
+          "after": [
+            "dispatch_carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "primary_tool_part0",
+          "target_id": "outbound_kit",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "dispatch_contained",
+          "description": "dispatch contained",
+          "duration": 0.4,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "grasp_return_tool",
+      "name": "Grasp and return the preparation tool",
+      "task": "Grasp the left preparation screwdriver by its narrow handle, lift and carry it a short distance, then return it to the preparation table and release it.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": 0.18,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "primary_tool_part0",
+          "target_id": "preparation_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "spare_to_inspection",
+      "name": "Deliver the spare tool to inspection",
+      "task": "Pick up the spare screwdriver at the right end of the preparation table and carry it to a free position on the inspection work surface. Set it down and release it.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "spare_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "spare_tool_part0",
+          "target_id": null,
+          "threshold": 1.0,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "spare_tool_part0",
+          "target_id": "inspection_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "spare_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "spare_to_dispatch",
+      "name": "Deliver a spare tool to the outbound kit",
+      "task": "Carry the spare screwdriver from the right end of the preparation table to the clear left-hand kit position on the outbound table and release it.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "spare_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "spare_tool_part0",
+          "target_id": null,
+          "threshold": 1.0,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "spare_tool_part0",
+          "target_id": "dispatch_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "spare_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "spare_tool_part0",
+          "target_id": "outbound_kit",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "contained",
+          "description": "contained",
+          "duration": 0.4,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "outbound_return",
+      "name": "Return the outbound tool for preparation",
+      "task": "Pick up the screwdriver at the right end of the outbound table and carry it back to a clear part of the preparation work surface.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "outbound_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "outbound_tool_part0",
+          "target_id": null,
+          "threshold": 1.0,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "outbound_tool_part0",
+          "target_id": "preparation_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "outbound_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "work_order_inspection",
+      "name": "Deliver the work order to inspection",
+      "task": "Pick up the work-order notebook from the preparation table by its thin edge, carry it to the inspection table, and set it down flat.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "work_order_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "work_order_part0",
+          "target_id": null,
+          "threshold": 1.0,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "work_order_part0",
+          "target_id": "inspection_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "work_order_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "work_order_dispatch",
+      "name": "Deliver the work order to outbound",
+      "task": "Carry the work-order notebook from the preparation table to a clear part of the outbound work surface and release it.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "work_order_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "work_order_part0",
+          "target_id": null,
+          "threshold": 1.0,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "work_order_part0",
+          "target_id": "dispatch_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "work_order_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "open_upper",
+      "name": "Pull open the upper tool drawer",
+      "task": "Pull the upper drawer of the tool cabinet open by its handle.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "tool_cabinet_part19",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "cycle_upper",
+      "name": "Open and push shut the upper tool drawer",
+      "task": "Pull open the upper tool-cabinet drawer by its handle, then push it fully shut.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "tool_cabinet_part19",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "tool_cabinet_part19",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "open_lower",
+      "name": "Pull open the lower tool drawer",
+      "task": "Pull the lower drawer of the tool cabinet open by its handle.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "tool_cabinet_part41",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "cycle_lower",
+      "name": "Open and push shut the lower tool drawer",
+      "task": "Pull open the lower tool-cabinet drawer by its handle, then push it fully shut.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "tool_cabinet_part41",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "tool_cabinet_part41",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "fetch_stored_tool",
+      "name": "Fetch the stored screwdriver",
+      "task": "Open the upper tool-cabinet drawer, pick up the screwdriver inside by its handle, carry it to a free part of the preparation table, and release it.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "tool_cabinet_part19",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "opened",
+          "description": "opened",
+          "duration": 0.3,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "holding",
+          "object_id": "stored_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [
+            "opened"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "stored_tool_part0",
+          "target_id": null,
+          "threshold": 0.7,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "stored_tool_part0",
+          "target_id": "preparation_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "stored_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "store_spare_close",
+      "name": "Store the spare screwdriver and close up",
+      "task": "Open the lower tool-cabinet drawer, pick up the spare screwdriver from the right side of the preparation table, carry it into the drawer, lay it fully inside, release it, and push the drawer shut.",
+      "rubric": [
+        {
+          "predicate": "joint_at",
+          "object_id": "tool_cabinet_part41",
+          "target_id": null,
+          "threshold": 0.4,
+          "tolerance": 0.025,
+          "value": null,
+          "id": "pulled_open",
+          "description": "pulled open",
+          "duration": 0.25,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "holding",
+          "object_id": "spare_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [
+            "pulled_open"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "spare_tool_part0",
+          "target_id": null,
+          "threshold": 0.3,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "spare_tool_part0",
+          "target_id": "tool_cabinet_part41",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "spare_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "joint_at",
+          "object_id": "tool_cabinet_part41",
+          "target_id": null,
+          "threshold": 0.0,
+          "tolerance": 0.015,
+          "value": null,
+          "id": "pushed_closed",
+          "description": "pushed closed",
+          "duration": 0.4,
+          "after": [
+            "release"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "spare_tool_part0",
+          "target_id": "tool_lower_closed",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "closed_cavity_containment",
+          "description": "closed cavity containment",
+          "duration": 0.4,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "push_carton",
+      "name": "Push the receiving carton into staging",
+      "task": "Without gripping or lifting the carton, push it sideways across the receiving worktable into the clear right-hand staging area. Leave it resting on the worktable.",
+      "rubric": [
+        {
+          "predicate": "released",
+          "object_id": "receiving_carton_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "never_grasp_carton",
+          "description": "never grasp carton",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "always",
+          "alternative_group": null,
+          "intent": "maintain"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "receiving_carton_part0",
+          "target_id": "receiving_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "carton_supported",
+          "description": "carton supported",
+          "duration": 0.5,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "maintain"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "receiving_carton_part0",
+          "target_id": "carton_staging",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "carton_staged",
+          "description": "carton staged",
+          "duration": 0.5,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    },
+    {
+      "id": "inspection_only",
+      "name": "Load and inspect the preparation tool",
+      "task": "Carry the left preparation screwdriver to the front centre of the inspection table, lay it down and release it, then leave it there for the three-second inspection dwell.",
+      "rubric": [
+        {
+          "predicate": "holding",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "grasp",
+          "description": "grasp",
+          "duration": 0.0,
+          "after": [],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "carried_distance",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": 1.0,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "carry",
+          "description": "carry",
+          "duration": 0.0,
+          "after": [
+            "grasp"
+          ],
+          "required": true,
+          "mode": "eventually",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "on_top",
+          "object_id": "primary_tool_part0",
+          "target_id": "inspection_part0",
+          "threshold": null,
+          "tolerance": 0.012,
+          "value": null,
+          "id": "support",
+          "description": "support",
+          "duration": 0.25,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "released",
+          "object_id": "primary_tool_part0",
+          "target_id": null,
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": null,
+          "id": "release",
+          "description": "release",
+          "duration": 0.4,
+          "after": [
+            "carry"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "in_region",
+          "object_id": "primary_tool_part0",
+          "target_id": "inspection_loading",
+          "threshold": null,
+          "tolerance": 0.003,
+          "value": null,
+          "id": "contained",
+          "description": "contained",
+          "duration": 0.4,
+          "after": [],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        },
+        {
+          "predicate": "process_complete",
+          "object_id": "primary_tool_part0",
+          "target_id": "inspection_cycle",
+          "threshold": null,
+          "tolerance": 0.03,
+          "value": "inspected",
+          "id": "inspection_finished",
+          "description": "inspection finished",
+          "duration": 0.0,
+          "after": [
+            "release"
+          ],
+          "required": true,
+          "mode": "final",
+          "alternative_group": null,
+          "intent": "achieve"
+        }
+      ]
+    }
+  ],
+  "selected_task_id": "inspect_dispatch"
+}

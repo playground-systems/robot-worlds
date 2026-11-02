@@ -1,0 +1,214 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import test from 'node:test';
+import vm from 'node:vm';
+
+const resourceSource = await readFile(new URL('../src/robot_worlds/static/scene-resources.js', import.meta.url));
+const resources = await import(`data:text/javascript;base64,${resourceSource.toString('base64')}`);
+const code = (await readFile(new URL('../src/robot_worlds/static/scene.js', import.meta.url), 'utf8'))
+  .replace(/^import .*;\n/gm, '').replace('export class WorldViewer', 'globalThis.WorldViewer = class WorldViewer');
+
+function fixture(extra = {}) {
+  const calls = [], document = new EventTarget(), context = vm.createContext({
+    ...resources, document, AbortController, cancelAnimationFrame: id => calls.push(['cancel', id]),
+    requestAnimationFrame: () => { calls.push(['frame']); return 17; },
+    ...extra,
+  });
+  vm.runInContext(code, context);
+  const viewer = Object.create(context.WorldViewer.prototype), canvas = new EventTarget(), controls = new EventTarget();
+  controls.dispose = () => calls.push(['controls']);
+  Object.assign(viewer, { active: true, onScreen: true, disposed: false, animation: 4, loads: new Set(), pendingLoads: [], canvas, controls,
+    resizeObserver: { disconnect: () => calls.push(['observer']) }, labels: { replaceChildren: () => calls.push(['labels']) },
+    scene: { traverse: callback => callback({}), clear: () => calls.push(['scene']) },
+    renderer: { shadowMap: {}, dispose: () => calls.push(['renderer']), forceContextLoss: () => calls.push(['context']) },
+    onPointerDown: () => calls.push(['pointer']), onPointerUp() {}, onKeyDown: () => calls.push(['key']), onVisibility: () => calls.push(['visibility']), onControlChange() {}, onControlStart() {},
+  });
+  canvas.addEventListener('pointerdown', viewer.onPointerDown); canvas.addEventListener('keydown', viewer.onKeyDown); document.addEventListener('visibilitychange', viewer.onVisibility);
+  return { viewer, calls, canvas, document };
+}
+
+test('disposing a viewer releases resources once without destroying the reusable canvas context', () => {
+  const { viewer, calls, canvas, document } = fixture(), request = new AbortController(); viewer.loads.add(request);
+  viewer.assets = { dispose: () => request.abort() };
+  viewer.pendingLoads.push(['later asset']); viewer.dispose(); viewer.dispose();
+  canvas.dispatchEvent(new Event('pointerdown')); canvas.dispatchEvent(new Event('keydown')); document.dispatchEvent(new Event('visibilitychange')); viewer.invalidate();
+  assert(request.signal.aborted); assert.equal(viewer.pendingLoads.length, 0);
+  assert.deepEqual(calls, [['cancel', 4], ['observer'], ['controls'], ['scene'], ['labels'], ['renderer']]);
+  assert.equal(viewer.disposed, true);
+});
+
+test('late results from a replaced scene cannot attach objects to the current scene', async () => {
+  const { viewer } = fixture();
+  const controller = new AbortController();
+  let resolve, attached = 0;
+  viewer.assets = { controller, dispose: () => controller.abort(), load: () => new Promise(done => { resolve = done; }) };
+  viewer.group = { add: () => attached++ }; viewer.objects = []; viewer.loadGeneration = 1;
+  const pending = viewer.loadOBJ({ id: 'old' }, '/old/', 1);
+  assert.equal(viewer.loads.size, 1);
+  viewer.abortLoads(); viewer.loadGeneration = 2;
+  resolve({ traverse(callback) { callback({ isMesh: true }); } });
+  await pending;
+  assert(controller.signal.aborted);
+  assert.equal(attached, 0); assert.equal(viewer.objects.length, 0); assert.equal(viewer.loads.size, 0);
+});
+
+test('inactive view pauses frames and queued mesh starts; reactivation caps concurrent loads at four', () => {
+  const { viewer, calls } = fixture(); viewer.loadOBJ = value => viewer.loads.add(value);
+  viewer.pendingLoads = [[1], [2], [3], [4], [5], [6]]; viewer.setActive(false); viewer.invalidate(); viewer.pumpLoads();
+  assert.equal(viewer.loads.size, 0); assert.deepEqual(calls, [['cancel', 4]]);
+  viewer.setActive(true); assert.equal(viewer.loads.size, 4); assert.equal(viewer.pendingLoads.length, 2);
+  assert.deepEqual(calls, [['cancel', 4], ['frame']]);
+});
+
+test('cutaway only changes renderer visibility and leaves physical object data intact', () => {
+  const { viewer } = fixture({ hideInspectionShell: () => true }), object = { id: 'wall', position: [1, 2, 3], size: [1, 2, 3] };
+  viewer.spec = { bounds: [10, 8, 5] };
+  viewer.shellNodes = [{ visible: true, userData: { objects: [object] } }]; viewer.reference = false;
+  const frozen = structuredClone(object); viewer.setCutaway(true);
+  assert.equal(viewer.shellNodes[0].visible, false); assert.deepEqual(object, frozen);
+  viewer.setCutaway(false); assert.equal(viewer.shellNodes[0].visible, true);
+});
+
+test('viewer batches only when the current source queue finishes and preserves primitive picking', async () => {
+  let batches = 0;
+  const batch = { isMesh: true, isInstancedMesh: true };
+  const { viewer } = fixture({ THREE: {}, isInspectionShell: () => false,
+    batchSourceMeshes: () => { batches++; return { objects: [batch], stats: { batches: 1 } }; } });
+  const waiting = [], sourceNodes = [], primitive = { isMesh: true, userData: { object: { id: 'primitive' } } };
+  viewer.spec = { bounds: [6,6,3] }; viewer.objects = [primitive]; viewer.loadGeneration = 1;
+  viewer.sourceGroup = { add: group => group.traverse(node => sourceNodes.push(node)),
+    traverse: callback => sourceNodes.forEach(callback) };
+  viewer.assets = { controller: new AbortController(), load: () => new Promise(done => waiting.push(done)) };
+  const first = viewer.loadOBJ({ id: 'first' }, '/', 1), second = viewer.loadOBJ({ id: 'second' }, '/', 1);
+  const firstNode = { isMesh: true, userData: { object: { id: 'first' } } };
+  const secondNode = { isMesh: true, userData: { object: { id: 'second' } } };
+  waiting[0]({ traverse(callback) { callback(firstNode); } });
+  await first;
+  assert.equal(batches, 0); assert.equal(viewer.loads.size, 1);
+  waiting[1]({ traverse(callback) { callback(secondNode); } });
+  await second;
+  assert.equal(batches, 1); assert.deepEqual(viewer.objects, [primitive,batch]);
+  viewer.batchSources(); assert.equal(batches, 1);
+});
+
+test('late-loaded source shells respect cutaway and stay outside the batching root', async () => {
+  const { viewer } = fixture({ THREE: {}, isInspectionShell: () => true,
+    batchSourceMeshes: () => ({ objects: [], stats: { batches: 0 } }) });
+  const shellMesh = { isMesh: true }, shell = { visible: true, traverse(callback) { callback(shellMesh); } };
+  viewer.assets = { controller: new AbortController(), load: async () => shell };
+  viewer.objects = []; viewer.shellNodes = []; viewer.loadGeneration = 1;
+  viewer.spec = { bounds: [6,6,3] }; viewer.reference = false; viewer.cutaway = true;
+  viewer.group = { add: group => assert.equal(group, shell) };
+  viewer.sourceGroup = { add: () => assert.fail('shell must stay independent'), traverse() {} };
+  await viewer.loadOBJ({ id: 'shell' }, '/', 1);
+  assert.equal(shell.visible, false); assert.equal(viewer.objects[0], shellMesh);
+  viewer.setCutaway(false); assert.equal(shell.visible, true);
+  viewer.setCutaway(true); assert.equal(shell.visible, false);
+});
+
+test('optional batching failure leaves existing selection objects usable', () => {
+  const { viewer } = fixture({ THREE: {}, batchSourceMeshes: () => { throw new Error('fixture failure'); } });
+  const node = { isMesh: true };
+  viewer.objects = [node]; viewer.sourceGroup = { traverse: callback => callback(node) };
+  viewer.batchSources();
+  assert.equal(viewer.objects[0], node);
+  assert.match(viewer.sourceBatchStats.error, /retained individual/);
+});
+
+test('asset failure annotations group repeated sources and cap DOM nodes for unique failures', () => {
+  const { viewer } = fixture({ THREE: { Vector3: class { constructor(...values) { this.values = values; } } } });
+  const nodes = [];
+  viewer.assetErrorLabels = new Map(); viewer.additionalAssetErrors = 0;
+  viewer.label = text => { const node = { textContent: text }; nodes.push(node); return node; };
+  const object = { id: 'rack', label: 'Rack', mesh_path: 'assets/shared.obj', position: [0,0,0] };
+  for (let i = 0; i < 200; i++) viewer.showAssetError({ ...object, id: `rack${i}` }, new Error('unavailable'));
+  assert.equal(nodes.length, 1); assert.match(nodes[0].textContent, /200 copies/);
+  for (let i = 1; i < 40; i++) viewer.showAssetError({ ...object, mesh_path: `assets/unique${i}.obj` }, new Error('unavailable'));
+  assert.equal(nodes.length, 17); assert.equal(viewer.assetErrorLabels.size, 16);
+  assert.equal(viewer.assetErrorSummary.textContent, '24 more unavailable meshes');
+});
+
+test('failed source shells retain cutaway behavior and object selection', async () => {
+  const mesh = { visible: true, isMesh: true, userData: {} }, object = { id: 'wall' };
+  const { viewer } = fixture({ isInspectionShell: () => true,
+    batchSourceMeshes: () => ({ objects: [], stats: {} }) });
+  viewer.spec = { bounds: [6,6,3] }; viewer.cutaway = true; viewer.reference = false;
+  viewer.shellNodes = []; viewer.objects = []; viewer.loadGeneration = 1;
+  viewer.sourceGroup = { add: () => assert.fail('shell must not be batched'), traverse() {} };
+  viewer.group = { add: node => assert.equal(node, mesh) };
+  viewer.showAssetError = value => assert.equal(value, object);
+  viewer.assets = { controller: new AbortController(), load: async () => { throw new Error('unavailable'); },
+    placeholder(value) { mesh.userData.object = value; return mesh; } };
+  await viewer.loadOBJ(object, '/', 1);
+  assert.equal(mesh.visible, false); assert.equal(viewer.objects[0].userData.object, object);
+  viewer.setCutaway(false); assert.equal(mesh.visible, true);
+});
+
+test('offscreen and hidden-tab viewers stop queued loads and resume only when both are visible', () => {
+  let observe, disconnects = 0;
+  const { viewer, calls, canvas, document } = fixture({
+    IntersectionObserver: class {
+      constructor(callback) { observe = callback; }
+      observe(target) { this.target = target; }
+      disconnect() { disconnects++; }
+    },
+  });
+  document.removeEventListener('visibilitychange', viewer.onVisibility);
+  viewer.loadOBJ = value => viewer.loads.add(value);
+  viewer.pendingLoads = [[1], [2], [3], [4], [5]];
+  viewer.observeVisibility(); viewer.pumpLoads();
+  assert.equal(viewer.loads.size, 0, 'wait for the first intersection');
+  observe([{ target: canvas, isIntersecting: true, intersectionRatio: 1 }]);
+  assert.equal(viewer.loads.size, 4);
+  observe([{ target: canvas, isIntersecting: false, intersectionRatio: 0 }]);
+  viewer.loads.delete(1); viewer.pumpLoads(); viewer.invalidate();
+  assert.equal(viewer.pendingLoads.length, 1);
+  assert.deepEqual(calls, [['cancel', 4]]);
+  document.hidden = true;
+  observe([{ target: canvas, isIntersecting: true, intersectionRatio: 1 }]);
+  viewer.setActive(true); assert.equal(viewer.pendingLoads.length, 1);
+  document.hidden = false; document.dispatchEvent(new Event('visibilitychange'));
+  assert.equal(viewer.pendingLoads.length, 0); assert.equal(viewer.loads.size, 4);
+  assert.deepEqual(calls, [['cancel', 4], ['frame']]);
+  document.hidden = true; document.dispatchEvent(new Event('visibilitychange'));
+  assert.deepEqual(calls.at(-1), ['cancel', 17]);
+  viewer.dispose();
+  assert.equal(disconnects, 1);
+  const count = calls.length;
+  document.hidden = false;
+  observe([{ target: canvas, isIntersecting: true, intersectionRatio: 1 }]);
+  document.dispatchEvent(new Event('visibilitychange'));
+  assert.equal(calls.length, count, 'late observer callbacks cannot resurrect a disposed viewer');
+});
+
+test('visibility fallback still suspends tab and hidden canvas work without IntersectionObserver', () => {
+  const { viewer, calls, canvas, document } = fixture();
+  document.removeEventListener('visibilitychange', viewer.onVisibility);
+  viewer.observeVisibility();
+  document.hidden = true; document.dispatchEvent(new Event('visibilitychange'));
+  viewer.invalidate();
+  assert.deepEqual(calls, [['cancel', 4]]);
+  document.hidden = false; canvas.hidden = true;
+  document.dispatchEvent(new Event('visibilitychange')); viewer.setActive(true);
+  assert.deepEqual(calls, [['cancel', 4]]);
+  canvas.hidden = false; viewer.setActive(true);
+  assert.deepEqual(calls, [['cancel', 4], ['frame']]);
+});
+
+test('Home and F fit only the focused viewport and never intercept form or modified keys', () => {
+  const { viewer, canvas, document } = fixture(), fitted = [];
+  viewer.selectedObject = { id: 'rack' }; viewer.fit = object => fitted.push(object);
+  let prevented = 0;
+  const event = { key: 'f', target: canvas, preventDefault() { prevented++; } };
+  viewer.handleShortcut(event);
+  assert.equal(fitted.length, 0);
+  document.activeElement = canvas;
+  viewer.handleShortcut({ ...event, target: {} });
+  viewer.handleShortcut({ ...event, ctrlKey: true });
+  viewer.handleShortcut({ ...event, repeat: true });
+  assert.equal(fitted.length, 0);
+  viewer.handleShortcut(event); viewer.handleShortcut({ ...event, key: 'Home' });
+  assert.deepEqual(fitted, [viewer.selectedObject, null]); assert.equal(prevented, 2);
+  viewer.onScreen = false; viewer.handleShortcut(event);
+  assert.equal(fitted.length, 2);
+});

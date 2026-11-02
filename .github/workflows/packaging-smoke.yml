@@ -1,0 +1,70 @@
+name: packaging-smoke
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  clean-install:
+    # A one-off household acceptance request must not start the full suite.
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'run-household-acceptance') && !contains(github.event.pull_request.labels.*.name, 'run-package-acceptance') && !contains(github.event.pull_request.labels.*.name, 'run-warehouse-acceptance') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            python: '3.11'
+          - os: ubuntu-24.04
+            python: '3.13'
+          - os: macos-15
+            python: '3.13'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      OPENAI_API_KEY: ''
+      PYTHONPATH: ''
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install build tooling
+        run: python -m pip install uv==0.11.28
+      - name: Build and inspect both archives
+        shell: bash
+        run: |
+          uv build
+          python tools/check_distribution.py dist > distribution-check.json
+          cat distribution-check.json
+      - name: Install wheel and source archive outside checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/robot-worlds-smoke"
+          for artifact in "$GITHUB_WORKSPACE"/dist/*.whl "$GITHUB_WORKSPACE"/dist/*.tar.gz; do
+            if [[ "$artifact" == *.whl ]]; then kind=wheel; else kind=sdist; fi
+            environment="$RUNNER_TEMP/robot-worlds-$kind"
+            uv venv --python '${{ matrix.python }}' "$environment"
+            uv pip install --python "$environment/bin/python" "$artifact"
+            uv pip check --python "$environment/bin/python"
+            (
+              cd "$RUNNER_TEMP/robot-worlds-smoke"
+              "$environment/bin/python" -I -c 'import os, pathlib, robot_worlds; location=pathlib.Path(robot_worlds.__file__).resolve(); assert not location.is_relative_to(pathlib.Path(os.environ["GITHUB_WORKSPACE"]).resolve()), location; print(location)'
+              "$environment/bin/python" -I -m robot_worlds.diagnostics --json > "$GITHUB_WORKSPACE/doctor-$kind.json"
+              "$environment/bin/robot-worlds" doctor --json > "$GITHUB_WORKSPACE/doctor-cli-$kind.json"
+              "$environment/bin/robot-worlds" --help > "$GITHUB_WORKSPACE/cli-help-$kind.txt"
+            )
+          done
+      - name: Retain review artifacts and offline reports
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: packaging-${{ matrix.os }}-python${{ matrix.python }}
+          if-no-files-found: error
+          path: |
+            dist/*
+            distribution-check.json
+            doctor-*.json
+            cli-help-*.txt

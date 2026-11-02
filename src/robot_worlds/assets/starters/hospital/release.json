@@ -1,0 +1,28 @@
+{
+  "id": "hospital",
+  "name": "Hospital",
+  "description": "Clinical rooms, reception, equipment and connecting corridors.",
+  "repo": "aws-robotics/aws-robomaker-hospital-world",
+  "revision": "7161eb8448f5cba6a469da7a79ae5d660b0b7f58",
+  "world": "worlds/hospital.world",
+  "license": "MIT-0 + CC BY-4.0",
+  "source_url": "https://github.com/aws-robotics/aws-robomaker-hospital-world/tree/7161eb8448f5cba6a469da7a79ae5d660b0b7f58",
+  "world_id": "a6fd9818da89d15f78ba19249152785bc2aff52613c715ad587ea04423bf3e93",
+  "bundle_sha256": "c8dde5f809fcd82bdff3b962cf5e2653a537e74991e80ef04f2c2f33bcd1f4c0",
+  "bounds": [
+    28.0,
+    60.0,
+    4.015379943847656
+  ],
+  "components": 9198,
+  "source_instances": 181,
+  "native_engine_version": "3.17.0",
+  "thumbnail_view": "Native MuJoCo aerial cutaway at reset; 1 explicitly named source ceiling/roof visual objects hidden for the thumbnail only. Runtime background ground hidden to show the original source flooring.",
+  "thumbnail_hidden_object_ids": [
+    "source_5772"
+  ],
+  "thumbnail_hidden_runtime_geoms": [
+    "floor"
+  ],
+  "bundle_bytes": 64864241
+}

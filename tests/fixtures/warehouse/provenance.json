@@ -1,0 +1,10 @@
+{
+  "kind": "saved live plan and actions for deterministic regression, not a bundled product demo",
+  "original_world_id": "bd64c5048f73b99c19970b643b004d33a877827e3cdf448977ae0834096e8722",
+  "plan_sha256": "11022aed5ab0a1d6c5790f8046121ca4c090eb559eba99d44e347af35a5795f8",
+  "source_run_id": "b33bc5d70a794bd08f63f126cd2e79fe",
+  "changes": "Only local graphic paths become @graphics resources. Current helper supplies complete UV indices; original positions/topology/layout/task/physics are unchanged.",
+  "model": "gpt-6-astra",
+  "transport": "codex",
+  "action_replay_is_autonomous": false
+}

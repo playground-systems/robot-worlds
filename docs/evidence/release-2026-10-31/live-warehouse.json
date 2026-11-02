@@ -1,0 +1,53 @@
+{
+  "world_id": "b54104868318cfcdd9e6c802113de102a9714f584e25ad95b4dd806fef4d558c",
+  "report_id": "f7549b0dc6bd4ff9a14d0a439c182c90",
+  "workflow_completed": true,
+  "task_success": false,
+  "elapsed_seconds": 363.9848176669984,
+  "model_usage": {
+    "generation": {
+      "calls": 3,
+      "input_tokens": 119973,
+      "output_tokens": 19443,
+      "total_tokens": 139416,
+      "transport": "codex_cli",
+      "cost": {
+        "mode": "codex_plan",
+        "charged_usd": null
+      }
+    },
+    "policy": {
+      "calls": 3,
+      "input_tokens": 78532,
+      "output_tokens": 129,
+      "total_tokens": 78661,
+      "transport": "codex_cli",
+      "cost": {
+        "mode": "codex_plan",
+        "charged_usd": null
+      }
+    }
+  },
+  "termination": "policy_finished",
+  "executed_steps": 3,
+  "portable_reload_and_regrade": true,
+  "validation_at_creation": "ready",
+  "source_assets": [
+    "rack_large_empty_a02",
+    "box_corrugated_brown_b20",
+    "pallet_a01",
+    "conveyor_belt_a05",
+    "barrier_fence_metal_a02"
+  ],
+  "bounds_metres": [
+    24,
+    20,
+    5
+  ],
+  "components": 2135,
+  "scope": "Live text generation through sensor policy, grading and portable artifacts",
+  "limitations": [
+    "Layout is sparse compared with the supplied visual reference.",
+    "Navigation failed because the generated zero-tolerance region excluded the base origin 1mm below the floor, despite reaching the XY target. New validation now rejects this rule; the recorded score is unchanged."
+  ]
+}

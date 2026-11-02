@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "version": "0.1.0a1",
+  "package_files": 344,
+  "controller_license_sha256": "ff28cacaef7b9919a0fb905136cf4ccffba5191522bf5d024c4339932c0edc28",
+  "artifacts": [
+    {
+      "name": "robot_worlds-0.1.0a1-py3-none-any.whl",
+      "sha256": "eb2d5c92ac73554082ee29f729209e8f413664300379885a3568d8eaf1f2bf23",
+      "bytes": 25399608
+    },
+    {
+      "name": "robot_worlds-0.1.0a1.tar.gz",
+      "sha256": "3f9f2a0ac58d3e4259d6564317709d83ae7738a3334540a6ba23e274e2fa059a",
+      "bytes": 25864446
+    }
+  ],
+  "limit": "Archive completeness and pinned notice checks only; not native execution, model compatibility or a legal opinion."
+}

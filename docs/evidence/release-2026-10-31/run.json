@@ -1,0 +1,13 @@
+{
+  "head_sha": "e5b9d6a09ea12730595dc0f5225f505e0715396f",
+  "run_url": "https://github.com/playground-systems/robot-worlds/actions/runs/41235518874",
+  "artifact_id": 13054369967,
+  "artifact_bytes": 66293009,
+  "artifact_sha256": "92aacafe884bd5392205aba787ac4e0b64a020de59cf8ed136ca32d01f2f5c16",
+  "status": "passed",
+  "cases": 77,
+  "wheel_and_sdist_linux_install": "passed",
+  "mac_wheel_native_sdk_flow": "passed",
+  "scope": "SDK and distribution acceptance; successful manipulation and live generation are separate gates",
+  "full_release_accepted": false
+}

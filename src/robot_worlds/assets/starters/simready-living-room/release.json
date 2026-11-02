@@ -1,0 +1,28 @@
+{
+  "id": "simready-living-room",
+  "name": "Reading and putting things away",
+  "description": "A comfortable west-side seating group and a north-wall household cabinet, with clear east-side access.",
+  "repo": "nvidia/simready-assets",
+  "revision": "4763fbfaa4f8e97658e68b57d01b4c86659e08b5",
+  "optimized_revision": "e52172290393dde80e8d383861db94b8d0e92ec3",
+  "world": "generation-plan.json",
+  "license": "CC BY-4.0",
+  "source_url": "https://huggingface.co/datasets/nvidia/simready-assets",
+  "world_id": "9c680b7443872359da9a5955eaab24c1bc9393be0ccd28bdcd79f7003e154068",
+  "bundle_sha256": "d329c5bf9c53b9f967f470242e0c91ad56d91161650c257eed609906c9866a1a",
+  "bundle_bytes": 24210745,
+  "bounds": [
+    5.0,
+    4.6,
+    3.2
+  ],
+  "components": 126,
+  "source_instances": 9,
+  "task_count": 13,
+  "authored_by": "gpt-6-astra",
+  "native_engine_version": "3.17.0",
+  "thumbnail_view": "Native MuJoCo aerial reset inspection. No geometry hidden; policy camera and world physics unchanged.",
+  "thumbnail_hidden_object_ids": [],
+  "thumbnail_hidden_runtime_geoms": [],
+  "interaction_evidence": "Native reset and task-reference checks; policy completion unverified"
+}

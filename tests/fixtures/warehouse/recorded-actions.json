@@ -1,0 +1,44 @@
+[
+  {
+    "tool": "drive",
+    "arguments": {
+      "distance": 2,
+      "turn": 0
+    }
+  },
+  {
+    "tool": "drive",
+    "arguments": {
+      "distance": 1,
+      "turn": 0
+    }
+  },
+  {
+    "tool": "drive",
+    "arguments": {
+      "distance": 0,
+      "turn": -0.8
+    }
+  },
+  {
+    "tool": "drive",
+    "arguments": {
+      "distance": 0,
+      "turn": -0.7
+    }
+  },
+  {
+    "tool": "drive",
+    "arguments": {
+      "distance": 0,
+      "turn": -0.6
+    }
+  },
+  {
+    "tool": "drive",
+    "arguments": {
+      "distance": 2,
+      "turn": 0
+    }
+  }
+]

@@ -1,0 +1,111 @@
+{
+  "workflow_completed": true,
+  "task_success": true,
+  "model": "gpt-6-astra",
+  "transport": "codex",
+  "budgets": {
+    "generation": {
+      "max_calls": 3,
+      "max_seconds": 540,
+      "timeout": 180,
+      "max_input_chars": 120000,
+      "max_total_tokens": 150000,
+      "max_cost_usd": null,
+      "billing": "Codex plan usage; no monetary cap or API pricing inference",
+      "token_limit": "Stops subsequent calls after reported total reaches limit"
+    },
+    "policy": {
+      "max_calls": 12,
+      "max_seconds": 420,
+      "timeout": 180,
+      "max_input_chars": 120000,
+      "max_total_tokens": 450000,
+      "max_cost_usd": null,
+      "billing": "Codex plan usage; no monetary cap or API pricing inference",
+      "token_limit": "Stops subsequent calls after reported total reaches limit"
+    }
+  },
+  "elapsed_seconds": 251.84818637499848,
+  "model_usage": {
+    "generation": {
+      "calls": 1,
+      "input_tokens": 36965,
+      "output_tokens": 7669,
+      "total_tokens": 44634,
+      "transport": "codex_cli",
+      "cost": {
+        "mode": "codex_plan",
+        "charged_usd": null
+      }
+    },
+    "policy": {
+      "calls": 3,
+      "input_tokens": 78709,
+      "output_tokens": 100,
+      "total_tokens": 78809,
+      "transport": "codex_cli",
+      "cost": {
+        "mode": "codex_plan",
+        "charged_usd": null
+      }
+    }
+  },
+  "world_id": "e034c4a539fe9f36e1b1eea6c63c45dbf688ae1f1f3f518457f013273cb6a477",
+  "validation": {
+    "status": "ready",
+    "checks": [
+      {
+        "check": "schema",
+        "passed": true,
+        "errors": []
+      },
+      {
+        "check": "geometry_and_rubric",
+        "passed": true,
+        "errors": []
+      },
+      {
+        "check": "physics_settling",
+        "passed": true,
+        "errors": []
+      },
+      {
+        "check": "physics_reset",
+        "passed": true,
+        "errors": []
+      },
+      {
+        "check": "initial_rubric",
+        "passed": true,
+        "errors": []
+      },
+      {
+        "check": "render",
+        "passed": true,
+        "errors": []
+      }
+    ],
+    "limitations": [
+      "Static geometry and a reset probe do not prove task reachability, completeness of natural-language interpretation, or policy solvability.",
+      "Material properties are estimated unless independently measured; temporal measurements have the recorded sampling resolution.",
+      "Surface finishes, floor pattern and studio lighting are visual estimates, not measured materials."
+    ]
+  },
+  "report_id": "a3792d98be824d38b0f158e32ede760a",
+  "summary": {
+    "attempted": 1,
+    "valid": 1,
+    "successes": 1,
+    "invalid_or_interrupted": 0,
+    "success_rate": 1.0,
+    "success_interval_95": [
+      0.20654931437723745,
+      1
+    ]
+  },
+  "termination": "policy_finished",
+  "executed_steps": 3,
+  "portable_reload_and_regrade": true,
+  "raw_record_sha256": "7e018688536d0d5dc5216d4a47829ef2a99cbe39dd66b85d69a97e3ed81cbc4c",
+  "evidence_class": "live model workflow; sensor-only bounded navigation; not manipulation or logistics"
+}

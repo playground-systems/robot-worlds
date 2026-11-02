@@ -1,0 +1,150 @@
+name: household-acceptance
+# Opt-in only: normal commits, PR updates and label removals do not run this job.
+# The label event supports testing this draft before workflows reach main.
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: household-acceptance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  household:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-household-acceptance' || github.event.label.name == 'run-package-acceptance' || github.event.label.name == 'run-warehouse-acceptance'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ''
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Install locked test environment
+        run: |
+          python -m pip install uv==0.11.28
+          uv sync --frozen --dev
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libegl1 xvfb xauth
+      - name: Record checkout identity
+        shell: bash
+        run: |
+          mkdir -p household-evidence
+          git rev-parse HEAD > household-evidence/commit.txt
+          echo "${{ github.event.label.name }}" > household-evidence/requested-scope.txt
+          uv --version > household-evidence/uv-version.txt
+          uv run --frozen python -c 'import sys; from importlib.metadata import version; print(sys.version); print("mujoco=" + version("mujoco")); print("robot-worlds=" + version("robot-worlds"))' > household-evidence/runtime.txt
+      - name: Run only household SDK, original physics and relevant regressions
+        if: github.event.label.name != 'run-package-acceptance' && github.event.label.name != 'run-warehouse-acceptance'
+        shell: bash
+        run: |
+          xvfb-run -a uv run --frozen pytest -q -ra \
+            tests/test_household_sdk_flow.py \
+            tests/test_sourced_household_physics.py \
+            tests/test_household_grading.py \
+            tests/test_arm_orientation.py \
+            tests/test_llm_policy.py \
+            tests/test_asset_import_physics.py \
+            tests/test_trace_checkpoints.py \
+            tests/test_live.py \
+            tests/test_spectator.py \
+            tests/test_rubric.py \
+            tests/test_sdk.py \
+            tests/test_regrade_integrity.py \
+            tests/test_appliance_physics.py \
+            tests/test_sdk_physics.py \
+            tests/test_batch.py \
+            tests/test_server.py \
+            --basetemp "$RUNNER_TEMP/household-acceptance" \
+            --junitxml=household-evidence/junit.xml
+      - name: Audit required native checks without accepting skips
+        if: ${{ always() && github.event.label.name != 'run-package-acceptance' && github.event.label.name != 'run-warehouse-acceptance' }}
+        run: python tools/check_household_evidence.py household-evidence/junit.xml --output household-evidence/acceptance.json
+      - name: Check changed viewer lifecycle and framing
+        if: github.event.label.name != 'run-package-acceptance' && github.event.label.name != 'run-warehouse-acceptance'
+        run: node --test tests/scene-lifecycle.test.mjs tests/scene-inspection.test.mjs
+      - name: Measure cold and warm original asset preparation
+        if: github.event.label.name != 'run-package-acceptance' && github.event.label.name != 'run-warehouse-acceptance'
+        run: uv run --frozen python tools/benchmark_asset_preparation.py > household-evidence/preparation-timing.json
+      - name: Build and verify release archives
+        run: |
+          uv build
+          python tools/check_distribution.py dist > household-evidence/distribution.json
+      - name: Install both archives outside the checkout
+        id: install
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/robot-worlds-clean"
+          for artifact in "$GITHUB_WORKSPACE"/dist/*.whl "$GITHUB_WORKSPACE"/dist/*.tar.gz; do
+            if [[ "$artifact" == *.whl ]]; then kind=wheel; else kind=sdist; fi
+            environment="$RUNNER_TEMP/robot-worlds-$kind"
+            uv venv --python 3.13 "$environment"
+            uv pip install --python "$environment/bin/python" "$artifact"
+            uv pip check --python "$environment/bin/python"
+            (
+              cd "$RUNNER_TEMP/robot-worlds-clean"
+              "$environment/bin/python" -I -c 'import os, pathlib, robot_worlds; location=pathlib.Path(robot_worlds.__file__).resolve(); assert not location.is_relative_to(pathlib.Path(os.environ["GITHUB_WORKSPACE"]).resolve()), location; print(location)'
+              "$environment/bin/robot-worlds" doctor --json > "$GITHUB_WORKSPACE/household-evidence/doctor-$kind.json"
+              "$environment/bin/robot-worlds" --help > "$GITHUB_WORKSPACE/household-evidence/help-$kind.txt"
+
+            )
+          done
+      - name: Render engineering placement from the installed wheel
+        if: github.event.label.name != 'run-package-acceptance' && github.event.label.name != 'run-warehouse-acceptance'
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/robot-worlds-clean"
+          status=0
+          /usr/bin/time -v -o "$GITHUB_WORKSPACE/household-evidence/engineering-resources.txt" \
+            timeout --signal=TERM 300s xvfb-run -a "$RUNNER_TEMP/robot-worlds-wheel/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/engineering_household.py" \
+            --output "$RUNNER_TEMP/household-engineering" --render \
+            > "$GITHUB_WORKSPACE/household-evidence/engineering.log" 2>&1 || status=$?
+          if [[ -f "$RUNNER_TEMP/household-engineering/acceptance.json" ]]; then
+            cp "$RUNNER_TEMP/household-engineering/acceptance.json" "$GITHUB_WORKSPACE/household-evidence/engineering.json"
+          fi
+          exit "$status"
+      - name: Verify dense warehouse evidence storage from the installed wheel
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event.label.name != 'run-package-acceptance' }}
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/robot-worlds-clean"
+          "$RUNNER_TEMP/robot-worlds-wheel/bin/robot-worlds" prepare-warehouse --output "$RUNNER_TEMP/warehouse-library" --timeout 120 \
+            > "$GITHUB_WORKSPACE/household-evidence/warehouse-preparation.log" 2>&1
+          status=0
+          /usr/bin/time -v -o "$GITHUB_WORKSPACE/household-evidence/warehouse-resources.txt" \
+            timeout --signal=TERM 600s xvfb-run -a "$RUNNER_TEMP/robot-worlds-wheel/bin/python" "$GITHUB_WORKSPACE/tools/acceptance/offline_warehouse.py" \
+            --output "$RUNNER_TEMP/warehouse-storage" --library "$RUNNER_TEMP/warehouse-library" \
+            --fixture "$GITHUB_WORKSPACE/tests/fixtures/warehouse" \
+            > "$GITHUB_WORKSPACE/household-evidence/warehouse.log" 2>&1 || status=$?
+          if [[ -f "$RUNNER_TEMP/warehouse-storage/acceptance.json" ]]; then
+            cp "$RUNNER_TEMP/warehouse-storage/acceptance.json" "$GITHUB_WORKSPACE/household-evidence/warehouse.json"
+          fi
+          exit "$status"
+      - name: Retain current-run evidence
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: household-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            household-evidence/
+            dist/*
+            ${{ runner.temp }}/household-engineering/acceptance.json
+            ${{ runner.temp }}/household-engineering/world.zip
+            ${{ runner.temp }}/household-engineering/report.zip
+            ${{ runner.temp }}/warehouse-storage/acceptance.json
+            ${{ runner.temp }}/warehouse-storage/world.zip
+            ${{ runner.temp }}/warehouse-storage/report.zip
+            ${{ runner.temp }}/household-acceptance/**/result.json
+            ${{ runner.temp }}/household-acceptance/**/trace.json
+            ${{ runner.temp }}/household-acceptance/**/trace.json.gz
+            ${{ runner.temp }}/household-acceptance/**/manifest.json
+            ${{ runner.temp }}/household-acceptance/**/report.html
+            ${{ runner.temp }}/household-acceptance/**/frames/*.png

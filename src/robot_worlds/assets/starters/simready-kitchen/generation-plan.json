@@ -1,0 +1,615 @@
+{
+  "schema_version": "1.0",
+  "name": "Dish preparation and kitchen storage",
+  "description": "A real rear-wall kitchenette faces an open preparation island; a wooden sideboard provides accessible household storage.",
+  "task": "Pull open the upper deep drawer at the right end of the kitchen counter. Grasp the preparation-island bowl by its rim, carry it over, set it fully inside on the drawer floor, let go, and push the drawer shut.",
+  "robot": "tiago++",
+  "bounds": [
+    9.0,
+    7.0,
+    3.2
+  ],
+  "robot_start": [
+    0.0,
+    -2.5,
+    1.57
+  ],
+  "objects": [
+    {
+      "id": "west_wall",
+      "label": "west wall",
+      "kind": "box",
+      "position": [
+        -4.44,
+        0.0,
+        1.6
+      ],
+      "size": [
+        0.12,
+        6.76,
+        3.2
+      ],
+      "color": [
+        0.85,
+        0.83,
+        0.77
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "east_wall",
+      "label": "east wall",
+      "kind": "box",
+      "position": [
+        4.44,
+        0.0,
+        1.6
+      ],
+      "size": [
+        0.12,
+        6.76,
+        3.2
+      ],
+      "color": [
+        0.85,
+        0.83,
+        0.77
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "north_wall",
+      "label": "north wall",
+      "kind": "box",
+      "position": [
+        0.0,
+        3.44,
+        1.6
+      ],
+      "size": [
+        8.76,
+        0.12,
+        3.2
+      ],
+      "color": [
+        0.9,
+        0.88,
+        0.82
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "entry_wall_left",
+      "label": "entry wall left",
+      "kind": "box",
+      "position": [
+        -2.5999999999999996,
+        -3.44,
+        1.6
+      ],
+      "size": [
+        3.8,
+        0.12,
+        3.2
+      ],
+      "color": [
+        0.9,
+        0.88,
+        0.82
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "entry_wall_right",
+      "label": "entry wall right",
+      "kind": "box",
+      "position": [
+        2.5999999999999996,
+        -3.44,
+        1.6
+      ],
+      "size": [
+        3.8,
+        0.12,
+        3.2
+      ],
+      "color": [
+        0.9,
+        0.88,
+        0.82
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    },
+    {
+      "id": "entry_lintel",
+      "label": "entry lintel",
+      "kind": "box",
+      "position": [
+        0.0,
+        -3.44,
+        2.75
+      ],
+      "size": [
+        1.4,
+        0.12,
+        0.9000000000000004
+      ],
+      "color": [
+        0.9,
+        0.88,
+        0.82
+      ],
+      "mass": 1.0,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1.0,
+      "revolved": null
+    }
+  ],
+  "assembly_templates": [],
+  "assembly_instances": [],
+  "regions": [
+    {
+      "id": "dish_drawer_closed",
+      "label": "Fully contained in the closed drawer",
+      "position": [
+        0.33499999999999996,
+        2.91,
+        0.6597885915271774
+      ],
+      "size": [
+        0.55,
+        0.4,
+        0.23
+      ],
+      "interior_of": "counter_part0"
+    },
+    {
+      "id": "sideboard_lower_closed",
+      "label": "Fully contained in the closed drawer",
+      "position": [
+        -3.97,
+        0.45,
+        0.658
+      ],
+      "size": [
+        0.48,
+        0.6,
+        0.116
+      ],
+      "interior_of": "sideboard_part0"
+    },
+    {
+      "id": "serving_position",
+      "label": "Clear serving position on the island",
+      "position": [
+        0.25,
+        -0.87,
+        1.0514856083569835
+      ],
+      "size": [
+        0.34,
+        0.32,
+        0.125
+      ],
+      "interior_of": null
+    }
+  ],
+  "rubric": [
+    {
+      "predicate": "joint_at",
+      "object_id": "counter_part150",
+      "target_id": null,
+      "threshold": 0.38,
+      "tolerance": 0.025,
+      "value": null,
+      "id": "pulled_open",
+      "description": "pulled open",
+      "duration": 0.25,
+      "after": [],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "holding",
+      "object_id": "prep_bowl_part0",
+      "target_id": null,
+      "threshold": null,
+      "tolerance": 0.03,
+      "value": null,
+      "id": "grasp",
+      "description": "grasp",
+      "duration": 0.0,
+      "after": [
+        "pulled_open"
+      ],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "carried_distance",
+      "object_id": "prep_bowl_part0",
+      "target_id": null,
+      "threshold": 0.3,
+      "tolerance": 0.03,
+      "value": null,
+      "id": "carry",
+      "description": "carry",
+      "duration": 0.0,
+      "after": [
+        "grasp"
+      ],
+      "required": true,
+      "mode": "eventually",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "on_top",
+      "object_id": "prep_bowl_part0",
+      "target_id": "counter_part150",
+      "threshold": null,
+      "tolerance": 0.012,
+      "value": null,
+      "id": "support",
+      "description": "support",
+      "duration": 0.25,
+      "after": [
+        "carry"
+      ],
+      "required": true,
+      "mode": "final",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "released",
+      "object_id": "prep_bowl_part0",
+      "target_id": null,
+      "threshold": null,
+      "tolerance": 0.03,
+      "value": null,
+      "id": "release",
+      "description": "release",
+      "duration": 0.4,
+      "after": [
+        "carry"
+      ],
+      "required": true,
+      "mode": "final",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "joint_at",
+      "object_id": "counter_part150",
+      "target_id": null,
+      "threshold": 0.0,
+      "tolerance": 0.015,
+      "value": null,
+      "id": "pushed_closed",
+      "description": "pushed closed",
+      "duration": 0.4,
+      "after": [
+        "release"
+      ],
+      "required": true,
+      "mode": "final",
+      "alternative_group": null,
+      "intent": "achieve"
+    },
+    {
+      "predicate": "in_region",
+      "object_id": "prep_bowl_part0",
+      "target_id": "dish_drawer_closed",
+      "threshold": null,
+      "tolerance": 0.003,
+      "value": null,
+      "id": "closed_cavity_containment",
+      "description": "closed cavity containment",
+      "duration": 0.4,
+      "after": [],
+      "required": true,
+      "mode": "final",
+      "alternative_group": null,
+      "intent": "achieve"
+    }
+  ],
+  "process_cycles": [],
+  "assumptions": [
+    "Spatial composition and every task were authored by the Astra model running as a Codex subagent on 2026-11-02. This is direct model-authored saved planning data, not a completed paid SDK generation call.",
+    "All furniture and loose objects use the selected NVIDIA SimReady prepared sources at original scale; source meshes, materials, masses and articulation are retained. Only room architecture and optional floor paint are new primitives.",
+    "Initial joint values are shared by every selectable task. Task selection changes instruction and rubric only.",
+    "Holding means bilateral physical finger contact. Carry distance is net XY displacement during uninterrupted sampled holding, sampled at 0.05 seconds and action boundaries; unseen intervening motion is not certified.",
+    "Static geometry and task-reference checks do not prove native contact stability, arm reachability, successful grasping or autonomous task execution. Native validation remains a separate step.",
+    "Placement regions extend 5 mm below the support contact plane and separately require measured on_top contact and release. Joint closure tolerance is 15 mm; this is not permission for an item to protrude from the closed cavity.",
+    "Books are rigid source shapes; pages do not turn. Drawers are passive source mechanisms. No new appliance, deformable, liquid or screw-thread behavior is claimed.",
+    "Bowls are the original hollow 13.01 cm diameter, 6.00 cm high SimReady bowl source at retained imported mass 1.145 kg. Grasping must use the rim; no full-diameter pinch or liquid behavior is assumed. Native rim-grasp feasibility remains unverified.",
+    "The existing packing table is reused only as a secondary preparation island. The full original kitchenette, drawers and hinged door define the kitchen; there is no invented cooker or microwave.",
+    "Kitchen cabinet door closing uses 0.015 radians tolerance; slide drawer closing uses 0.015 metres."
+  ],
+  "source_prompt": "Create a polished, semantically coherent 9m by 7m kitchen with a dining/preparation area for TIAGo++.\nYou (Astra) author the entire spatial composition and task suite using the supplied source catalog.\nUse ONLY prepared NVIDIA SimReady assets for all furniture, appliances and loose objects. No AWS models, Google bowl, or nvidia-microwave079 from another NVIDIA collection. Prefer a real supplied kitchen counter/kitchenette fixture against rear walls and place its fronts facing the room. Include actual source drawer/door mechanisms and handles; do not call a fixed fixture openable. A supplied wooden drawer cabinet can serve as a sideboard. Use source coffee or packing tables only as secondary preparation surfaces, not as an entire pretend kitchen.\nPlace at least three separate supplied SimReady dishware instances on real reachable supports: bowls, mugs, plates or trays as actually installed. A supplied book/notebook can be a recipe book. Keep loose objects independent from furniture. Leave real door/drawer sweeps clear and keep kitchenware off the floor. Never add an absent asset or invent an appliance from primitive geometry. The inspected optimized SimReady catalog had no microwave-named asset; do not claim microwave operation without a compatible source.\nOnly floors, walls and floor paint may use simple layout primitives. All other geometry must reference installed source assets. A real doorway and0.9m or wider paths must connect entry, prep surfaces, counter fronts and sideboard. Keep handling areas near accessible edges and retain the original meshes and textures. All source scales are fixed. Explain a normal usable kitchen arrangement, with meaningful storage and preparation areas.\nFlagship mission: physically pick up a fitting dish or recipe book from the preparation area, pull open a real source drawer, put the item on its actual drawer-floor support, release it, and push the drawer closed. Reference the moving floor via on_top, not an immobile region pretending to follow the drawer. For containment, use only a region whose position is valid for the required mechanism state. Do not weaken placement to proximity. No cooking/heating or liquids.\nAuthor at least 12 distinct selectable tasks over the unchanged reset: dish grasp/release, transfers between actual supports, serving/preparation placement, pulling and pushing multiple real source drawers or doors, storage retrieval, recipe-book delivery, and ordered tidy-and-close missions. Closing a drawer initially closed must first require opening it. Check item/drawer fit from source dimensions. Put task regions only in actual free space; do not invent cavities. Do not require moving huge furniture or gripping a bowl across its full diameter. Operator instructions must omit simulator coordinates and hidden-state hints. Disclose physical estimates and unsupported behaviors.\n",
+  "unvalidated_requirements": [],
+  "created_assets": [],
+  "asset_requests": [],
+  "prepared_assets": [
+    {
+      "id": "counter",
+      "asset_id": "fixture_counter_a01",
+      "position": [
+        -0.8,
+        2.95,
+        0.0
+      ],
+      "quarter_turns": 3,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "sideboard",
+      "asset_id": "fixture_cabinet_b01",
+      "position": [
+        -3.95,
+        0.45,
+        0.0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "prep",
+      "asset_id": "table_packing_heavyduty_c01",
+      "position": [
+        0.2,
+        -0.45,
+        0.0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "prep_bowl",
+      "asset_id": "kitchenware_bowl_b01",
+      "position": [
+        -0.38,
+        -0.92,
+        0.9959856083569834
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "counter_bowl",
+      "asset_id": "kitchenware_bowl_b01",
+      "position": [
+        -1.75,
+        2.77,
+        0.9289748776455323
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "serving_bowl",
+      "asset_id": "kitchenware_bowl_b01",
+      "position": [
+        -3.78,
+        0.55,
+        0.9304577667713165
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "stored_bowl",
+      "asset_id": "kitchenware_bowl_b01",
+      "position": [
+        -3.87,
+        0.45,
+        0.7501440543652003
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    },
+    {
+      "id": "recipe_note",
+      "asset_id": "misc_notebook_a01",
+      "position": [
+        0.73,
+        -0.88,
+        0.9959856083569834
+      ],
+      "quarter_turns": 1,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": null,
+      "joint_initials": []
+    }
+  ]
+}

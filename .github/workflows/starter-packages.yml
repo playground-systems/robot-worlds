@@ -1,0 +1,47 @@
+name: starter-packages
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'verify-starter-packages'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ''
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Install locked SDK dependencies
+        run: |
+          python -m pip install uv==0.11.28
+          uv sync --frozen --dev
+      - name: Check offline packaging and import contracts
+        run: |
+          .venv/bin/python -m pytest -q tests/test_distribution.py tests/test_diagnostics.py tests/test_starters.py
+          node --test tests/starter-ui.test.mjs
+      - name: Verify installed real starter bundles without simulation
+        run: |
+          mkdir -p starter-evidence
+          .venv/bin/python tools/starters/check_installed.py --require-current-runtime > starter-evidence/offline-api-sdk.json
+      - name: Build and inspect complete distributions
+        run: |
+          uv build --out-dir starter-distributions
+          .venv/bin/python tools/check_distribution.py starter-distributions > starter-evidence/distributions.json
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: starter-packages-${{ github.run_id }}
+          retention-days: 7
+          path: |
+            starter-distributions/
+            starter-evidence/
+          if-no-files-found: warn

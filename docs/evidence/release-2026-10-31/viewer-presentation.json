@@ -1,0 +1,44 @@
+{
+  "world_id": "2bb6f3fd50b889278c828a7e9c6b732847e3aee62470e5a88d508e230c8228f7",
+  "components": 3427,
+  "ready_seconds": 2.512300000000745,
+  "viewport_css": [
+    684,
+    720
+  ],
+  "pixel_ratio": 1.5,
+  "batching": {
+    "meshesBefore": 865,
+    "meshesAfter": 106,
+    "batches": 62,
+    "batchedInstances": 821,
+    "cellSize": 8
+  },
+  "source_error_groups": 0,
+  "additional_source_errors": 0,
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "frame_interval_ms": {
+    "samples": 89,
+    "median": 16.699999999999818,
+    "p95": 17.699999999999818,
+    "max": 18.599999999999454
+  },
+  "render_submission_ms": {
+    "samples": 90,
+    "median": 0.8000000007450581,
+    "p95": 1.699999999254942,
+    "max": 2.300000000745058
+  },
+  "draw_calls": 162,
+  "triangles": 2538200,
+  "gpu_resources": {
+    "geometries": 95,
+    "textures": 55
+  },
+  "note": "Warm orbit after loading. Frame intervals include browser scheduling. CPU submission is not GPU duration. No simulation or model calls.",
+  "hardware": {
+    "chip": "Apple M1 Pro",
+    "memory_bytes": 17179869184
+  },
+  "limits": "One cached 90-frame orbit in the in-app browser. Background application load uncontrolled; not cold-network or sustained GPU performance."
+}

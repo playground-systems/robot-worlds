@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "environments": [
+    {
+      "id": "simready-kitchen",
+      "name": "Dish preparation and kitchen storage",
+      "description": "A real rear-wall kitchenette faces an open preparation island; a wooden sideboard provides accessible household storage.",
+      "repo": "nvidia/simready-assets",
+      "revision": "4763fbfaa4f8e97658e68b57d01b4c86659e08b5",
+      "optimized_revision": "e52172290393dde80e8d383861db94b8d0e92ec3",
+      "world": "generation-plan.json",
+      "license": "CC BY-4.0",
+      "source_url": "https://huggingface.co/datasets/nvidia/simready-assets",
+      "world_id": "41e48f70b53c8f9cf5315632a653d708120d1c773eae43ba3b7f54de3820d93b",
+      "bundle_sha256": "5ff168e903837ac2ec34374794781aab2642dad4a4b0370b80d7891e4718080e",
+      "bundle_bytes": 32324773,
+      "bounds": [
+        9.0,
+        7.0,
+        3.2
+      ],
+      "components": 436,
+      "source_instances": 8,
+      "task_count": 16,
+      "authored_by": "gpt-6-astra",
+      "native_engine_version": "3.17.0",
+      "thumbnail_view": "Native MuJoCo aerial reset inspection. No geometry hidden; policy camera and world physics unchanged.",
+      "thumbnail_hidden_object_ids": [],
+      "thumbnail_hidden_runtime_geoms": [],
+      "interaction_evidence": "Native reset and task-reference checks; policy completion unverified"
+    },
+    {
+      "id": "simready-factory",
+      "name": "Tool preparation, inspection and dispatch",
+      "description": "Four connected physical work areas around a compact manual tool-processing cell, with reserve rack storage and a clear loading apron.",
+      "repo": "nvidia/simready-assets",
+      "revision": "4763fbfaa4f8e97658e68b57d01b4c86659e08b5",
+      "optimized_revision": "e52172290393dde80e8d383861db94b8d0e92ec3",
+      "world": "generation-plan.json",
+      "license": "CC BY-4.0",
+      "source_url": "https://huggingface.co/datasets/nvidia/simready-assets",
+      "world_id": "49537f246c6883d84062c36170db5c2a0d47a1d83437efc724412486de759261",
+      "bundle_sha256": "f39b65dd2e340d9397a0402271db5898b22c65217a7cdf69396d7df541f00fda",
+      "bundle_bytes": 35022640,
+      "bounds": [
+        18.0,
+        9.0,
+        4.5
+      ],
+      "components": 684,
+      "source_instances": 18,
+      "task_count": 15,
+      "authored_by": "gpt-6-astra",
+      "native_engine_version": "3.17.0",
+      "thumbnail_view": "Native MuJoCo aerial reset inspection. No geometry hidden; policy camera and world physics unchanged.",
+      "thumbnail_hidden_object_ids": [],
+      "thumbnail_hidden_runtime_geoms": [],
+      "interaction_evidence": "Native reset and task-reference checks; policy completion unverified"
+    },
+    {
+      "id": "simready-living-room",
+      "name": "Reading and putting things away",
+      "description": "A comfortable west-side seating group and a north-wall household cabinet, with clear east-side access.",
+      "repo": "nvidia/simready-assets",
+      "revision": "4763fbfaa4f8e97658e68b57d01b4c86659e08b5",
+      "optimized_revision": "e52172290393dde80e8d383861db94b8d0e92ec3",
+      "world": "generation-plan.json",
+      "license": "CC BY-4.0",
+      "source_url": "https://huggingface.co/datasets/nvidia/simready-assets",
+      "world_id": "9c680b7443872359da9a5955eaab24c1bc9393be0ccd28bdcd79f7003e154068",
+      "bundle_sha256": "d329c5bf9c53b9f967f470242e0c91ad56d91161650c257eed609906c9866a1a",
+      "bundle_bytes": 24210745,
+      "bounds": [
+        5.0,
+        4.6,
+        3.2
+      ],
+      "components": 126,
+      "source_instances": 9,
+      "task_count": 13,
+      "authored_by": "gpt-6-astra",
+      "native_engine_version": "3.17.0",
+      "thumbnail_view": "Native MuJoCo aerial reset inspection. No geometry hidden; policy camera and world physics unchanged.",
+      "thumbnail_hidden_object_ids": [],
+      "thumbnail_hidden_runtime_geoms": [],
+      "interaction_evidence": "Native reset and task-reference checks; policy completion unverified"
+    },
+    {
+      "id": "warehouse",
+      "name": "Small warehouse",
+      "description": "Storage aisles, loaded shelving and logistics equipment.",
+      "repo": "aws-robotics/aws-robomaker-small-warehouse-world",
+      "revision": "ee0af733315e78432408c3cd98d378ecee5f767c",
+      "world": "worlds/no_roof_small_warehouse/no_roof_small_warehouse.world",
+      "license": "MIT-0",
+      "source_url": "https://github.com/aws-robotics/aws-robomaker-small-warehouse-world/tree/ee0af733315e78432408c3cd98d378ecee5f767c",
+      "world_id": "4e6234d57fff0ba655c7dc90263c30012212261f25e880d217edc0f44046d802",
+      "bundle_sha256": "62594bb42b1748b8086183374f2b2cbef387a83ee3b3a71cda0152e6cad9bdbd",
+      "bounds": [
+        17.0,
+        23.0,
+        10.983835716180325
+      ],
+      "components": 692,
+      "source_instances": 25,
+      "native_engine_version": "3.17.0",
+      "thumbnail_view": "Native MuJoCo aerial inspection at reset; all source visible geometry retained. Runtime background ground hidden to show the original source flooring.",
+      "thumbnail_hidden_object_ids": [],
+      "thumbnail_hidden_runtime_geoms": [
+        "floor"
+      ],
+      "bundle_bytes": 4804839
+    },
+    {
+      "id": "house",
+      "name": "Furnished house",
+      "description": "Connected living spaces, kitchen and bedroom furniture.",
+      "repo": "aws-robotics/aws-robomaker-small-house-world",
+      "revision": "ff9631ca6d1db9c1ba656498151464b5ab74aafe",
+      "world": "worlds/small_house.world",
+      "license": "MIT-0",
+      "source_url": "https://github.com/aws-robotics/aws-robomaker-small-house-world/tree/ff9631ca6d1db9c1ba656498151464b5ab74aafe",
+      "world_id": "a4ff3917b725bf2fc90075db836230dea5363183c39aa4fcf87d9bfdf3e208e4",
+      "bundle_sha256": "7a0d17dd634ed3247e509b42a668ab5d82e41e3f0962d4854be85f0664bed02f",
+      "bounds": [
+        22.0,
+        14.0,
+        4.000249999999999
+      ],
+      "components": 1545,
+      "source_instances": 87,
+      "native_engine_version": "3.17.0",
+      "thumbnail_view": "Native MuJoCo aerial inspection at reset; all source visible geometry retained. Runtime background ground hidden to show the original source flooring.",
+      "thumbnail_hidden_object_ids": [],
+      "thumbnail_hidden_runtime_geoms": [
+        "floor"
+      ],
+      "bundle_bytes": 43107616
+    },
+    {
+      "id": "hospital",
+      "name": "Hospital",
+      "description": "Clinical rooms, reception, equipment and connecting corridors.",
+      "repo": "aws-robotics/aws-robomaker-hospital-world",
+      "revision": "7161eb8448f5cba6a469da7a79ae5d660b0b7f58",
+      "world": "worlds/hospital.world",
+      "license": "MIT-0 + CC BY-4.0",
+      "source_url": "https://github.com/aws-robotics/aws-robomaker-hospital-world/tree/7161eb8448f5cba6a469da7a79ae5d660b0b7f58",
+      "world_id": "a6fd9818da89d15f78ba19249152785bc2aff52613c715ad587ea04423bf3e93",
+      "bundle_sha256": "c8dde5f809fcd82bdff3b962cf5e2653a537e74991e80ef04f2c2f33bcd1f4c0",
+      "bounds": [
+        28.0,
+        60.0,
+        4.015379943847656
+      ],
+      "components": 9198,
+      "source_instances": 181,
+      "native_engine_version": "3.17.0",
+      "thumbnail_view": "Native MuJoCo aerial cutaway at reset; 1 explicitly named source ceiling/roof visual objects hidden for the thumbnail only. Runtime background ground hidden to show the original source flooring.",
+      "thumbnail_hidden_object_ids": [
+        "source_5772"
+      ],
+      "thumbnail_hidden_runtime_geoms": [
+        "floor"
+      ],
+      "bundle_bytes": 64864241
+    },
+    {
+      "id": "bookstore",
+      "name": "Bookstore",
+      "description": "Book aisles, reading tables and a retail checkout area.",
+      "repo": "aws-robotics/aws-robomaker-bookstore-world",
+      "revision": "f5a2aaacd5418f9ecfa30f79e788856417f17c13",
+      "world": "worlds/bookstore.world",
+      "license": "MIT-0",
+      "source_url": "https://github.com/aws-robotics/aws-robomaker-bookstore-world/tree/f5a2aaacd5418f9ecfa30f79e788856417f17c13",
+      "world_id": "0b8aa71026346c45f118d3d757ac378646d351ea15d33366681237501aec02d8",
+      "bundle_sha256": "4cab37046ddb5f72c210b057df69e93a93e151c956d0167b373ffd774bcefd46",
+      "bounds": [
+        18.0,
+        17.0,
+        4.441675986831665
+      ],
+      "components": 3243,
+      "source_instances": 139,
+      "native_engine_version": "3.17.0",
+      "thumbnail_view": "Native MuJoCo aerial inspection at reset; all source visible geometry retained. Runtime background ground hidden to show the original source flooring.",
+      "thumbnail_hidden_object_ids": [],
+      "thumbnail_hidden_runtime_geoms": [
+        "floor"
+      ],
+      "bundle_bytes": 15895888
+    }
+  ]
+}

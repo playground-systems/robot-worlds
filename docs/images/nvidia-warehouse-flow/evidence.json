@@ -1,0 +1,46 @@
+{
+  "world_id": "323abdaaaba29abb74fa762eff6fb45226fd6808eda5db983d0b4391dc7e275f",
+  "components": 3368,
+  "planning": "deterministic",
+  "physical_validation": false,
+  "paid_model_calls": 0,
+  "seconds": 3.2225992919993587,
+  "asset_ids": [
+    "rack_large_empty_a02",
+    "pallet_a01",
+    "box_corrugated_brown_b20",
+    "barrier_fence_metal_a02",
+    "conveyor_belt_a05"
+  ],
+  "static_checks": [
+    {
+      "check": "schema",
+      "passed": true
+    },
+    {
+      "check": "geometry_and_rubric",
+      "passed": true,
+      "errors": []
+    }
+  ],
+  "navigation_status": "unknown",
+  "material_flow": [
+    "west receiving opening",
+    "receiving pallets",
+    "stocked racks",
+    "manual packing infeed at south conveyor end",
+    "unpowered roller transfer",
+    "manual unloading at north conveyor end",
+    "dispatch pallets",
+    "north shipping opening"
+  ],
+  "limitations": [
+    "Deterministic visual preview; not a live-model result.",
+    "No native physics, robot execution or automatic material transfer was verified.",
+    "Prompt guidance is not an automatic semantic-layout validator."
+  ],
+  "screenshots": {
+    "overview.jpg": "1f8d1fdb2698a86d78cbfe7f161f5950eb7927d755885018649cdd99a46176df",
+    "flow-plan.jpg": "63e4c951dccd2047eb515448d5c4ef3c65f1e57299efd386d2a355463b0db18d"
+  }
+}

@@ -1,0 +1,1843 @@
+{
+  "schema_version": "1.0",
+  "name": "Panel-frame warehouse with inspection approach",
+  "description": "A 20 \u00d7 16 \u00d7 5 m warehouse with six stocked original steel racks, framed receiving and shipping bays, pallet staging, and an accessible two-module passive roller line. Open overhead framing permits inspection. Supplied floor-stencil meshes are fixed children of physical wall geometry.",
+  "task": "Drive into the yellow inspection square beside the area marked PICK & PACK, ahead of you near the roller conveyor, and remain inside for two seconds.",
+  "robot": "tiago++",
+  "bounds": [
+    20,
+    16,
+    5
+  ],
+  "robot_start": [
+    3,
+    -4.5,
+    1.5707963267948966
+  ],
+  "objects": [
+    {
+      "id": "finish",
+      "label": "Charcoal epoxy floor finish",
+      "kind": "box",
+      "position": [
+        0,
+        0,
+        0.0015
+      ],
+      "size": [
+        20,
+        16,
+        0.003
+      ],
+      "color": [
+        0.045,
+        0.055,
+        0.065
+      ],
+      "mass": 1,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1,
+      "revolved": null
+    },
+    {
+      "id": "south_w",
+      "label": "Receiving outer wall panel",
+      "kind": "box",
+      "position": [
+        -8.7,
+        -7.9,
+        2.4
+      ],
+      "size": [
+        2.1,
+        0.2,
+        4.8
+      ],
+      "color": [
+        0.73,
+        0.76,
+        0.77
+      ],
+      "mass": 1,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1,
+      "revolved": null
+    },
+    {
+      "id": "south_c",
+      "label": "Central front wall panel and fixed architectural graphic root",
+      "kind": "box",
+      "position": [
+        0,
+        -7.9,
+        2.4
+      ],
+      "size": [
+        8.7,
+        0.2,
+        4.8
+      ],
+      "color": [
+        0.73,
+        0.76,
+        0.77
+      ],
+      "mass": 1,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1,
+      "revolved": null
+    },
+    {
+      "id": "south_e",
+      "label": "Shipping outer wall panel",
+      "kind": "box",
+      "position": [
+        8.7,
+        -7.9,
+        2.4
+      ],
+      "size": [
+        2.1,
+        0.2,
+        4.8
+      ],
+      "color": [
+        0.73,
+        0.76,
+        0.77
+      ],
+      "mass": 1,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": null,
+      "joint": null,
+      "mesh_path": null,
+      "mesh_quarter_turns": 0,
+      "texture_path": null,
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": null,
+      "source_metadata": null,
+      "collision": true,
+      "visible": true,
+      "opacity": 1,
+      "revolved": null
+    },
+    {
+      "id": "receiving_text",
+      "label": "RECEIVING floor stencil",
+      "kind": "mesh",
+      "position": [
+        -6,
+        -7.15,
+        0.009
+      ],
+      "size": [
+        3,
+        0.55,
+        0.002
+      ],
+      "color": [
+        1,
+        1,
+        1
+      ],
+      "mass": 1,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": "south_c",
+      "joint": null,
+      "mesh_path": "@graphics/stencil.obj",
+      "mesh_quarter_turns": 0,
+      "texture_path": "@graphics/stencil-0.png",
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": "@graphics/ATTRIBUTION.md",
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1,
+      "revolved": null
+    },
+    {
+      "id": "storage_text",
+      "label": "STORAGE floor stencil",
+      "kind": "mesh",
+      "position": [
+        -3,
+        3,
+        0.009
+      ],
+      "size": [
+        3,
+        0.55,
+        0.002
+      ],
+      "color": [
+        1,
+        1,
+        1
+      ],
+      "mass": 1,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": "south_c",
+      "joint": null,
+      "mesh_path": "@graphics/stencil.obj",
+      "mesh_quarter_turns": 0,
+      "texture_path": "@graphics/stencil-1.png",
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": "@graphics/ATTRIBUTION.md",
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1,
+      "revolved": null
+    },
+    {
+      "id": "pick_text",
+      "label": "PICK & PACK floor stencil",
+      "kind": "mesh",
+      "position": [
+        5.6,
+        -2.1,
+        0.009
+      ],
+      "size": [
+        3,
+        0.55,
+        0.002
+      ],
+      "color": [
+        1,
+        1,
+        1
+      ],
+      "mass": 1,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": "south_c",
+      "joint": null,
+      "mesh_path": "@graphics/stencil.obj",
+      "mesh_quarter_turns": 0,
+      "texture_path": "@graphics/stencil-2.png",
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": "@graphics/ATTRIBUTION.md",
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1,
+      "revolved": null
+    },
+    {
+      "id": "shipping_text",
+      "label": "SHIPPING floor stencil",
+      "kind": "mesh",
+      "position": [
+        6,
+        4.65,
+        0.009
+      ],
+      "size": [
+        3,
+        0.55,
+        0.002
+      ],
+      "color": [
+        1,
+        1,
+        1
+      ],
+      "mass": 1,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": "south_c",
+      "joint": null,
+      "mesh_path": "@graphics/stencil.obj",
+      "mesh_quarter_turns": 0,
+      "texture_path": "@graphics/stencil-3.png",
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": "@graphics/ATTRIBUTION.md",
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1,
+      "revolved": null
+    },
+    {
+      "id": "clear_text",
+      "label": "KEEP CLEAR shipping apron stencil",
+      "kind": "mesh",
+      "position": [
+        6,
+        -6.85,
+        0.009
+      ],
+      "size": [
+        3,
+        0.55,
+        0.002
+      ],
+      "color": [
+        1,
+        1,
+        1
+      ],
+      "mass": 1,
+      "movable": false,
+      "friction": 0.7,
+      "parent_id": "south_c",
+      "joint": null,
+      "mesh_path": "@graphics/stencil.obj",
+      "mesh_quarter_turns": 0,
+      "texture_path": "@graphics/stencil-4.png",
+      "normal_texture_path": null,
+      "orm_texture_path": null,
+      "emissive_texture_path": null,
+      "surface": null,
+      "source_notice": "@graphics/ATTRIBUTION.md",
+      "source_metadata": null,
+      "collision": false,
+      "visible": true,
+      "opacity": 1,
+      "revolved": null
+    }
+  ],
+  "assembly_templates": [
+    {
+      "id": "wall",
+      "label": "Segmented pale panel with butt-jointed steel framing",
+      "parts": [
+        {
+          "id": "post",
+          "label": "Dark vertical upright",
+          "kind": "box",
+          "position": [
+            -1.9,
+            0,
+            2.3
+          ],
+          "size": [
+            0.1,
+            0.2,
+            4.6
+          ],
+          "color": [
+            0.12,
+            0.15,
+            0.18
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "panel",
+          "label": "Pale wall panel",
+          "kind": "box",
+          "position": [
+            0.05,
+            0,
+            2.3
+          ],
+          "size": [
+            3.8,
+            0.16,
+            4.6
+          ],
+          "color": [
+            0.73,
+            0.76,
+            0.77
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "rail",
+          "label": "Elevated horizontal steel frame",
+          "kind": "box",
+          "position": [
+            0,
+            0,
+            4.7
+          ],
+          "size": [
+            3.9,
+            0.2,
+            0.2
+          ],
+          "color": [
+            0.12,
+            0.15,
+            0.18
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        }
+      ]
+    },
+    {
+      "id": "bay",
+      "label": "Three metre clear loading opening",
+      "parts": [
+        {
+          "id": "left",
+          "label": "Left steel jamb",
+          "kind": "box",
+          "position": [
+            -1.575,
+            0,
+            1.75
+          ],
+          "size": [
+            0.15,
+            0.2,
+            3.5
+          ],
+          "color": [
+            0.12,
+            0.15,
+            0.18
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "right",
+          "label": "Right steel jamb",
+          "kind": "box",
+          "position": [
+            1.575,
+            0,
+            1.75
+          ],
+          "size": [
+            0.15,
+            0.2,
+            3.5
+          ],
+          "color": [
+            0.12,
+            0.15,
+            0.18
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "lintel",
+          "label": "Deep steel lintel",
+          "kind": "box",
+          "position": [
+            0,
+            0.05,
+            3.625
+          ],
+          "size": [
+            3.3,
+            0.3,
+            0.25
+          ],
+          "color": [
+            0.12,
+            0.15,
+            0.18
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "upper",
+          "label": "Upper wall infill",
+          "kind": "box",
+          "position": [
+            0,
+            0,
+            4.275
+          ],
+          "size": [
+            3,
+            0.16,
+            1.05
+          ],
+          "color": [
+            0.73,
+            0.76,
+            0.77
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "rib_l",
+          "label": "Short upper left rib",
+          "kind": "box",
+          "position": [
+            -1.575,
+            0,
+            4.275
+          ],
+          "size": [
+            0.15,
+            0.2,
+            1.05
+          ],
+          "color": [
+            0.12,
+            0.15,
+            0.18
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "rib_r",
+          "label": "Short upper right rib",
+          "kind": "box",
+          "position": [
+            1.575,
+            0,
+            4.275
+          ],
+          "size": [
+            0.15,
+            0.2,
+            1.05
+          ],
+          "color": [
+            0.12,
+            0.15,
+            0.18
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        }
+      ]
+    },
+    {
+      "id": "roof",
+      "label": "Open roof beam and suspended white strip",
+      "parts": [
+        {
+          "id": "beam",
+          "label": "Roof steel beam",
+          "kind": "box",
+          "position": [
+            0,
+            0,
+            4.9
+          ],
+          "size": [
+            19.5,
+            0.18,
+            0.2
+          ],
+          "color": [
+            0.14,
+            0.17,
+            0.2
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "drop_l",
+          "label": "Fixture suspension",
+          "kind": "box",
+          "position": [
+            -3,
+            0,
+            4.68
+          ],
+          "size": [
+            0.025,
+            0.025,
+            0.24
+          ],
+          "color": [
+            0.3,
+            0.33,
+            0.36
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "drop_r",
+          "label": "Fixture suspension",
+          "kind": "box",
+          "position": [
+            3,
+            0,
+            4.68
+          ],
+          "size": [
+            0.025,
+            0.025,
+            0.24
+          ],
+          "color": [
+            0.3,
+            0.33,
+            0.36
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "strip",
+          "label": "White overhead strip fixture",
+          "kind": "box",
+          "position": [
+            0,
+            0,
+            4.52
+          ],
+          "size": [
+            8,
+            0.12,
+            0.08
+          ],
+          "color": [
+            0.98,
+            0.98,
+            0.96
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": true,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        }
+      ]
+    },
+    {
+      "id": "lane",
+      "label": "Yellow lane edge segment",
+      "parts": [
+        {
+          "id": "edge",
+          "label": "Yellow painted lane edge",
+          "kind": "box",
+          "position": [
+            0,
+            0,
+            0.006
+          ],
+          "size": [
+            3,
+            0.055,
+            0.002
+          ],
+          "color": [
+            1,
+            0.76,
+            0.02
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": false,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        }
+      ]
+    },
+    {
+      "id": "square",
+      "label": "Inspection square outline",
+      "parts": [
+        {
+          "id": "west",
+          "label": "Yellow west edge",
+          "kind": "box",
+          "position": [
+            -0.775,
+            0,
+            0.006
+          ],
+          "size": [
+            0.05,
+            1.6,
+            0.002
+          ],
+          "color": [
+            1,
+            0.76,
+            0.02
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": false,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "east",
+          "label": "Yellow east edge",
+          "kind": "box",
+          "position": [
+            0.775,
+            0,
+            0.006
+          ],
+          "size": [
+            0.05,
+            1.6,
+            0.002
+          ],
+          "color": [
+            1,
+            0.76,
+            0.02
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": false,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "south",
+          "label": "Yellow south edge",
+          "kind": "box",
+          "position": [
+            0,
+            -0.775,
+            0.006
+          ],
+          "size": [
+            1.5,
+            0.05,
+            0.002
+          ],
+          "color": [
+            1,
+            0.76,
+            0.02
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": false,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "north",
+          "label": "Yellow north edge",
+          "kind": "box",
+          "position": [
+            0,
+            0.775,
+            0.006
+          ],
+          "size": [
+            1.5,
+            0.05,
+            0.002
+          ],
+          "color": [
+            1,
+            0.76,
+            0.02
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": false,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        }
+      ]
+    },
+    {
+      "id": "arrow",
+      "label": "Stepped directional arrow and chevron",
+      "parts": [
+        {
+          "id": "shaft",
+          "label": "Arrow shaft pointing positive local Y",
+          "kind": "box",
+          "position": [
+            0,
+            -0.2,
+            0.006
+          ],
+          "size": [
+            0.09,
+            0.6,
+            0.002
+          ],
+          "color": [
+            1,
+            0.76,
+            0.02
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": false,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "wing_l",
+          "label": "Left chevron outer step",
+          "kind": "box",
+          "position": [
+            -0.24,
+            0.08,
+            0.006
+          ],
+          "size": [
+            0.16,
+            0.09,
+            0.002
+          ],
+          "color": [
+            1,
+            0.76,
+            0.02
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": false,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "wing_r",
+          "label": "Right chevron outer step",
+          "kind": "box",
+          "position": [
+            0.24,
+            0.08,
+            0.006
+          ],
+          "size": [
+            0.16,
+            0.09,
+            0.002
+          ],
+          "color": [
+            1,
+            0.76,
+            0.02
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": false,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "inner_l",
+          "label": "Left chevron inner step",
+          "kind": "box",
+          "position": [
+            -0.12,
+            0.17,
+            0.006
+          ],
+          "size": [
+            0.16,
+            0.09,
+            0.002
+          ],
+          "color": [
+            1,
+            0.76,
+            0.02
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": false,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "inner_r",
+          "label": "Right chevron inner step",
+          "kind": "box",
+          "position": [
+            0.12,
+            0.17,
+            0.006
+          ],
+          "size": [
+            0.16,
+            0.09,
+            0.002
+          ],
+          "color": [
+            1,
+            0.76,
+            0.02
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": false,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        },
+        {
+          "id": "tip",
+          "label": "Chevron point",
+          "kind": "box",
+          "position": [
+            0,
+            0.26,
+            0.006
+          ],
+          "size": [
+            0.16,
+            0.09,
+            0.002
+          ],
+          "color": [
+            1,
+            0.76,
+            0.02
+          ],
+          "mass": 1,
+          "movable": false,
+          "friction": 0.7,
+          "parent_id": null,
+          "joint": null,
+          "mesh_path": null,
+          "mesh_quarter_turns": 0,
+          "texture_path": null,
+          "normal_texture_path": null,
+          "orm_texture_path": null,
+          "emissive_texture_path": null,
+          "surface": null,
+          "source_notice": null,
+          "source_metadata": null,
+          "collision": false,
+          "visible": true,
+          "opacity": 1,
+          "revolved": null
+        }
+      ]
+    }
+  ],
+  "assembly_instances": [
+    {
+      "id": "north",
+      "template_id": "wall",
+      "position": [
+        -7.8,
+        7.9,
+        0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        5,
+        1,
+        1
+      ],
+      "spacing": [
+        3.9,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "west",
+      "template_id": "wall",
+      "position": [
+        -9.85,
+        -5.85,
+        0
+      ],
+      "quarter_turns": 1,
+      "repeat": [
+        1,
+        4,
+        1
+      ],
+      "spacing": [
+        0,
+        3.9,
+        0
+      ]
+    },
+    {
+      "id": "east",
+      "template_id": "wall",
+      "position": [
+        9.85,
+        -5.85,
+        0
+      ],
+      "quarter_turns": 1,
+      "repeat": [
+        1,
+        4,
+        1
+      ],
+      "spacing": [
+        0,
+        3.9,
+        0
+      ]
+    },
+    {
+      "id": "bays",
+      "template_id": "bay",
+      "position": [
+        -6,
+        -7.9,
+        0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        2,
+        1,
+        1
+      ],
+      "spacing": [
+        12,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "overhead",
+      "template_id": "roof",
+      "position": [
+        0,
+        -4,
+        0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        3,
+        1
+      ],
+      "spacing": [
+        0,
+        4,
+        0
+      ]
+    },
+    {
+      "id": "south_lane",
+      "template_id": "lane",
+      "position": [
+        -7,
+        -5.2,
+        0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        5,
+        1,
+        1
+      ],
+      "spacing": [
+        3,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "east_lane",
+      "template_id": "lane",
+      "position": [
+        7.3,
+        -3.7,
+        0
+      ],
+      "quarter_turns": 1,
+      "repeat": [
+        1,
+        3,
+        1
+      ],
+      "spacing": [
+        0,
+        3,
+        0
+      ]
+    },
+    {
+      "id": "storage_lane",
+      "template_id": "lane",
+      "position": [
+        -3.8,
+        -2,
+        0
+      ],
+      "quarter_turns": 1,
+      "repeat": [
+        1,
+        3,
+        1
+      ],
+      "spacing": [
+        0,
+        3,
+        0
+      ]
+    },
+    {
+      "id": "inspection",
+      "template_id": "square",
+      "position": [
+        3,
+        -2.5,
+        0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "receive_arrows",
+      "template_id": "arrow",
+      "position": [
+        -3.4,
+        -3,
+        0
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        3,
+        1
+      ],
+      "spacing": [
+        0,
+        4,
+        0
+      ]
+    },
+    {
+      "id": "pick_arrow",
+      "template_id": "arrow",
+      "position": [
+        2.6,
+        -5.6,
+        0
+      ],
+      "quarter_turns": 3,
+      "repeat": [
+        1,
+        1,
+        1
+      ],
+      "spacing": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ship_arrows",
+      "template_id": "arrow",
+      "position": [
+        8.4,
+        -3,
+        0
+      ],
+      "quarter_turns": 2,
+      "repeat": [
+        1,
+        3,
+        1
+      ],
+      "spacing": [
+        0,
+        3,
+        0
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "id": "inspection_target",
+      "label": "Interior of yellow inspection square",
+      "position": [
+        3,
+        -2.5,
+        1
+      ],
+      "size": [
+        1.5,
+        1.5,
+        2
+      ],
+      "interior_of": null
+    }
+  ],
+  "rubric": [
+    {
+      "predicate": "robot_in_region",
+      "object_id": null,
+      "target_id": "inspection_target",
+      "threshold": null,
+      "tolerance": 0.005,
+      "value": null,
+      "id": "inspection_stop",
+      "description": "Enter the yellow inspection square from outside and remain inside for two seconds at the end.",
+      "duration": 2,
+      "after": [],
+      "required": true,
+      "mode": "final",
+      "alternative_group": null,
+      "intent": "achieve"
+    }
+  ],
+  "process_cycles": [],
+  "assumptions": [
+    "The explicit 20 \u00d7 16 \u00d7 5 m dimensions and short navigation-only task override the generic large-facility defaults.",
+    "Material flow is receiving bay, receiving pallet staging, stocked storage aisles, manual pick/pack at the south conveyor endpoint, passive roller transfer northward, unloading and shipping pallet staging, then the east circulation corridor back to the shipping bay.",
+    "The pick/pack station is the accessible conveyor infeed and its marked operator apron; no additional equipment model is introduced. The discharge has a clear unloading apron before the shipping pallets.",
+    "All source assets retain original geometry, textures, imported mass, scale, mobility and mechanisms. Both conveyors preserve their 29 passive roller hinges. They provide no powered transport; moving goods between rack, pallet and roller heights and advancing goods requires manual handoffs. These operations are scenery context, not robot task requirements.",
+    "Six racks occupy two columns and three rows. Their transverse gaps are approximately 1.933 m and the gap between columns is approximately 2 m. Connected circulation bypasses staging through the central and eastern corridors. The receiving pallets leave approximately 1.567 m between their northern bounds and the southern racks.",
+    "Each rack carries six cartons on each of three levels, totaling 108. Carton local X centers are -1.5, -0.9, -0.3, 0.3, 0.9 and 1.5 m, avoiding the center shelf seam. Carton bottoms are 2 mm above the physical tops of catalog shelf support pairs part61/part64, part62/part65 and part63/part66, including the rack placement height.",
+    "The two conveyor modules are aligned end-to-end with a roughly 2 mm bounds gap at matching roller heights. Side barriers remain beside the line and leave both endpoints open.",
+    "Bay jamb inner faces define actual 3 m openings. The southern receiving apron and shipping apron remain open to circulation; pallets are staged inside the building rather than in the opening plane.",
+    "Architecture uses fixed box approximations with butt joints between panels, posts, elevated rails, lintels and upper ribs. Roof beams and suspended strips remain above equipment and leave the roof visually open. Fixtures are appearance geometry without electrical or photometric simulation. Fixed architectural components use nominal 1 kg masses and friction 0.7; these are modeling placeholders and do not represent structural engineering calculations.",
+    "The floor finish is noncolliding above native ground. Paint bottoms are 2 mm above its top; stencil bottoms are 5 mm above its top. Primitive appearance uses color and opacity only. Directional markings use stepped chevrons because the schema provides quarter-turn placement rather than arbitrary box yaw.",
+    "All five supplied appearance-only stencil meshes are fixed, noncolliding children of the physical south_c wall panel. Their specified positions remain world-space geometry centers; parenting does not relocate the floor lettering or add collision geometry.",
+    "The robot begins 2 m from the inspection-square center, outside the target and facing it. The approach has no equipment or architectural obstruction within the 0.8 m wide, 1.6 m high navigation envelope. Initial camera visibility is intended by the unobstructed forward placement; no camera-render validation has run.",
+    "The 0.005 m region tolerance accommodates a wheeled robot base frame settling slightly below nominal floor height; the target remains exactly 1.5 \u00d7 1.5 \u00d7 2 m.",
+    "There are 9 bespoke objects, 24 template parts and 23 placement/repetition blocks including prepared assets. Generated object expansion is 123; prepared source expansion is 3298, totaling 3421 components, below 5000.",
+    "Source collision proxies are conservative and native contact validation is pending as stated by the catalog. The supplied validation failures concern appearance-only mesh parenting; this revision addresses those references. No new execution, reachability, contact, rendering or validation run is claimed."
+  ],
+  "source_prompt": "Saved live-generated warehouse plan used only as a deterministic integration fixture.",
+  "unvalidated_requirements": [],
+  "created_assets": [],
+  "asset_requests": [],
+  "prepared_assets": [
+    {
+      "id": "rack",
+      "asset_id": "rack_large_empty_a02",
+      "position": [
+        -6.5,
+        -3,
+        0.001
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        2,
+        3,
+        1
+      ],
+      "spacing": [
+        6,
+        4,
+        0
+      ],
+      "mass": null
+    },
+    {
+      "id": "cart_w0",
+      "asset_id": "box_corrugated_brown_b20",
+      "position": [
+        -8,
+        -3,
+        0.5089940671740328
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        6,
+        3,
+        1
+      ],
+      "spacing": [
+        0.6,
+        4,
+        0
+      ],
+      "mass": null
+    },
+    {
+      "id": "cart_w1",
+      "asset_id": "box_corrugated_brown_b20",
+      "position": [
+        -8,
+        -3,
+        1.633106580460421
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        6,
+        3,
+        1
+      ],
+      "spacing": [
+        0.6,
+        4,
+        0
+      ],
+      "mass": null
+    },
+    {
+      "id": "cart_w2",
+      "asset_id": "box_corrugated_brown_b20",
+      "position": [
+        -8,
+        -3,
+        2.3844070596938556
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        6,
+        3,
+        1
+      ],
+      "spacing": [
+        0.6,
+        4,
+        0
+      ],
+      "mass": null
+    },
+    {
+      "id": "cart_e0",
+      "asset_id": "box_corrugated_brown_b20",
+      "position": [
+        -2,
+        -3,
+        0.5089940671740328
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        6,
+        3,
+        1
+      ],
+      "spacing": [
+        0.6,
+        4,
+        0
+      ],
+      "mass": null
+    },
+    {
+      "id": "cart_e1",
+      "asset_id": "box_corrugated_brown_b20",
+      "position": [
+        -2,
+        -3,
+        1.633106580460421
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        6,
+        3,
+        1
+      ],
+      "spacing": [
+        0.6,
+        4,
+        0
+      ],
+      "mass": null
+    },
+    {
+      "id": "cart_e2",
+      "asset_id": "box_corrugated_brown_b20",
+      "position": [
+        -2,
+        -3,
+        2.3844070596938556
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        6,
+        3,
+        1
+      ],
+      "spacing": [
+        0.6,
+        4,
+        0
+      ],
+      "mass": null
+    },
+    {
+      "id": "receiving_pallet",
+      "asset_id": "pallet_a01",
+      "position": [
+        -8,
+        -6,
+        0.001
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        3,
+        1,
+        1
+      ],
+      "spacing": [
+        2,
+        0,
+        0
+      ],
+      "mass": null
+    },
+    {
+      "id": "shipping_pallet",
+      "asset_id": "pallet_a01",
+      "position": [
+        4,
+        5.7,
+        0.001
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        3,
+        1,
+        1
+      ],
+      "spacing": [
+        2,
+        0,
+        0
+      ],
+      "mass": null
+    },
+    {
+      "id": "line",
+      "asset_id": "conveyor_belt_a05",
+      "position": [
+        5.5,
+        0,
+        0.001
+      ],
+      "quarter_turns": 0,
+      "repeat": [
+        1,
+        2,
+        1
+      ],
+      "spacing": [
+        0,
+        2.0020837221741674,
+        0
+      ],
+      "mass": null
+    },
+    {
+      "id": "guard",
+      "asset_id": "barrier_fence_metal_a02",
+      "position": [
+        4.65,
+        -0.35,
+        0.001
+      ],
+      "quarter_turns": 1,
+      "repeat": [
+        2,
+        3,
+        1
+      ],
+      "spacing": [
+        1.7,
+        1.25,
+        0
+      ],
+      "mass": null
+    }
+  ]
+}

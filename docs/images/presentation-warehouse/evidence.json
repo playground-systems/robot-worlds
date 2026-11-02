@@ -1,0 +1,34 @@
+{
+  "kind": "actual application screenshots",
+  "world_id": "2bb6f3fd50b889278c828a7e9c6b732847e3aee62470e5a88d508e230c8228f7",
+  "parent_world_id": "bd64c5048f73b99c19970b643b004d33a877827e3cdf448977ae0834096e8722",
+  "generation": "live Codex generation plus five-entity UV-only edit, strict validation passed",
+  "workflow_limit": "Live evaluation interrupted before final report; visual acceptance does not imply autonomous navigation or machinery automation.",
+  "components": 3427,
+  "bounds_m": [
+    20,
+    16,
+    5
+  ],
+  "captures": {
+    "rack-detail.png": "e418b211d5362b72ff010d8b3a10731cd36fa2b9a914b723f756457543286fb1",
+    "conveyor-detail.png": "d42a2552cbaa130721d0126d70e722367c3915789f3e8e1e3145e889a0a3408e",
+    "generated-before-uv-repair.png": "70dd0270fb6a9634713f307f29533fb6f13c680c0b1688186573e4740039456e",
+    "overview.png": "2bf0cbdefa87cf46eceb5ddebe162372e4fa974660dc24b3fe52c01dcb52a37e",
+    "structure.png": "57786a57e397cc7d3ee0f4206a097bfe12f0dee509297f16ad3c6ca8ab64f329"
+  },
+  "comparison_to_reference": {
+    "present": [
+      "original source racks, cross-braces, cartons, pallets, rollers and barriers",
+      "wall panels, roof beams, loading openings and overhead light geometry",
+      "receiving/storage/pick-and-pack/shipping labels and directed marked lanes",
+      "source textures, metal response and cast shadows"
+    ],
+    "limits": [
+      "No forklifts or facility automation; passive conveyors.",
+      "Studio illumination and materials are estimates, not calibrated photorealism.",
+      "Cutaway intentionally hides near walls and overhead structure; structure.png shows the full enclosure.",
+      "Reference has denser pallet loading and stronger cinematic reflections."
+    ]
+  }
+}

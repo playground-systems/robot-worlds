@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0a1",
+  "commit": "08ee250d29f316f528de555d5fa8fd17bd6f8f19",
+  "ci_run": "https://github.com/playground-systems/robot-worlds/actions/runs/41268962945",
+  "scope": "Package-only build, distribution inspection, fresh wheel and source installs, dependency checks and offline diagnostics; no simulation repeated.",
+  "artifact": {
+    "run": "41268962945",
+    "artifact_id": 13068641830,
+    "bytes": 52334052,
+    "sha256": "cf1e4534cbbf1cbef2f8d1e2581ab71ef1fcc7f0e66d109dc91aa15d857a1af7",
+    "whole_archive_verified": true
+  },
+  "archives": [
+    {
+      "name": "robot_worlds-0.1.0a1-py3-none-any.whl",
+      "bytes": 25407545,
+      "sha256": "3465f3d2007848c7220fa4ae381e221c902bc24bc2b23c23e454ca5fddba4f6c"
+    },
+    {
+      "name": "robot_worlds-0.1.0a1.tar.gz",
+      "bytes": 27808642,
+      "sha256": "f45e68cc6494611e26162655e54945b4ae55291de0ee4032edeb9cce138f665e"
+    }
+  ],
+  "pull_request_head": "cd94d462ce91f6fc82624a047fee272f416bd811",
+  "source_tree": "ae2658bc4b7e6e87a2d70b1ada905c52a589a02a",
+  "checkout_note": "GitHub checks out a synthetic PR merge commit. Its source tree equals the PR head tree; the pull request remains unmerged."
+}
