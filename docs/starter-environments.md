@@ -28,7 +28,10 @@ scripts, plugins or executable dependencies run during import.
 
 These presets retain the original object placement, visual meshes and texture
 coordinates. Conversion changes include centimetres to metres, centered layout
-coordinates, 1024-pixel texture limits and estimated rough materials. Verified
+coordinates, 1024-pixel texture limits and estimated rough materials. Legacy
+OBJ polygons use disclosed triangulation with original 3D corners and UVs;
+diagonals can differ from another viewer. Proven zero-area records and wire
+lines have no triangle surface and are disclosed when omitted. Verified
 convex collision solids remain solids. Other static collision surfaces use thin
 convex pieces; they preserve openings instead of filling rooms with a hull.
 The provenance records the 0.5 mm contact-surface backing and 0.1 mm backing for
@@ -36,7 +39,11 @@ planar visuals. Hospital scanned props and curtain hardware use conservative
 component envelopes, which can fill concavities and spaces under furniture;
 curtain cloth and architectural openings retain their source contact surfaces.
 Source-specific ODE contact parameters use the runtime's default
-isotropic friction of 0.7.
+isotropic friction of 0.7. One corrupt upstream bookstore save placed a book
+343,582 metres above the floor. Its original pose is recorded; the unchanged
+assembly is lowered to the floor at its original XY position. Native previews
+hide explicitly named roofs and ceilings for inspection, with hidden IDs
+recorded. The saved world retains that geometry.
 
 All imported equipment is fixed. Source doors, appliances and furniture are not
 certified manipulation assets. Each scene adds TIAGo++ and a short task: drive

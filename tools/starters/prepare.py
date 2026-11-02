@@ -152,11 +152,19 @@ def acquire(entry, cache):
     return target
 
 
-def primitives(path, disclosures=None, *, root=None):
+def primitives(path, disclosures=None, *, root=None, reviewed_obj=False):
     if path.suffix.lower() == ".obj":
         from obj_source import read_obj
 
-        for primitive in read_obj(path, root=root or path.parent):
+        for primitive in read_obj(
+            path,
+            root=root or path.parent,
+            allow_nonplanar=reviewed_obj,
+            drop_zero_area=reviewed_obj,
+            ignore_lines=reviewed_obj,
+            ignore_texture_w=reviewed_obj,
+            disclosures=disclosures,
+        ):
             yield primitive, 1.0
         return
     if path.suffix.lower() != ".dae":
@@ -262,6 +270,34 @@ class Adapter:
         external = source / "fuel-sources.json"
         self.external_sources = json.loads(external.read_text()) if external.exists() else []
         self.external_models = {record["name"] for record in self.external_sources}
+        self.layout_repairs = []
+
+    def repair_known_source_pose(self, instance, first_object):
+        """Repair one corrupt pinned save pose, retaining its original evidence."""
+        if self.entry["id"] != "bookstore" or instance.get("name") != "BookE_01_009":
+            return
+        original = np.fromstring(instance.findtext("pose"), sep=" ")
+        if (
+            self.entry["revision"] != "f5a2aaacd5418f9ecfa30f79e788856417f17c13"
+            or abs(original[2] - 343582.718718) > 1e-6
+        ):
+            raise ValueError("Reviewed corrupt bookstore pose changed; re-review the source repair")
+        members = self.objects[first_object:]
+        if not members:
+            raise ValueError("Cannot repair an empty source assembly")
+        minimum = min(o["position"][2] - o["size"][2] / 2 for o in members)
+        translation = 0.001 - minimum
+        for obj in members:
+            obj["position"][2] += translation
+        repair = {
+            "source_model": instance.get("name"),
+            "original_pose": original.tolist(),
+            "translation_metres": [0, 0, translation],
+            "destination_minimum_z": 0.001,
+            "reason": "Pinned upstream save places this book 343582.718718 m above the floor; lower the unchanged rigid assembly onto the floor, preserving XY and orientation.",
+        }
+        self.layout_repairs.append(repair)
+        self.disclosures.append(repair["reason"])
 
     def store(self, data, suffix):
         name = hashlib.sha256(data).hexdigest() + suffix
@@ -390,7 +426,12 @@ class Adapter:
             "aws_robomaker_hospital_curtain_half_open_01",
             "aws_robomaker_hospital_curtain_open_01",
         }
-        for primitive, unit in primitives(mesh, self.disclosures, root=self.source):
+        for primitive, unit in primitives(
+            mesh,
+            self.disclosures,
+            root=self.source,
+            reviewed_obj=model_name in self.external_models,
+        ):
             vertices = primitive.vertex * unit * scale
             if model_name in self.external_models or curtain:
                 # Only the known hospital scans and curtain hardware use
@@ -495,7 +536,12 @@ class Adapter:
                     match.update(visible=True, color=color[:3].tolist(), opacity=float(color[3]))
                     continue
                 path, scale = self.geometry(visual)
-                for primitive, unit in primitives(path, self.disclosures, root=self.source):
+                external_obj = (
+                    path.relative_to(self.source / "models").parts[0] in self.external_models
+                )
+                for primitive, unit in primitives(
+                    path, self.disclosures, root=self.source, reviewed_obj=external_obj
+                ):
                     uv = (
                         primitive.texcoordset[0][primitive.texcoord_indexset[0]]
                         if primitive.texcoordset
@@ -525,6 +571,8 @@ class Adapter:
         high = np.max(
             [np.array(o["position"]) + np.array(o["size"]) / 2 for o in self.objects], axis=0
         )
+        if high[2] > 100:
+            raise ValueError("Starter source contains geometry above 100 m; review its saved poses")
         offset = (low + high) / 2
         offset[2] = 0
         for obj in self.objects:
@@ -641,6 +689,8 @@ class Adapter:
             },
             source_files=self.inputs,
             external_sources=self.external_sources,
+            layout_repairs=self.layout_repairs,
+            coordinate_transform={"translation_metres": (-offset).tolist()},
             acquisition=json.loads((self.source / "acquisition.json").read_text()),
             disclosures=sorted(set(self.disclosures)),
             instances=len(xml(self.source / self.entry["world"]).find("world").findall("model")),
@@ -711,7 +761,9 @@ def main():
                 flush=True,
             )
             try:
+                first_object = len(adapter.objects)
                 adapter.model(model, np.eye(4), model.get("name", "Source object"))
+                adapter.repair_known_source_pose(model, first_object)
             except Exception as error:
                 failure = {
                     "environment": entry["id"],

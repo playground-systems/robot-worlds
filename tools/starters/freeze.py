@@ -7,8 +7,10 @@ leaves diagnostics and never produces a release catalog claiming availability.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import math
+import re
 import shutil
 import tempfile
 import zipfile
@@ -61,16 +63,65 @@ def require_native_ready(manifest: dict) -> None:
             raise ValueError(f"Missing native {key}")
 
 
+def cutaway_object_ids(spec: WorldSpec) -> list[str]:
+    """Only explicitly named, sourced roof/ceiling meshes receive a cutaway."""
+    result = []
+    fixtures = {"light", "lamp", "fan", "fixture", "vent", "camera", "sensor", "sprinkler", "sign"}
+    for obj in spec.objects:
+        tokens = set(re.split(r"[^a-z0-9]+", (obj.id + " " + obj.label).lower()))
+        if (obj.kind == "mesh" and obj.visible and obj.source_notice and obj.source_metadata
+                and tokens & {"ceiling", "roof"} and not tokens & fixtures):
+            result.append(obj.id)
+    return sorted(result)
+
+
+def render_native_overview(runtime):
+    """Render an intentional aerial inspection view without orbit collision repair.
+
+    Only the thumbnail uses this cutaway. Source bodies, contact settings,
+    simulator state and policy cameras are retained. Temporary display changes
+    are restored before the SDK records the native runtime manifest.
+    """
+    import mujoco
+
+    renderer = runtime._get_renderer(overview=True)
+    renderer.disable_depth_rendering()
+    renderer.disable_segmentation_rendering()
+    camera = mujoco.MjvCamera()
+    camera.type = mujoco.mjtCamera.mjCAMERA_FREE
+    bounds = runtime.spec.bounds
+    focus_z = min(1, bounds[2] / 3)
+    camera.lookat[:] = [0, 0, focus_z]
+    fovy = float(runtime.model.vis.global_.fovy)
+    if not 0 < fovy < 179:
+        raise ValueError("Native overview camera has an invalid field of view")
+    # Fit the complete bounds inside the vertical field of view, including a
+    # small margin. This avoids scene-size-dependent crops at a fixed distance.
+    radius = math.sqrt((bounds[0] / 2) ** 2 + (bounds[1] / 2) ** 2
+                       + max(focus_z, bounds[2] - focus_z) ** 2)
+    camera.distance = max(4, radius / math.sin(math.radians(fovy) / 2) * 1.08)
+    camera.azimuth, camera.elevation = 135, -65
+    hidden = set(cutaway_object_ids(runtime.spec))
+    geom_ids = [gid for gid, oid in runtime._geom_objects.items() if oid in hidden]
+    original = runtime.model.geom_rgba[geom_ids].copy()
+    try:
+        runtime.model.geom_rgba[geom_ids, 3] = 0
+        renderer.update_scene(runtime.data, camera=camera)
+        pixels = renderer.render().copy()
+    finally:
+        runtime.model.geom_rgba[geom_ids] = original
+    image = io.BytesIO()
+    Image.fromarray(pixels).save(image, format="PNG")
+    return image.getvalue()
+
+
 def overview_runtime(spec, **kwargs):
-    """Use the ordinary native reset probe with a scene overview as its preview."""
+    """Use ordinary native reset checks with a disclosed aerial cutaway preview."""
     from robot_worlds.runtime import Runtime
 
     class OverviewRuntime(Runtime):
         def render(self):
-            bounds = self.spec.bounds
-            distance = math.hypot(bounds[0], bounds[1]) * .85
-            return super().render(view="overview", azimuth=135, elevation=-65,
-                                  distance=max(4, distance), lookat=[0, 0, min(1, bounds[2] / 3)])
+            return render_native_overview(self)
 
     return OverviewRuntime(spec, **kwargs)
 
@@ -82,6 +133,10 @@ def freeze_one(entry: dict, source: Path, output: Path, evidence: Path) -> dict:
         if provenance.get(key) != entry.get(key):
             raise ValueError(f"Prepared provenance does not match pinned catalog: {key}")
     spec = WorldSpec.model_validate_json((source / "spec.json").read_text())
+    hidden_ids = cutaway_object_ids(spec)
+    thumbnail_view = (f"Native MuJoCo aerial cutaway at reset; {len(hidden_ids)} explicitly named source ceiling/roof visual objects hidden for the thumbnail only."
+                      if hidden_ids else "Native MuJoCo aerial inspection at reset; all source visible geometry retained.")
+    spec.assumptions.append(thumbnail_view + " All saved source geometry, collision physics and policy-camera visibility are unchanged.")
     evidence.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
     # Stage outside the release output: partial validation never looks installed.
@@ -114,7 +169,7 @@ def freeze_one(entry: dict, source: Path, output: Path, evidence: Path) -> dict:
                   "bounds": list(spec.bounds), "components": len(spec.objects),
                   "source_instances": provenance["instances"],
                   "native_engine_version": world.manifest["runtime"]["engine_version"],
-                  "thumbnail_view": "Native MuJoCo source-scene overview at reset",
+                  "thumbnail_view": thumbnail_view, "thumbnail_hidden_object_ids": hidden_ids,
                   "bundle_bytes": archive.stat().st_size}
         write_json(destination / "release.json", result)
         final = output / identifier

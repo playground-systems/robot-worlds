@@ -228,11 +228,12 @@ def test_main_collects_source_failures_and_never_releases_a_partial_scene(tmp_pa
     output = tmp_path / "output"
     (output / "partial").mkdir(parents=True)
     (output / "partial/manifest.json").write_text("stale previous success")
-    calls = []
+    calls, repairs = [], []
 
     class TinyAdapter:
         def __init__(self, entry, source, output, cache):
             self.entry, self.output = entry, output
+            self.objects = []
             output.mkdir(parents=True, exist_ok=True)
 
         def input(self, path):
@@ -242,6 +243,10 @@ def test_main_collects_source_failures_and_never_releases_a_partial_scene(tmp_pa
             calls.append((self.entry["id"], label))
             if label == "bad":
                 raise ValueError("original source fixture is unsupported")
+            self.objects.append({"source": label})
+
+        def repair_known_source_pose(self, model, first_object):
+            repairs.append((self.entry["id"], model.get("name"), first_object))
 
         def finish(self):
             calls.append((self.entry["id"], "finish"))
@@ -254,6 +259,7 @@ def test_main_collects_source_failures_and_never_releases_a_partial_scene(tmp_pa
     with pytest.raises(RuntimeError, match="no partial scene is release-ready"):
         prepare.main()
     assert calls == [("partial", "bad"), ("partial", "after_bad"), ("complete", "good"), ("complete", "finish")]
+    assert repairs == [("partial", "after_bad", 0), ("complete", "good", 0)]
     assert not (output / "partial/manifest.json").exists()
     assert (output / "complete/manifest.json").read_text() == "complete fixture"
     failures = json.loads((output / "failures.json").read_text())
@@ -338,3 +344,73 @@ def test_source_filename_case_correction_stays_in_existing_source_parent(adapter
     with pytest.raises(ValueError, match="Unresolved source resource"):
         prepare.resolve("model://nonexistent/actual_collision.dae", adapter.source,
                         adapter.source, disclosures)
+
+
+def test_reviewed_bookstore_pose_repair_keeps_assembly_shape_and_records_original(adapter):
+    import copy
+
+    adapter.entry.update(id="bookstore", revision="f5a2aaacd5418f9ecfa30f79e788856417f17c13")
+    original_pose = [1.170199, 1.196251, 343582.718718, .002241, -.001100, -.623328]
+    instance = ET.fromstring('<model name="BookE_01_009"><pose>'
+                             + ' '.join(map(str, original_pose)) + '</pose></model>')
+    original_xml = ET.tostring(instance)
+    vertices, faces = cube()
+    earlier = np.eye(4)
+    earlier[:3, 3] = [-4, -4, .5]
+    adapter.add_mesh(vertices, faces, earlier, "Earlier source object", physical=True)
+    earlier_object = copy.deepcopy(adapter.objects[0])
+    first = len(adapter.objects)
+    transform = prepare.pose(instance) @ np.diag([.1, .03, .2, 1])
+    parent = adapter.add_mesh(vertices, faces, transform, "Original book collision", physical=True)
+    adapter.add_mesh(vertices, faces, transform, "Original book visual", parent=parent)
+    before = copy.deepcopy(adapter.objects[first:])
+    mesh_bytes = {o["mesh_path"]: (adapter.output / o["mesh_path"]).read_bytes() for o in before}
+    adapter.repair_known_source_pose(instance, first)
+    after = adapter.objects[first:]
+    assert adapter.objects[0] == earlier_object and ET.tostring(instance) == original_xml
+    assert min(o["position"][2] - o["size"][2] / 2 for o in after) == pytest.approx(.001, abs=1e-10)
+    for prior, current in zip(before, after):
+        np.testing.assert_allclose(current["position"][:2], prior["position"][:2])
+        assert {key: value for key, value in current.items() if key != "position"} == {
+            key: value for key, value in prior.items() if key != "position"}
+        assert (adapter.output / current["mesh_path"]).read_bytes() == mesh_bytes[current["mesh_path"]]
+    np.testing.assert_allclose(np.array(after[0]["position"]) - after[1]["position"],
+                               np.array(before[0]["position"]) - before[1]["position"])
+    repair = adapter.layout_repairs[0]
+    assert repair["original_pose"] == original_pose and repair["source_model"] == "BookE_01_009"
+    assert repair["translation_metres"][:2] == [0, 0]
+    assert repair["translation_metres"][2] == pytest.approx(after[0]["position"][2] - before[0]["position"][2])
+    world_path = adapter.source / adapter.entry["world"]
+    world_path.write_text('<sdf><world name="fixture">' + original_xml.decode() + '</world></sdf>')
+    low = np.min([np.array(o["position"]) - np.array(o["size"]) / 2 for o in adapter.objects], axis=0)
+    high = np.max([np.array(o["position"]) + np.array(o["size"]) / 2 for o in adapter.objects], axis=0)
+    adapter.finish()
+    provenance = json.loads((adapter.output / "provenance.json").read_text())
+    assert provenance["layout_repairs"] == [repair]
+    np.testing.assert_allclose(provenance["coordinate_transform"]["translation_metres"],
+                               [-(low[0] + high[0]) / 2, -(low[1] + high[1]) / 2, 0])
+
+
+@pytest.mark.parametrize("revision,z", [("0" * 40, 343582.718718),
+                                       ("f5a2aaacd5418f9ecfa30f79e788856417f17c13", 1.0)])
+def test_bookstore_pose_repair_rejects_changed_reviewed_revision_or_height(adapter, revision, z):
+    adapter.entry.update(id="bookstore", revision=revision)
+    instance = ET.fromstring(f'<model name="BookE_01_009"><pose>1 2 {z} 0 0 0</pose></model>')
+    adapter.objects.append({"position": [1, 2, z], "size": [.1, .1, .1]})
+    with pytest.raises(ValueError, match="re-review the source repair"):
+        adapter.repair_known_source_pose(instance, 0)
+    assert adapter.objects[0]["position"] == [1, 2, z]
+    assert not adapter.layout_repairs
+
+
+def test_other_tall_source_objects_are_not_silently_repaired(adapter):
+    adapter.entry.update(id="bookstore", revision="f5a2aaacd5418f9ecfa30f79e788856417f17c13")
+    vertices, faces = cube()
+    transform = np.eye(4)
+    transform[2, 3] = 101
+    adapter.add_mesh(vertices, faces, transform, "Another source object", physical=True)
+    instance = ET.fromstring('<model name="BookE_01_010"><pose>0 0 101 0 0 0</pose></model>')
+    adapter.repair_known_source_pose(instance, 0)
+    assert not adapter.layout_repairs
+    with pytest.raises(ValueError, match="geometry above 100 m"):
+        adapter.finish()

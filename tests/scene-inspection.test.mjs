@@ -86,3 +86,57 @@ test('an inset facade is still an enclosure while its articulated children stay 
   assert.equal(hideInspectionShell(facade,[20,16,5],[12,-12,10]),true);
   assert.equal(isInspectionShell({...facade,parent_id:'door'},[20,16,5]),false);
  });
+
+function sourceCeiling() {
+  const root = { id: 'source_collision', kind: 'mesh', collision: true, visible: false, movable: false };
+  const ceiling = { id: 'source_visual', label: 'aws_robomaker_hospital_floor_01_ceiling',
+    kind: 'mesh', collision: false, visible: true, parent_id: root.id,
+    position: [0, 0, 3], size: [25, 56, .08], mesh_path: 'files/original.obj' };
+  return { root, ceiling, spec: { bounds: [27, 58, 5], objects: [root, ceiling] } };
+}
+
+test('fixed imported ceiling appearances open the interior while preserving source data', () => {
+  const { root, ceiling, spec } = sourceCeiling(), original = structuredClone(spec);
+  assert.equal(isInspectionShell(ceiling, spec.bounds, spec.objects), true);
+  assert.equal(initialCutaway(spec), true);
+  assert.equal(hideInspectionShell(ceiling, spec.bounds, [30, -40, 35]), true);
+  assert.equal(hideInspectionShell(ceiling, spec.bounds, [-30, 40, 35]), true);
+  assert.equal(isInspectionShell(root, spec.bounds, spec.objects), false);
+  assert.deepEqual(spec, original);
+});
+
+test('imported ceiling inference requires the complete fixed ancestry', () => {
+  const { root, ceiling, spec } = sourceCeiling();
+  const frame = { id: 'fixed_frame', parent_id: root.id, movable: false };
+  const child = { ...ceiling, parent_id: frame.id };
+  assert.equal(isInspectionShell(child, spec.bounds, [child, frame, root]), true);
+  for (const change of [{ movable: true }, { joint: { type: 'hinge' } }]) {
+    assert.equal(isInspectionShell(child, spec.bounds, [child, frame, { ...root, ...change }]), false);
+    assert.equal(initialCutaway({ ...spec, objects: [child, { ...frame, ...change }, root] }), false);
+    assert.equal(isInspectionShell({ ...child, ...change }, spec.bounds, [child, frame, root]), false);
+  }
+  assert.equal(isInspectionShell(ceiling, spec.bounds), false);
+  assert.equal(isInspectionShell(ceiling, spec.bounds, [ceiling]), false);
+  assert.equal(isInspectionShell(child, spec.bounds, [child, frame]), false);
+  assert.equal(isInspectionShell(child, spec.bounds, [child, frame, { ...root, parent_id: frame.id }]), false);
+  assert.equal(isInspectionShell({ ...ceiling, parent_id: ceiling.id }, spec.bounds, [root, ceiling]), false);
+  assert.equal(isInspectionShell(ceiling, spec.bounds, [root, { ...root, movable: true }, ceiling]), false);
+});
+
+test('source cutaway excludes arbitrary props, physical meshes and broad wall meshes', () => {
+  const { root, ceiling, spec } = sourceCeiling();
+  for (const change of [
+    { id: 'work_surface', label: 'Conference table' },
+    { collision: true },
+    { parent_id: undefined },
+    { size: [25, .2, 3] },
+    { size: [25, 56, 3] },
+    { position: [0, 0, 0] },
+    { size: [.4, .4, .2] },
+  ]) {
+    const candidate = { ...ceiling, ...change };
+    assert.equal(isInspectionShell(candidate, spec.bounds, [root, candidate]), false);
+    assert.equal(initialCutaway({ ...spec, objects: [root, candidate] }), false);
+  }
+  assert.equal(initialCutaway({ ...spec, objects: [root, { ...ceiling, visible: false }] }), false);
+});

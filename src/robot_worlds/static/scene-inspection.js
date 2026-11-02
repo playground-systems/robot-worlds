@@ -43,16 +43,41 @@ export function perspectiveFit(bounds, aspect, fovDegrees = 42, direction = [.8,
     distance, maxDistance, right, up, backward };
 }
 
+/** A source appearance may be hidden only after its entire ancestry is fixed. */
+function hasFixedAncestry(object, objects) {
+  if (!object.parent_id || !Array.isArray(objects)) return false;
+  const byId = new Map(), duplicateIds = new Set();
+  for (const member of objects) {
+    if (byId.has(member.id)) duplicateIds.add(member.id);
+    byId.set(member.id, member);
+  }
+  const seen = new Set([object.id]);
+  let current = object;
+  while (current.parent_id) {
+    if (seen.has(current.parent_id) || duplicateIds.has(current.parent_id)) return false;
+    seen.add(current.parent_id);
+    current = byId.get(current.parent_id);
+    if (!current || current.movable || current.joint) return false;
+  }
+  return true;
+}
+
 /** Conservative visual inference, not semantic truth or a collision modification. */
-export function isInspectionShell(object, bounds = [6, 6, 3]) {
-  if (object.movable || object.joint || object.parent_id || object.kind !== 'box') return false;
+export function isInspectionShell(object, bounds = [6, 6, 3], objects = undefined) {
+  if (object.movable || object.joint) return false;
   const [x, y, z] = object.size || [0, 0, 0], position = object.position || [0, 0, 0];
   const name = `${object.id || ''} ${object.label || ''}`.toLowerCase();
+  const roofShape = z <= .6 && x >= 2 && y >= 2 && position[2] >= 1.5;
+  const namedRoof = /(?:^|[\s_-])(roof|ceiling)(?:$|[\s_\d-])/.test(name);
+  // Imported source ceilings are visual children of their physical mesh. Keep
+  // this exception limited to broad, thin named overhead appearance surfaces;
+  // source wall meshes and ordinary props remain visible as spatial context.
+  if (object.kind === 'mesh') return object.collision === false && roofShape && namedRoof
+    && hasFixedAncestry(object, objects);
+  if (object.parent_id || object.kind !== 'box') return false;
   const wallShape = Math.min(x, y) <= .6 && Math.max(x, y) >= 1.5 && z >= 1.4 && Math.max(x, y) >= 4*Math.min(x, y);
   const boundary = x < y ? Math.abs(Math.abs(position[0])-bounds[0]/2) <= Math.max(x/2, .6) : Math.abs(Math.abs(position[1])-bounds[1]/2) <= Math.max(y/2, .6);
   const namedWall = /(?:^|[\s_-])(wall|partition|facade)(?:$|[\s_\d-])/.test(name);
-  const roofShape = z <= .6 && x >= 2 && y >= 2 && position[2] >= 1.5;
-  const namedRoof = /(?:^|[\s_-])(roof|ceiling)(?:$|[\s_\d-])/.test(name);
   const overheadBeam = /(?:^|[\s_-])(beam|joist)(?:$|[\s_\d-])/.test(name)
     && position[2] >= Math.max(2.2, bounds[2]*.65) && z <= .6
     && Math.max(x, y) >= Math.max(bounds[0], bounds[1])*.35;
@@ -61,7 +86,7 @@ export function isInspectionShell(object, bounds = [6, 6, 3]) {
 
 /** Start enclosed scenes with their interior visible; the user can restore walls. */
 export function initialCutaway(spec) {
-  const shells = (spec.objects || []).filter(object => object.visible !== false && isInspectionShell(object, spec.bounds));
+  const shells = (spec.objects || []).filter(object => object.visible !== false && isInspectionShell(object, spec.bounds, spec.objects));
   return shells.length >= 3 || shells.some(object => (object.size?.[0] || 0) >= 2
     && (object.size?.[1] || 0) >= 2 && (object.size?.[2] || 0) <= .6);
 }

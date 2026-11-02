@@ -1,9 +1,15 @@
 """Cheap release-gate and foundation checks; native evidence is produced on Linux."""
 import importlib.util
+import io
 import json
+import math
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
+import numpy as np
 import pytest
+from PIL import Image
 
 from robot_worlds.artifacts import file_digest
 from robot_worlds.generator import validate_spec
@@ -201,3 +207,71 @@ def test_native_batch_attempts_every_scene_but_catalog_requires_all_ready(tmp_pa
     assert called == identifiers
     outcomes = json.loads((evidence / "native-summary.json").read_text())["environments"]
     assert {outcome["starter_id"] for outcome in outcomes if outcome["status"] == "failed"} == failed
+
+
+def cutaway_spec():
+    data = source_spec().model_dump()
+    for identifier, label, sourced, visible in (
+        ("ceiling", "aws_robomaker_hospital_floor_01_ceiling_1", True, True),
+        ("roof", "Warehouse roof panel", True, True),
+        ("ceiling_light", "Ceiling light fixture", True, True),
+        ("unsourced_roof", "Roof", False, True),
+        ("hidden_ceiling", "Ceiling source collision", True, False),
+        ("table", "Work table", True, True),
+    ):
+        data["objects"].append({"id": identifier, "label": label, "kind": "mesh", "mesh_path": "fixture.obj",
+                                "position": [1, 1, 2], "size": [1, 1, .1], "visible": visible,
+                                "source_notice": "NOTICE.txt" if sourced else None,
+                                "source_metadata": "source.json" if sourced else None})
+    return WorldSpec.model_validate(data)
+
+
+def test_thumbnail_cutaway_only_selects_explicit_source_roofs_not_fixtures():
+    assert freeze.cutaway_object_ids(cutaway_spec()) == ["ceiling", "roof"]
+
+
+@pytest.mark.parametrize("fail_render", [False, True])
+def test_aerial_thumbnail_restores_native_display_and_fits_bounds(monkeypatch, fail_render):
+    plan = cutaway_spec()
+    original_spec = plan.model_dump()
+    rgba = np.array([[.2, .3, .4, .8], [.3, .2, .4, 1], [.5, .6, .7, .9], [.8, .5, .4, 1]])
+    original_rgba = rgba.copy()
+    model = SimpleNamespace(geom_rgba=rgba, vis=SimpleNamespace(global_=SimpleNamespace(fovy=45)))
+    updates = []
+
+    class Camera:
+        def __init__(self):
+            self.lookat = np.zeros(3)
+
+    class Renderer:
+        def disable_depth_rendering(self):
+            pass
+        def disable_segmentation_rendering(self):
+            pass
+        def update_scene(self, data, *, camera):
+            updates.append(camera)
+            assert camera.type == 7 and camera.azimuth == 135 and camera.elevation == -65
+            assert model.geom_rgba[:, 3].tolist() == [0, 0, .9, 1]
+        def render(self):
+            if fail_render:
+                raise RuntimeError("Mock native renderer failure")
+            return np.full((2, 3, 3), 128, dtype=np.uint8)
+
+    monkeypatch.setitem(sys.modules, "mujoco", SimpleNamespace(MjvCamera=Camera,
+                                                            mjtCamera=SimpleNamespace(mjCAMERA_FREE=7)))
+    runtime = SimpleNamespace(spec=plan, model=model, data=object(),
+                              _geom_objects={0: "ceiling", 1: "roof", 2: "ceiling_light", 3: "table"},
+                              _get_renderer=lambda *, overview: Renderer() if overview else pytest.fail("Aerial renderer required"))
+    if fail_render:
+        with pytest.raises(RuntimeError, match="Mock native renderer failure"):
+            freeze.render_native_overview(runtime)
+    else:
+        image = freeze.render_native_overview(runtime)
+        with Image.open(io.BytesIO(image)) as opened:
+            assert opened.size == (3, 2)
+    assert np.array_equal(model.geom_rgba, original_rgba)
+    assert plan.model_dump() == original_spec
+    camera = updates[0]
+    radius = math.sqrt((plan.bounds[0] / 2) ** 2 + (plan.bounds[1] / 2) ** 2
+                       + (plan.bounds[2] - camera.lookat[2]) ** 2)
+    assert camera.distance * math.sin(math.radians(45) / 2) > radius

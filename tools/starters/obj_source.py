@@ -1,8 +1,10 @@
 """Bounded, data-only Wavefront source import for the offline scene adapter.
 
 Material libraries and diffuse images must resolve inside the supplied source
-root. Polygons are accepted only when planar and simple; ear clipping retains
-original winding and independent position/texture/normal corner references.
+root. By default polygons must be planar and simple. Reviewed source adapters
+can opt into measured nonplanar triangulation, zero-area records, wire lines and
+2D use of three-component texture coordinates; each adaptation is disclosed.
+Original 3D positions and independent texture/normal corner references remain.
 No upstream code, remote resources, geometry repair or physical inference runs.
 """
 from __future__ import annotations
@@ -10,6 +12,7 @@ from __future__ import annotations
 import math
 import shlex
 from dataclasses import dataclass
+from fractions import Fraction
 from pathlib import Path, PureWindowsPath
 from urllib.parse import unquote, urlsplit
 
@@ -135,9 +138,30 @@ def _cross(a, b, c):
     return (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0])
 
 
-def _triangulate(points: np.ndarray) -> list[tuple[int, int, int]]:
+def _zero_surface(points: np.ndarray) -> bool:
+    """Prove affine rank at most one using exact ratios of source float values.
+
+    A cancelling Newell normal alone proves nothing: a bow-tie can have nonzero
+    surface despite zero signed area. This proof runs only for degenerate-area
+    candidates, so ordinary faces do not pay for exact rational arithmetic.
+    """
+    original = [[Fraction(float(value)) for value in point] for point in points]
+    relative = [[value-origin for value, origin in zip(point, original[0])] for point in original]
+    direction = next((point for point in relative if any(point)), None)
+    if direction is None:
+        return True
+    return all(direction[i]*point[j] == direction[j]*point[i]
+               for point in relative for i, j in ((0, 1), (1, 2), (2, 0)))
+
+
+def _triangulate(points: np.ndarray, *, allow_nonplanar=False, drop_zero_area=False,
+                 diagnostics=None) -> list[tuple[int, int, int]]:
     count = len(points)
     if count == 3:
+        if (drop_zero_area and not np.any(np.cross(points[1]-points[0], points[2]-points[0]))
+                and _zero_surface(points)):
+            diagnostics["zero_area_faces"] += 1
+            return []
         return [(0, 1, 2)]
     if count < 3 or count > MAX_POLYGON_CORNERS:
         raise ValueError("OBJ polygon exceeds the supported corner budget")
@@ -147,10 +171,21 @@ def _triangulate(points: np.ndarray) -> list[tuple[int, int, int]]:
     length = float(np.linalg.norm(normal))
     epsilon = max(1e-20, extent * extent * 1e-10)
     if length <= epsilon:
+        if drop_zero_area and _zero_surface(points):
+            diagnostics["zero_area_faces"] += 1
+            return []
         raise ValueError("OBJ polygon has no stable planar area")
     normal /= length
-    if np.max(np.abs(relative @ normal)) > max(1e-9, extent * 1e-6):
-        raise ValueError("Nonplanar OBJ polygon needs reviewed source triangulation")
+    deviation = float(np.max(np.abs(relative @ normal)))
+    if deviation > max(1e-9, extent * 1e-6):
+        if not allow_nonplanar:
+            raise ValueError("Nonplanar OBJ polygon needs reviewed source triangulation")
+        diagnostics["nonplanar_faces"] += 1
+        diagnostics["max_plane_deviation"] = max(diagnostics["max_plane_deviation"], deviation)
+    # Same projection family as Assimp's triangulation process: Newell normal,
+    # dominant-axis projection, ear clipping, then original 3D corner positions.
+    # https://github.com/assimp/assimp/blob/master/code/PostProcessing/TriangulateProcess.cpp
+    # This is not a claim of identical diagonals for an ambiguous warped face.
     projected = np.delete(relative, int(np.argmax(np.abs(normal))), axis=1)
     signed_area = sum(_cross([0, 0], a, b) for a, b in zip(projected, np.roll(projected, -1, axis=0))) / 2
     winding = 1 if signed_area > 0 else -1
@@ -206,12 +241,25 @@ def _compact(values, indices, width):
     return values[used], inverse.reshape(indices.shape)
 
 
-def read_obj(path: Path, *, root: Path) -> list[SourcePrimitive]:
-    """Read source OBJ/MTL into bounded material primitives; lengths stay unscaled."""
+def read_obj(path: Path, *, root: Path, allow_nonplanar=False, drop_zero_area=False,
+             ignore_lines=False, ignore_texture_w=False, disclosures=None) -> list[SourcePrimitive]:
+    """Read bounded material primitives; lengths stay in unscaled OBJ units.
+
+    Compatibility options are explicit and require a disclosure destination.
+    Nonplanar polygons keep their 3D vertices; projection only selects diagonals.
+    Dropped faces must be exactly collinear, not merely have zero signed area.
+    ``ignore_texture_w`` uses the first two texture components unchanged for 2D
+    diffuse images; the third is not a homogeneous divisor.
+    """
+    if any((allow_nonplanar, drop_zero_area, ignore_lines, ignore_texture_w)) and disclosures is None:
+        raise ValueError("OBJ compatibility adaptations require recorded disclosures")
     root, path = Path(root).resolve(), Path(path).resolve()
     if path.suffix.lower() != ".obj" or not path.is_relative_to(root) or not path.is_file():
         raise ValueError("Expected a local OBJ inside the source root")
     vertices, normals, texcoords, faces, libraries = [], [], [], [], []
+    lines = []
+    diagnostics = {"nonplanar_faces": 0, "max_plane_deviation": 0., "zero_area_faces": 0,
+                   "texture_w": 0, "texture_w_min": math.inf, "texture_w_max": -math.inf}
     material_name = None
     for keyword, value in _lines(_text(path, MAX_OBJ_BYTES)):
         if keyword == "v":
@@ -231,7 +279,11 @@ def read_obj(path: Path, *, root: Path) -> list[SourcePrimitive]:
         elif keyword == "vt":
             uv = _numbers(value, {1, 2, 3})
             if len(uv) == 3 and uv[2] != 0:
-                raise ValueError("Three-dimensional OBJ texture coordinates are unsupported")
+                if not ignore_texture_w:
+                    raise ValueError("Three-dimensional OBJ texture coordinates are unsupported")
+                diagnostics["texture_w"] += 1
+                diagnostics["texture_w_min"] = min(diagnostics["texture_w_min"], uv[2])
+                diagnostics["texture_w_max"] = max(diagnostics["texture_w_max"], uv[2])
             texcoords.append((uv + [0])[:2])
         elif keyword == "mtllib":
             references = shlex.split(value)
@@ -259,12 +311,29 @@ def read_obj(path: Path, *, root: Path) -> list[SourcePrimitive]:
             faces.append((material_name, corners))
             if len(faces) > MAX_TRIANGLES:
                 raise ValueError("OBJ exceeds its face budget")
+        elif keyword == "l" and ignore_lines:
+            references = []
+            for reference in value.split():
+                fields = reference.split("/")
+                if len(fields) > 2 or not fields[0] or len(fields) == 2 and not fields[1]:
+                    raise ValueError("Invalid OBJ wire-line reference")
+                references.append((_index(fields[0], len(vertices)),
+                                   _index(fields[1], len(texcoords)) if len(fields) == 2 else None))
+            if len(references) < 2 or len(references) > MAX_POLYGON_CORNERS:
+                raise ValueError("OBJ wire line exceeds its corner budget")
+            lines.append(references)
+            if len(lines) > MAX_TRIANGLES:
+                raise ValueError("OBJ exceeds its wire-line budget")
         elif keyword not in {"o", "g", "s"}:
             raise ValueError(f"Unsupported OBJ source statement: {keyword}")
         if max(len(vertices), len(normals), len(texcoords)) > MAX_VALUES:
             raise ValueError("OBJ exceeds its vertex/attribute budget")
     if not vertices or not faces:
         raise ValueError("OBJ source needs vertices and faces")
+    for line in lines:
+        if any(not 0 <= vertex < len(vertices) or uv is not None and not 0 <= uv < len(texcoords)
+               for vertex, uv in line):
+            raise ValueError("OBJ wire-line index is outside the declared data")
     materials = {}
     for library in dict.fromkeys(libraries):
         parsed = _materials(library)
@@ -278,7 +347,11 @@ def read_obj(path: Path, *, root: Path) -> list[SourcePrimitive]:
             if any(index is not None and not 0 <= index < count
                    for index, count in zip(corner, (len(vertices), len(texcoords), len(normals)))):
                 raise ValueError("OBJ face index is outside the declared data")
-        indices = _triangulate(positions[[corner[0] for corner in corners]])
+        indices = _triangulate(positions[[corner[0] for corner in corners]],
+                               allow_nonplanar=allow_nonplanar, drop_zero_area=drop_zero_area,
+                               diagnostics=diagnostics)
+        if not indices:
+            continue
         triangle_count += len(indices)
         if triangle_count > MAX_TRIANGLES:
             raise ValueError("OBJ exceeds its triangle budget")
@@ -301,4 +374,22 @@ def read_obj(path: Path, *, root: Path) -> list[SourcePrimitive]:
                                       (uv,) if has_uv else (), (uv_indices,) if has_uv else (),
                                       tuple(material["color"]) if material else (1., 1., 1., 1.), texture,
                                       (material["library"],) if material else (), name))
+    if not result:
+        raise ValueError("OBJ source has no nonzero surface after proven-degenerate records")
+    if diagnostics["nonplanar_faces"]:
+        disclosures.append(f"{path.name}: {diagnostics['nonplanar_faces']} nonplanar source polygons "
+                           "triangulated by Newell dominant-axis projection and checked ear clipping; "
+                           "original 3D vertices, corner UVs and normals retained; maximum plane "
+                           f"deviation {diagnostics['max_plane_deviation']:.12g} OBJ source units before SDF scaling. "
+                           "Warped source polygons do not define a unique triangulated surface; diagonals may differ from another viewer.")
+    if diagnostics["zero_area_faces"]:
+        disclosures.append(f"{path.name}: omitted {diagnostics['zero_area_faces']} proven zero-area source "
+                           "faces; exact rational collinearity checked in 3D, no nonzero surface removed")
+    if lines:
+        disclosures.append(f"{path.name}: omitted {len(lines)} zero-surface-area OBJ wire-line records "
+                           f"({sum(len(line)-1 for line in lines)} segments); no triangle surface removed")
+    if diagnostics["texture_w"]:
+        disclosures.append(f"{path.name}: {diagnostics['texture_w']} nonzero third texture components "
+                           f"(range {diagnostics['texture_w_min']:.12g} to {diagnostics['texture_w_max']:.12g}) "
+                           "ignored for 2D diffuse image lookup; source U/V retained unchanged, no division by W")
     return result

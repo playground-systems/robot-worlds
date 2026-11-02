@@ -1,4 +1,4 @@
-import { WorldViewer } from './scene.js?v=viz3d-6';
+import { WorldViewer } from './scene.js?v=starters-2';
 
 const $ = id => document.getElementById(id);
 const state = { world: null, navigation: 0, worldId: null, worlds: [], runs: [], tab: 'scene', panel: 'agent', selectedObject: null, layerLimit: 120, mode: 'physical', jobId: null, eventSeen: new Set(), key: false, editing: false, isPreview: false, viewer: null, viewerSpec: null, reference: false, editMode: null, scope: [], lineage: [], lineageLoading: false, lineageError: '', submitting: false, jobContext: null, assets: [] };
@@ -46,7 +46,7 @@ function renderStarters() {
     else { const placeholder = el('div', 'starter-thumbnail starter-placeholder', '◇'); placeholder.setAttribute('aria-hidden', 'true'); card.append(placeholder); }
     const body = el('div', 'starter-card-body'); body.append(el('h3', '', starter.name), el('p', '', starter.description));
     const details = starter.bounds ? `${starter.bounds[0].toFixed(0)} × ${starter.bounds[1].toFixed(0)} m · ${starter.components} components` : 'Source scene';
-    body.append(el('small', 'muted', details));
+    body.append(el('small', 'muted', details + (starter.thumbnail_hidden_object_ids?.length ? ' · cutaway preview' : '')));
     const footer = el('div', 'starter-card-footer'), source = el('a', 'text-button', `Source · ${starter.license}`);
     source.href = starter.source_url; source.target = '_blank'; source.rel = 'noopener noreferrer';
     const button = el('button', 'button primary starter-add', starter.available ? 'Add to workspace' : 'Not installed'); button.dataset.available = String(starter.available); button.disabled = !starter.available;

@@ -201,3 +201,120 @@ def test_quoted_nested_materials_and_homogeneous_positions_are_data(tmp_path):
     np.testing.assert_allclose(primitive.vertex, [[0, 0, 0], [1, 0, 0], [0, 1, 0]])
     np.testing.assert_allclose(primitive.texcoordset[0], [[.1, 0]])
     assert primitive.source_texture_path == directory / "color map.png"
+
+
+def test_reviewed_nonplanar_triangulation_keeps_original_3d_corners_and_reports_deviation(tmp_path):
+    text = """v 0 0 0
+v 1 0 0
+v 1 1 .1
+v 0 1 0
+vt 0 0
+vt 1 0
+vt 1 1
+vt 0 1
+vn 0 0 1
+f 1/1/1 2/2/1 3/3/1 4/4/1
+"""
+    path = tmp_path / "source.obj"
+    path.write_text(text)
+    with pytest.raises(ValueError, match="Nonplanar"):
+        obj_source.read_obj(path, root=tmp_path)
+    disclosures = []
+    primitive = obj_source.read_obj(path, root=tmp_path, allow_nonplanar=True, disclosures=disclosures)[0]
+    assert len(primitive) == 2
+    np.testing.assert_allclose(primitive.vertex, [[0, 0, 0], [1, 0, 0], [1, 1, .1], [0, 1, 0]])
+    np.testing.assert_allclose(primitive.texcoordset[0][primitive.texcoord_indexset[0]],
+                               primitive.vertex[primitive.vertex_index][:, :, :2])
+    np.testing.assert_allclose(primitive.normal[primitive.normal_index], np.tile([0, 0, 1], (2, 3, 1)))
+    assert len(disclosures) == 1
+    assert "1 nonplanar source polygons" in disclosures[0]
+    assert "OBJ source units before SDF scaling" in disclosures[0]
+    assert "original 3D vertices" in disclosures[0]
+    assert "maximum plane deviation 0.0498754668054" in disclosures[0]
+
+
+def test_only_proven_collinear_faces_can_be_dropped(tmp_path):
+    path = tmp_path / "source.obj"
+    # PatientWheelChair_Col's reviewed exporter pattern is [A,B,B,A], with
+    # distinct position indices at identical positions. Every 3D cross is zero.
+    path.write_text("""v 0 0 0
+v 1 0 0
+v 0 1 0
+v 1 0 0
+v 0 0 0
+f 1 2 3
+f 1 2 4 5
+""")
+    disclosures = []
+    primitive = obj_source.read_obj(path, root=tmp_path, drop_zero_area=True, disclosures=disclosures)[0]
+    assert len(primitive) == 1
+    assert "omitted 1 proven zero-area source faces" in disclosures[0]
+    assert "exact rational collinearity checked in 3D" in disclosures[0]
+    assert "no nonzero surface removed" in disclosures[0]
+
+
+@pytest.mark.parametrize("points", [
+    [[0, 0, 0], [1, 1, 0], [0, 1, 0], [1, 0, 0]],  # Cancelling Newell area, nonzero surface.
+    [[0, 0, 0], [1, 0, 0], [1, 1e-12, 0], [0, 1e-12, 0]],  # Small is not zero.
+])
+def test_zero_area_optin_never_discards_cancelling_or_tiny_nonzero_surface(tmp_path, points):
+    path = tmp_path / "source.obj"
+    path.write_text("".join("v " + " ".join(map(str, point)) + "\n" for point in points) + "f 1 2 3 4\n")
+    with pytest.raises(ValueError, match="no stable planar area"):
+        obj_source.read_obj(path, root=tmp_path, allow_nonplanar=True, drop_zero_area=True, disclosures=[])
+
+
+def test_reviewed_wire_lines_keep_surface_geometry_and_are_explicitly_disclosed(tmp_path):
+    path = tmp_path / "source.obj"
+    path.write_text("""v 0 0 0
+v 1 0 0
+v 0 1 0
+v 999 999 999
+vt 0 0
+vt 1 1
+l -4/1 -3/2 4/1
+f 1 2 3
+""")
+    with pytest.raises(ValueError, match="Unsupported OBJ source statement: l"):
+        obj_source.read_obj(path, root=tmp_path)
+    disclosures = []
+    primitive = obj_source.read_obj(path, root=tmp_path, ignore_lines=True, disclosures=disclosures)[0]
+    assert primitive.vertex.max() == 1
+    assert "omitted 1 zero-surface-area OBJ wire-line records (2 segments)" in disclosures[0]
+    assert "no triangle surface removed" in disclosures[0]
+
+
+@pytest.mark.parametrize("reference", ["0", "99", "1/0", "1/99", "1//1", "1/"])
+def test_ignored_wire_lines_still_require_valid_indices(tmp_path, reference):
+    path = tmp_path / "source.obj"
+    path.write_text(f"v 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nl {reference} 2\nf 1 2 3\n")
+    with pytest.raises(ValueError):
+        obj_source.read_obj(path, root=tmp_path, ignore_lines=True, disclosures=[])
+
+
+def test_reviewed_2d_texture_lookup_keeps_uv_instead_of_dividing_by_w(tmp_path):
+    path = tmp_path / "source.obj"
+    path.write_text("""v 0 0 0
+v 1 0 0
+v 0 1 0
+vt .25 .5 2
+vt .75 .5 -3
+vt 0 .25 0
+f 1/1 2/2 3/3
+""")
+    with pytest.raises(ValueError, match="Three-dimensional OBJ texture coordinates"):
+        obj_source.read_obj(path, root=tmp_path)
+    disclosures = []
+    primitive = obj_source.read_obj(path, root=tmp_path, ignore_texture_w=True, disclosures=disclosures)[0]
+    np.testing.assert_allclose(primitive.texcoordset[0][primitive.texcoord_indexset[0]],
+                               [[[.25, .5], [.75, .5], [0, .25]]])
+    assert "2 nonzero third texture components (range -3 to 2)" in disclosures[0]
+    assert "source U/V retained unchanged, no division by W" in disclosures[0]
+
+
+@pytest.mark.parametrize("option", ["allow_nonplanar", "drop_zero_area", "ignore_lines", "ignore_texture_w"])
+def test_compatibility_adaptations_require_a_provenance_destination(tmp_path, option):
+    path = tmp_path / "source.obj"
+    path.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n")
+    with pytest.raises(ValueError, match="require recorded disclosures"):
+        obj_source.read_obj(path, root=tmp_path, **{option: True})

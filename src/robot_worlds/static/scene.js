@@ -3,7 +3,7 @@ import { OrbitControls } from './vendor/OrbitControls.js';
 import { SceneAssets } from './scene-assets.js';
 import { batchSourceMeshes } from './scene-batching.js';
 import { disposeTree } from './scene-resources.js';
-import { hideInspectionShell, initialCutaway, isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js?v=viz3d-6';
+import { hideInspectionShell, initialCutaway, isInspectionShell, objectBounds, perspectiveFit, sceneBounds } from './scene-inspection.js?v=starters-2';
 import { APPEARANCE_NOTICE, estimatedAppearance, studioEnvironmentPixels } from './scene-appearance.js';
 import { geometryKey, revolvedGeometry } from './scene-shapes.js';
 
@@ -174,7 +174,7 @@ export class WorldViewer {
     for (const object of spec.objects || []) {
       if (object.visible === false) continue;
       const kind = object.kind || 'box';
-      const shell = isInspectionShell(object, spec.bounds); if (shell) this.shellCount++;
+      const shell = isInspectionShell(object, spec.bounds, spec.objects); if (shell) this.shellCount++;
       if (kind === 'mesh' && assetBase && /\.obj$/i.test(object.mesh_path || '')) { this.pendingLoads.push([object, assetBase, generation]); continue; }
       const appearance = estimatedAppearance(object);
       const key = `${geometryKey(object)}:${shell ? 'shell:'+object.id : 'solid'}:${appearance.id}:${object.opacity ?? 1}`;
@@ -246,7 +246,7 @@ export class WorldViewer {
       const group = await assets.load(object, assetBase);
       if (this.disposed || this.loadGeneration !== generation) return;
       group.traverse(node => { if (node.isMesh) this.objects.push(node); });
-      if (isInspectionShell(object, this.spec.bounds)) {
+      if (isInspectionShell(object, this.spec.bounds, this.spec.objects)) {
         // Keep cutaway shells independent so toggling visibility still works.
         this.shellNodes.push(group); group.visible = !this.cutaway;
         this.group.add(group);
@@ -255,7 +255,7 @@ export class WorldViewer {
       if (assets.controller.signal.aborted || this.disposed || this.loadGeneration !== generation) return;
       const mesh = assets.placeholder(object);
       this.objects.push(mesh);
-      if (isInspectionShell(object, this.spec.bounds)) {
+      if (isInspectionShell(object, this.spec.bounds, this.spec.objects)) {
         this.shellNodes.push(mesh); mesh.visible = !this.cutaway; this.group.add(mesh);
       } else this.sourceGroup.add(mesh);
       this.showAssetError(object, error);
