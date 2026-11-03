@@ -1,0 +1,470 @@
+{
+  "schema_version": 1,
+  "author": {
+    "model": "gpt-6-astra",
+    "reasoning": "high",
+    "date": "2026-11-02",
+    "method": "Direct scene-author subagent decision from original assembled fixture metadata and XML; no native run by author"
+  },
+  "source_xml": ".robot-worlds/existing-scenes-2026-11-02/robocasa-kitchen/assembly-output-relocated-v4/kitchen_layout004_style004_clutter1_seed0.xml",
+  "source_sha256": "53268191d328f1a8bf3676fb30d37bdbede60e6e9f85475a432dd4b2790ef2dc",
+  "source_basis": [
+    "docs/robocasa-source-assembly.md",
+    ".robot-worlds/existing-scenes-2026-11-02/robocasa-kitchen/assembly-output-relocated-v4/source-fixtures.json",
+    ".robot-worlds/existing-scenes-2026-11-02/robocasa-kitchen/assembly-output-relocated-v4/source-fixture-placements.json",
+    "literal XML visual, light and worldbody inventory",
+    "Original RoboCasa Kitchen constructor lines378-379: render_collision_mesh=False, render_visual_mesh=True; literal XML group2 geoms are EEF debug targets."
+  ],
+  "source_room_frame": "Metres, Z up; enclosed room nominal X0..5.2,Y-5.9..0, wallheight3m. Wall metadata size uses source half-extents; other fixture sizes follow source constructors.",
+  "inspected_fixture_metadata": [
+    {
+      "name": "wall_room",
+      "class_name": "Wall",
+      "position": [
+        2.6,
+        0.02,
+        1.5
+      ],
+      "rotation": null,
+      "size": [
+        2.64,
+        1.5,
+        0.02
+      ],
+      "source_body_attributes": {
+        "pos": "2.6 0.02 1.5",
+        "name": "wall_room_main",
+        "quat": "-0.707 0.707 0 0"
+      }
+    },
+    {
+      "name": "wall_left_room",
+      "class_name": "Wall",
+      "position": [
+        -0.02,
+        -2.95,
+        1.5
+      ],
+      "rotation": null,
+      "size": [
+        2.99,
+        1.5,
+        0.02
+      ],
+      "source_body_attributes": {
+        "pos": "-0.02 -2.95 1.5",
+        "name": "wall_left_room_main",
+        "quat": "0.5 0.5 -0.5 -0.5"
+      }
+    },
+    {
+      "name": "wall_right_room",
+      "class_name": "Wall",
+      "position": [
+        5.22,
+        -2.95,
+        1.5
+      ],
+      "rotation": null,
+      "size": [
+        2.99,
+        1.5,
+        0.02
+      ],
+      "source_body_attributes": {
+        "pos": "5.22 -2.95 1.5",
+        "name": "wall_right_room_main",
+        "quat": "0.5 -0.5 -0.5 0.5"
+      }
+    },
+    {
+      "name": "wall_front_room",
+      "class_name": "Wall",
+      "position": [
+        2.6,
+        -5.92,
+        1.5
+      ],
+      "rotation": null,
+      "size": [
+        2.64,
+        1.5,
+        0.02
+      ],
+      "source_body_attributes": {
+        "pos": "2.6 -5.92 1.5",
+        "name": "wall_front_room_main",
+        "quat": "0 0 0.707 -0.707"
+      }
+    },
+    {
+      "name": "stool_1_room",
+      "class_name": "Stool",
+      "position": [
+        3.6,
+        -3.875,
+        0.45000000000000007
+      ],
+      "rotation": -1.5708,
+      "size": [
+        0.39793096286455193,
+        0.4252193432775685,
+        0.9000000000000001
+      ],
+      "source_body_attributes": {
+        "name": "stool_1_room_main",
+        "pos": "3.6 -3.875 0.45000000000000007",
+        "euler": "0 0 -1.5708"
+      }
+    },
+    {
+      "name": "stool_2_room",
+      "class_name": "Stool",
+      "position": [
+        3.6,
+        -3.225,
+        0.45000000000000007
+      ],
+      "rotation": -1.5708,
+      "size": [
+        0.39793096286455193,
+        0.4252193432775685,
+        0.9000000000000001
+      ],
+      "source_body_attributes": {
+        "name": "stool_2_room_main",
+        "pos": "3.6 -3.225 0.45000000000000007",
+        "euler": "0 0 -1.5708"
+      }
+    },
+    {
+      "name": "stool_3_room",
+      "class_name": "Stool",
+      "position": [
+        3.6,
+        -2.575,
+        0.45000000000000007
+      ],
+      "rotation": -1.5708,
+      "size": [
+        0.39793096286455193,
+        0.4252193432775685,
+        0.9000000000000001
+      ],
+      "source_body_attributes": {
+        "name": "stool_3_room_main",
+        "pos": "3.6 -2.575 0.45000000000000007",
+        "euler": "0 0 -1.5708"
+      }
+    },
+    {
+      "name": "counter_main_main_group",
+      "class_name": "Counter",
+      "position": [
+        1.2,
+        -0.325,
+        0.46
+      ],
+      "rotation": 0.0,
+      "size": [
+        1.0,
+        0.65,
+        0.92
+      ],
+      "source_body_attributes": {
+        "name": "counter_main_main_group_main",
+        "pos": "1.2 -0.325 0.46"
+      }
+    },
+    {
+      "name": "fridge_main_group",
+      "class_name": "FridgeFrenchDoor",
+      "position": [
+        4.1450050793455695,
+        -0.45318972835755555,
+        0.89
+      ],
+      "rotation": 0.0,
+      "size": [
+        0.8499999999999999,
+        0.8,
+        1.78
+      ],
+      "source_body_attributes": {
+        "name": "fridge_main_group_main",
+        "pos": "4.1450050793455695 -0.45318972835755555 0.89"
+      }
+    },
+    {
+      "name": "counter_1_left_left_group",
+      "class_name": "Counter",
+      "position": [
+        0.32499283724785594,
+        -2.199998806221497,
+        0.46
+      ],
+      "rotation": 1.5708,
+      "size": [
+        3.0,
+        0.65,
+        0.92
+      ],
+      "source_body_attributes": {
+        "name": "counter_1_left_left_group_main",
+        "pos": "0.32499283724785594 -2.199998806221497 0.46",
+        "euler": "0 0 1.5708"
+      }
+    },
+    {
+      "name": "oven_left_group",
+      "class_name": "Oven",
+      "position": [
+        0.3309402560938159,
+        -4.099404356455652,
+        0.9999999827128453
+      ],
+      "rotation": 1.5708,
+      "size": [
+        0.75,
+        0.6,
+        0.68
+      ],
+      "source_body_attributes": {
+        "name": "oven_left_group_main",
+        "pos": "0.3309402560938159 -4.099404356455652 0.9999999827128453",
+        "euler": "0 0 1.5708"
+      }
+    },
+    {
+      "name": "microwave_left_group",
+      "class_name": "Microwave",
+      "position": [
+        0.3763288177748437,
+        -4.0999986584276105,
+        1.6249910122256557
+      ],
+      "rotation": 1.5708,
+      "size": [
+        0.75,
+        0.5,
+        0.4603082176618023
+      ],
+      "source_body_attributes": {
+        "name": "microwave_left_group_main",
+        "pos": "0.3763288177748437 -4.0999986584276105 1.6249910122256557",
+        "euler": "0 0 1.5708"
+      }
+    },
+    {
+      "name": "island_island_group",
+      "class_name": "Counter",
+      "position": [
+        2.8999966206705317,
+        -3.2199895313592486,
+        0.46
+      ],
+      "rotation": -1.5708,
+      "size": [
+        2.45,
+        1.6,
+        0.92
+      ],
+      "source_body_attributes": {
+        "name": "island_island_group_main",
+        "pos": "2.8999966206705317 -3.2199895313592486 0.46",
+        "euler": "0 0 -1.5708"
+      }
+    }
+  ],
+  "views": [
+    {
+      "id": "interior_robot_height",
+      "eye_m": [
+        4.55,
+        -5.1,
+        1.45
+      ],
+      "target_m": [
+        1.95,
+        -1.8,
+        1.05
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "vertical_fov_degrees": 57,
+      "free_camera_lookat_m": [
+        1.95,
+        -1.8,
+        1.05
+      ],
+      "free_camera_distance_m": 4.220189569,
+      "free_camera_azimuth_degrees": 128.233825177,
+      "free_camera_elevation_degrees": -5.438799886,
+      "angle_convention": "Forward XY heading; eye/target are authoritative if renderer convention differs.",
+      "purpose": "Clear southeast circulation corner across the island toward L-counter, source cabinet fronts, hood, fridge and domestic details. Eye height is a scene-inspection proxy, not a calibrated robot sensor."
+    },
+    {
+      "id": "overview",
+      "eye_m": [
+        4.85,
+        -5.55,
+        3.8
+      ],
+      "target_m": [
+        2.2,
+        -2.35,
+        0.65
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "vertical_fov_degrees": 60,
+      "free_camera_lookat_m": [
+        2.2,
+        -2.35,
+        0.65
+      ],
+      "free_camera_distance_m": 5.213923666,
+      "free_camera_azimuth_degrees": 129.629005304,
+      "free_camera_elevation_degrees": -37.167811851,
+      "angle_convention": "Forward XY heading; eye/target are authoritative if renderer convention differs.",
+      "purpose": "Elevated southeast overview of whole L-counter/island relationship and source circulation. Source has no ceiling; do not hide walls or fixtures."
+    }
+  ],
+  "render_settings": {
+    "width": 640,
+    "height": 360,
+    "max_shadowmap_size": 1024,
+    "multisamples": 0,
+    "frames_per_view": 1,
+    "physics_steps": 0,
+    "retained_source_directional_light": {
+      "position": [
+        2,
+        -2,
+        2
+      ],
+      "direction": [
+        0.01,
+        0.01,
+        -1
+      ],
+      "ambient": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "diffuse": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "specular": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "castshadow": false
+    },
+    "headlight": "Retain source/default state; do not introduce an additional light or exposure adjustment.",
+    "source_znear": 0.001,
+    "source_visual_groups": {
+      "geomgroup0": false,
+      "geomgroup1": true,
+      "geomgroup2": false,
+      "other_geom_groups": "No other groups authored; preserve renderer defaults.",
+      "source_geom_group_counts": {
+        "0": 1182,
+        "1": 563,
+        "2": 4
+      },
+      "group2_names": [
+        "left_eef_target_box",
+        "left_eef_target_sphere",
+        "right_eef_target_box",
+        "right_eef_target_sphere"
+      ],
+      "reason": "Match original visual-only rendering contract and suppress non-room EEF debug targets. Physics geometry remains compiled and unchanged.",
+      "overlays": "No contact, joint-frame or site debug overlays."
+    },
+    "override_location": "Derived or in-memory preview only; raw XML and all asset hashes unchanged.",
+    "equivalent_texture_deduplication": {
+      "approved_by": {
+        "model": "gpt-6-astra",
+        "reasoning": "high",
+        "date": "2026-11-02"
+      },
+      "scope": "Derived preview XML/model only. Original source XML, images and author material definitions remain unchanged.",
+      "equivalence_rule": "Coalesce texture definitions only when their complete normalized XML structure is identical except for the top-level texture name: every other attribute/value, child element and meaningful text must match. Do not treat merely equal filenames or pixel sizes as sufficient.",
+      "canonical_choice": "Retain the first source-order identical texture entry; record every removed name as an alias to that entry.",
+      "reference_remapping": "Remap texture references to canonical names without changing material values, texture roles, UVs, texture transforms, sampling/flip/type settings or references to non-texture assets. Preserve every original material entry.",
+      "prohibited": [
+        "resizing or recompressing images",
+        "recoloring, exposure or material-factor changes",
+        "merging visually similar but nonidentical definitions",
+        "normal/metallic/roughness substitutions",
+        "source geometry, joints, physics or camera changes"
+      ],
+      "evidence_required": [
+        "raw XML hash before and after",
+        "derived XML hash",
+        "deterministic alias map",
+        "original/canonical texture counts",
+        "exact equivalence check for every alias",
+        "no unresolved texture references",
+        "confirmation all non-texture source semantics and material values are unchanged"
+      ],
+      "source_audit": {
+        "source_sha256": "53268191d328f1a8bf3676fb30d37bdbede60e6e9f85475a432dd4b2790ef2dc",
+        "texture_definitions": 116,
+        "exact_equivalence_classes": 41,
+        "duplicated_classes": 25,
+        "redundant_definitions": 75
+      },
+      "runtime_scope": "One bounded retry with the previously authored two camera views and render budget. Native compilation remains an engineering check; approval does not establish memory use or successful rendering."
+    },
+    "current_pipeline": "Split source-preserving browser appearance and derived native geometry/physics model; see browser rendering contract.",
+    "browser_preview_background": "First inspection: flat source skybox rgb1 [0.98,0.98,1.0], background only; exact gradient pending and disclosed. See browser render contract.",
+    "browser_camera_clipping": "Source resolved znear and zfar multiplied by compiled model extent, exported and recorded; no arbitrary clipping distances."
+  },
+  "preserve": [
+    "source geometry, source fixture transforms and sampled accessory placements",
+    "source textures, material values and lighting",
+    "source joint initialization as represented by compiled export",
+    "all source physics options, masses, collision settings and joints",
+    "four source-disabled fixtures remain disabled",
+    "no task props, robot, new fixtures or synthetic backdrop added"
+  ],
+  "acceptance_status": "Camera and render settings authored only; image quality and native loadability unverified until engineering returns frames.",
+  "return_if_blocked": "Report compile error or actual occlusion/camera-in-solid evidence to author; do not repair fixture placement or camera automatically.",
+  "preview_attempt_history": [
+    {
+      "attempt": "initial source-native preview",
+      "reported_by": "root engineering",
+      "result": "terminated by 600 MiB watchdog during native compilation",
+      "elapsed_seconds": 1.06,
+      "sampled_rss_bytes": 695648256,
+      "frames": 0,
+      "physics_steps": 0,
+      "scope": "Reported diagnostic; not author-run validation."
+    },
+    {
+      "attempt": "exact texture-deduplicated source-native preview",
+      "reported_by": "root engineering",
+      "result": "terminated by 600 MiB watchdog during native compilation",
+      "elapsed_seconds": 0.96,
+      "sampled_rss_bytes": 640991232,
+      "texture_aliases": 75,
+      "canonical_textures": 41,
+      "frames": 0,
+      "physics_steps": 0,
+      "scope": "Reported diagnostic; deduplication succeeded but native image allocation remains above budget."
+    }
+  ],
+  "browser_rendering_contract": "docs/robocasa-browser-render-contract-2026-11-02.json"
+}

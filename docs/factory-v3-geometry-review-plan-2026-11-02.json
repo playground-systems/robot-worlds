@@ -1,0 +1,250 @@
+{
+  "schema_version": 1,
+  "author": {
+    "model": "gpt-6-astra",
+    "reasoning": "high",
+    "date": "2026-11-02",
+    "method": "Direct scene-author subagent decision from original assembled fixture metadata and XML; no native run by author"
+  },
+  "source_summary": ".robot-worlds/factory-v3-sources-2026-11-02/source-physics-summary.json",
+  "source_summary_sha256": "6d6a4113eb362b6b9a0ab447ca352acfeb20f28c896594a68eaab0b83ef881d1",
+  "stage": "Acquisition reviewed; geometry, visual and physical acceptance pending; no new scene placement authorized.",
+  "source_masses": [
+    {
+      "asset_id": "equipment_rolling_tool_chest_cabinet_combo_d01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "1",
+        "1",
+        "0.5",
+        "1",
+        "1",
+        "0.5",
+        "1",
+        "1",
+        "0.07082872",
+        "1",
+        "1",
+        "1",
+        "35.593",
+        "0.081671886",
+        "1",
+        "1",
+        "0.5",
+        "1",
+        "0.07082862",
+        "1",
+        "0.5"
+      ],
+      "sum_declared_body_masses_kg": "50.816329226",
+      "motion_bodies": 21,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "equipment_utility_cart_e01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "0.38024157",
+        "8.958625",
+        "0.42130336",
+        "0.6149951",
+        "1.490205",
+        "1.4902053",
+        "0.40206286",
+        "0.24408479",
+        "1.4902049",
+        "1.4902049",
+        "0.4105443"
+      ],
+      "sum_declared_body_masses_kg": "17.39267708",
+      "motion_bodies": 11,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "storage_toolbox_standard_hardCase_d01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "0.059231695",
+        "0.5",
+        "0.049595363",
+        "3"
+      ],
+      "sum_declared_body_masses_kg": "3.608827058",
+      "motion_bodies": 4,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "crate_blue_a01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "2.8367376"
+      ],
+      "sum_declared_body_masses_kg": "2.8367376",
+      "motion_bodies": 1,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "crate_white_a20",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "1.7019488"
+      ],
+      "sum_declared_body_masses_kg": "1.7019488",
+      "motion_bodies": 1,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "dishware_plastic_tray_a01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "0.41487625"
+      ],
+      "sum_declared_body_masses_kg": "0.41487625",
+      "motion_bodies": 1,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "handTool_wrench_combination_a01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "0.82821196"
+      ],
+      "sum_declared_body_masses_kg": "0.82821196",
+      "motion_bodies": 1,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "handTool_pliers_combination_a01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "0.15877536",
+        "0.16577543"
+      ],
+      "sum_declared_body_masses_kg": "0.32455079",
+      "motion_bodies": 2,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "instrument_caliper_a01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "0.37349772",
+        "0.28831443"
+      ],
+      "sum_declared_body_masses_kg": "0.66181215",
+      "motion_bodies": 2,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "engineComponent_idler_pulley_a01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "0.13533968"
+      ],
+      "sum_declared_body_masses_kg": "0.13533968",
+      "motion_bodies": 1,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "brakeSystem_brake_master_cylinder_b01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "3.19966"
+      ],
+      "sum_declared_body_masses_kg": "3.19966",
+      "motion_bodies": 1,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "engineComponent_spark_plug_b01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "0.07230999"
+      ],
+      "sum_declared_body_masses_kg": "0.07230999",
+      "motion_bodies": 1,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "hardware_bracket_largeCorner_a01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "0.0066213747"
+      ],
+      "sum_declared_body_masses_kg": "0.0066213747",
+      "motion_bodies": 1,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "factory_bolt_m20_tight",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "0.010707934"
+      ],
+      "sum_declared_body_masses_kg": "0.010707934",
+      "motion_bodies": 1,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    },
+    {
+      "asset_id": "equipment_bench_vise_a01",
+      "mass_basis": "Original MuJoCo instance-layer explicitly authored per-body values, not a convenient inferred mass",
+      "per_body_mass_literals_kg": [
+        "0.49689808",
+        "5.753067",
+        "4.075946",
+        "0.26828215",
+        "5"
+      ],
+      "sum_declared_body_masses_kg": "15.59419323",
+      "motion_bodies": 5,
+      "note": "Sum of listed body masses, not a validated payload or grasp rating."
+    }
+  ],
+  "task_adjustments": [
+    "Keep the source 3.608827058 kg empty tool case supported on a bench or the cart for core kitting/rework; no loaded single-arm carry requirement until robot payload and grasp are validated.",
+    "Treat the 3.19966 kg master cylinder as a cart-delivered or supported service workpiece initially; do not lower its mass to enable carrying.",
+    "Deep blue crate mass is 2.8367376 kg empty. Use it for supported stock storage or verified cart cargo, not an assumed single-arm lifting task.",
+    "The 0.41487625 kg small tray, 0.13533968 kg pulley, 0.07230999 kg spark plug, 0.0066213747 kg bracket and 0.010707934 kg bolt are the first geometry/grasp candidates; tiny/flat contact features still need evidence.",
+    "Keep all source body masses and mobility, including tool-chest and cart wheels; do not weld them to ground to make drawer or transport tasks easier."
+  ],
+  "checks_before_scene_placement": [
+    {
+      "stage": "Faithful appearance",
+      "check": "Decode each original GLB once; preserve original mesh triangles, transforms, material factors and basecolor/normal/metallic-roughness maps. Return a labeled thumbnail and dimensions for author review. A smooth generic replacement mesh is not acceptable."
+    },
+    {
+      "stage": "Rigid/joint identity",
+      "check": "Map every source motion body, fixed attachment and hinge/slide with source parent, frame, axis and limits. Compare decoded world-space geometry at reset to source bounds; verify no node transform is applied twice."
+    },
+    {
+      "stage": "Cavities",
+      "check": "Measure blue/white crate, tray, tool-case and all candidate drawer interior bottoms, walls, openings and closure volumes using source meshes. Return source triangle/collision overlays or sections. A single convex hull filling the cavity cannot support containment tasks."
+    },
+    {
+      "stage": "Contact adaptation proposal",
+      "check": "If source convexHull fills useful empty space, propose a source-triangle-preserving segmented/decomposed contact representation with measured clearance error; keep source visual mesh intact. Return proposal to Astra before choosing geometry cuts, tolerances or allowed contact exclusions."
+    },
+    {
+      "stage": "Handle/grasp geometry",
+      "check": "Measure actual handle aperture, grasp thickness and approach clearance for case/chest/cart/tools/parts against the selected robot gripper; identify rigid roots and supports. Do not infer a usable handle from the asset name."
+    },
+    {
+      "stage": "Kinematic sweeps",
+      "check": "Inspect source drawer, lid, latch, pliers, caliper, wheel/caster and vise motion through original limits in geometry-only poses. Preserve raw source. Return conflicting sweeps; no automatic source pose repair."
+    },
+    {
+      "stage": "Physical gates later",
+      "check": "After authored contact adaptation and placement: native settling, contact, drawer/lid sweep and load support. Cart pushing and clamp retention require separate measured demonstrations; joint existence alone is insufficient."
+    }
+  ],
+  "visual_review_order": [
+    "tool chest",
+    "tool case",
+    "blue crate, white crate and small tray",
+    "utility cart",
+    "wrench, pliers and caliper",
+    "pulley, spark plug, bracket, bolt and master cylinder",
+    "conditional vise"
+  ],
+  "resource_scope": "One asset preview at a time; no native physics, policy or large conversion sweep requested by this decision. Start with source rendering and analytical geometry evidence."
+}

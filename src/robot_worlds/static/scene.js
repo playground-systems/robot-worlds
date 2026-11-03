@@ -86,7 +86,7 @@ export class WorldViewer {
         a.node.style.top = `${(1 - point.y) * canvas.clientHeight / 2}px`;
       }
     };
-    this.onControlChange = () => { if (this.cutaway) this.applyCutaway(); this.invalidate(); };
+    this.onControlChange = () => { if (this.cutaway) this.applyCutaway(); this.updateSourceHeadlight(); this.invalidate(); };
     this.onControlStart = () => { this.fitted = false; };
     this.controls.addEventListener('change', this.onControlChange);
     this.controls.addEventListener('start', this.onControlStart);
@@ -158,7 +158,7 @@ export class WorldViewer {
     this.scene.children.filter(n => n.isLight).forEach(n => { n.visible = true; });
     this.scene.background.set('#d3dae5');
     this.scene.environment = this.layoutEnvironment; this.environmentTarget?.dispose(); this.environmentTarget = null;
-    this.renderer.toneMappingExposure = .95; this.renderer.shadowMap.needsUpdate = true;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping; this.renderer.toneMappingExposure = .95; this.renderer.shadowMap.needsUpdate = true;
     disposeTree(this.group);
     this.group.clear(); this.objects = []; this.annotations = []; this.labels.replaceChildren();
     this.sourceGroup = new THREE.Group(); this.group.add(this.sourceGroup);
@@ -336,6 +336,66 @@ export class WorldViewer {
     this.invalidate();
   }
 
+  async setSourceScene(data, base) {
+    const { loadSourceScene } = await import('./source-scene-viewer.js?v=source-inspection-2');
+    this.setSpec({ bounds: [10, 10, 5], objects: [], regions: [] });
+    const generation = this.loadGeneration;
+    this.sourceController = new AbortController();
+    const loaded = await loadSourceScene(data, base, { signal: this.sourceController.signal });
+    if (generation !== this.loadGeneration) { loaded.dispose(); return; }
+    disposeTree(this.group); this.group.clear(); this.objects = [];
+    this.annotations = []; this.labels.replaceChildren();
+    this.sourceInspection = loaded; this.sourceDescriptor = data;
+    this.group.add(loaded.group);
+    loaded.group.traverse(node => { if (node.isMesh) this.objects.push(node); });
+    this.scene.children.filter(node => node.isLight).forEach(node => { node.visible = false; });
+    this.scene.environment = null;
+    this.renderer.toneMapping = THREE.NoToneMapping; this.renderer.toneMappingExposure = 1;
+    if (data.background?.color) this.scene.background.setRGB(...data.background.color);
+    const ambient = new THREE.Color(0, 0, 0);
+    for (const source of data.lights || []) {
+      const light = source.directional ? new THREE.DirectionalLight() : new THREE.PointLight();
+      light.color.setRGB(...source.diffuse); light.intensity = 1;
+      light.position.set(...source.position); light.castShadow = !!source.castshadow;
+      if (source.directional) {
+        light.target.position.copy(light.position).add(new THREE.Vector3(...source.direction));
+        this.group.add(light.target);
+      }
+      if (light.castShadow) light.shadow.mapSize.set(1024, 1024);
+      this.group.add(light); ambient.add(new THREE.Color().setRGB(...source.ambient));
+    }
+    if (data.headlight?.active) {
+      ambient.add(new THREE.Color().setRGB(...data.headlight.ambient));
+      this.sourceHeadlight = new THREE.DirectionalLight(new THREE.Color().setRGB(...data.headlight.diffuse), 1);
+      this.group.add(this.sourceHeadlight, this.sourceHeadlight.target);
+    }
+    this.group.add(new THREE.AmbientLight(ambient, 1));
+    this.controls.maxPolarAngle = Math.PI * .98; this.controls.minDistance = .02;
+    this.sourceViews = data.views || [];
+    this.setSourceView(this.sourceViews[0]?.id);
+    this.renderer.shadowMap.needsUpdate = true;
+    this.invalidate();
+    return loaded;
+  }
+
+  updateSourceHeadlight() {
+    if (!this.sourceHeadlight) return;
+    this.sourceHeadlight.position.copy(this.camera.position);
+    this.sourceHeadlight.target.position.copy(this.controls.target);
+  }
+
+  setSourceView(id) {
+    const view = this.sourceViews?.find(item => item.id === id);
+    if (!view) return;
+    this.camera.position.set(...view.eye_m); this.camera.up.set(...view.up);
+    this.camera.fov = view.vertical_fov_degrees;
+    this.camera.near = this.sourceDescriptor.clipping.near;
+    this.camera.far = this.sourceDescriptor.clipping.far;
+    this.camera.updateProjectionMatrix(); this.controls.target.set(...view.target_m);
+    this.controls.update(); this.fitted = false; this.sourceViewId = id;
+    this.updateSourceHeadlight(); this.invalidate();
+  }
+
   label(text, position) {
     const node = document.createElement('div'); node.className = 'scene-label'; node.textContent = text;
     this.labels.append(node); this.annotations.push({ node, position }); return node;
@@ -351,6 +411,7 @@ export class WorldViewer {
 
   fit(object = null, direction = [.8, -.9, .85]) {
     this.resize();
+    if (this.sourceInspection) { this.setSourceView(this.sourceViewId); return; }
     if (this.reference && this.referenceShot) {
       this.camera.position.set(...this.referenceShot.position); this.controls.target.set(...this.referenceShot.target);
       this.camera.fov = this.referenceShot.fov; this.camera.updateProjectionMatrix(); this.controls.update(); this.invalidate(); return;
@@ -390,7 +451,12 @@ export class WorldViewer {
     this.updateVisibility();
   }
 
-  abortLoads() { this.assets?.dispose(); this.assets = null; this.loads.clear(); this.pendingLoads = []; }
+  abortLoads() {
+    this.sourceController?.abort(); this.sourceController = null;
+    this.sourceInspection?.dispose(); this.sourceInspection = null; this.sourceDescriptor = null;
+    this.sourceHeadlight = null; this.sourceViews = null;
+    this.assets?.dispose(); this.assets = null; this.loads.clear(); this.pendingLoads = [];
+  }
 
   dispose() {
     if (this.disposed) return;

@@ -1,0 +1,91 @@
+{
+  "date": "2026-11-02",
+  "scope": "Source-preserving browser inspection; not robot or task acceptance",
+  "native": {
+    "mujoco_version": "3.17.0",
+    "bodies": 249,
+    "joints": 67,
+    "joint_types": {
+      "hinge": 39,
+      "slide": 27,
+      "free": 1
+    },
+    "geoms": 1749,
+    "meshes": 428,
+    "materials": 222,
+    "textures": 0,
+    "physics_steps": 0,
+    "visible_geom_groups": [
+      1
+    ]
+  },
+  "export": {
+    "watchdog": {
+      "exit_code": 0,
+      "sampled_peak_rss_bytes": 625704960,
+      "elapsed_seconds": 2.901529666996794,
+      "terminated_reason": null,
+      "compiler_usethread": false
+    },
+    "reported_peak_rss_bytes": 626688000,
+    "bundle_id": "34df5b1ec5c14034483ceaf2ffa10dbd2448dcfa40204a1519b133a4b577d68b",
+    "source_xml_sha256": "4ae59383d40505f9d11d179f388c5b7a327169238e323b58b57539e38a1d6df4",
+    "derived_xml_sha256": "f70e4d36c726b1bd04b808a68ced612459a59a9188a9980cbb6a8db51543f0b1",
+    "browser_manifest_sha256": "c865c9385f87a6f8f03318b6c96745c0039e6fb9386784015ce663bb3192efd9",
+    "geometry_sha256": "8a7ef8da51d441a496dc381815b76eed1a4fc28d275e422a4cb007abc225eeb6",
+    "geometry_byte_length": 46071984,
+    "visual_geoms": 563,
+    "unique_original_images": 35,
+    "source_original_unchanged": true,
+    "compiler_usethread": false
+  },
+  "checks": {
+    "focused_python_tests": 41,
+    "focused_browser_module_tests": 32,
+    "native_kitchen_physics_steps": 0,
+    "model_calls": 0,
+    "policy_trials": 0,
+    "ci_runs": 0,
+    "browser_gpu_console_errors_or_warnings": 0
+  },
+  "browser": {
+    "canvas_css_width": 1280,
+    "canvas_css_height": 720,
+    "views": [
+      "interior_robot_height",
+      "overview"
+    ],
+    "interactions": [
+      "cabinet hinge at90 degrees",
+      "microwave door at original negative90-degree limit",
+      "fridge drawer at original upper translation limit",
+      "source part selection resolves owning joint",
+      "hide/show panels",
+      "exact original source range retained after browser decimal rounding"
+    ],
+    "evaluation_disabled": true
+  },
+  "images": [
+    {
+      "path": "docs/images/source-scenes/robocasa-kitchen-interior.jpg",
+      "sha256": "4cd19b757aa20b54cc6ed8b942db4fb98e3f97f6d4c87b0722b5c07589a87aa6"
+    },
+    {
+      "path": "docs/images/source-scenes/robocasa-kitchen-open.jpg",
+      "sha256": "d85cb6cde6f3a8ac5c3494ec4373da9090a85d5c5e2e0509f67a972ae7585500"
+    },
+    {
+      "path": "docs/images/source-scenes/robocasa-kitchen-overview.jpg",
+      "sha256": "3b16e16f0a68cee381cdcbc2d944f507001be09a40ed602ac039fcab7c8a3f32"
+    }
+  ],
+  "limitations": [
+    "Kinematic browser transforms are not contact, grasp or task evidence.",
+    "Robot policy/SDK evaluation is not wired to this source-scene format yet.",
+    "Source geometry and mechanisms are retained; most decorative source props remain fixed.",
+    "Source visual inspection accepted by Astra high; Homebody-level final fidelity remains unaccepted.",
+    "Grounding/shadows, appliance material response, source reflectance and bright edge artifacts require further work.",
+    "A single measured native export does not establish a portable memory or runtime guarantee."
+  ],
+  "author_review": "docs/robocasa-browser-visual-review-v2-2026-11-02.json"
+}

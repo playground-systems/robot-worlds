@@ -1,0 +1,419 @@
+{
+  "schema_version": 1,
+  "author": {
+    "model": "gpt-6-astra",
+    "reasoning": "high",
+    "date": "2026-11-02",
+    "method": "Direct visual inspection of both actual browser images plus read-only exported source material/light inventory."
+  },
+  "images": [
+    {
+      "view": "interior",
+      "path": ".robot-worlds/existing-scenes-2026-11-02/robocasa-kitchen/browser-review/interior-v2.jpg",
+      "sha256": "4cd19b757aa20b54cc6ed8b942db4fb98e3f97f6d4c87b0722b5c07589a87aa6"
+    },
+    {
+      "view": "overview",
+      "path": ".robot-worlds/existing-scenes-2026-11-02/robocasa-kitchen/browser-review/overview-v2.jpg",
+      "sha256": "3b16e16f0a68cee381cdcbc2d944f507001be09a40ed602ac039fcab7c8a3f32"
+    }
+  ],
+  "reported_render_evidence": {
+    "actual_canvas_pixels": [
+      1280,
+      720
+    ],
+    "actual_canvas_aspect": "16:9",
+    "geometry_or_source_changes": false,
+    "shader_change": "Scoped source classic diffuse evaluation compensates the extra1/PI in Three Phong direct and ambient diffuse only.",
+    "gpu_compile": "Root reports no logged errors or warnings.",
+    "source_physics_steps": 0
+  },
+  "verdict": {
+    "source_selected": true,
+    "bounded_source_inspection_presentation_acceptable": true,
+    "final_homebody_level_visual_fidelity_accepted": false,
+    "physical_validation_accepted": false,
+    "release_accepted": false
+  },
+  "visible_improvements": [
+    "The interior now includes the appliance stack, sink/window, complete L-counter, hood, fridge and island with stools; original proportions and source room identity are readable.",
+    "Brick, wood cabinetry, wood flooring and small countertop accessories are visibly differentiated after the diffuse correction.",
+    "The overview clearly shows the source island/counter relationship and open circulation; no new layout correction is justified by these images.",
+    "The false Robot start annotation is absent."
+  ],
+  "remaining_fidelity_blockers": [
+    {
+      "issue": "Weak grounding and depth",
+      "observed": "Cabinetry, appliances and island still look flat compared with Homebody; contact shadows and local occlusion cues are weak.",
+      "known_source_context": "Original directional light has castshadow=false; source light ambient0.3 plus headlight ambient0.1 and diffuse0.4 remain.",
+      "decision": "This is partly a source/presentation limit, not evidence of broken collision geometry. No new shadows or lighting changes are authorized within the source-compatibility stage."
+    },
+    {
+      "issue": "Appliance material response",
+      "observed": "Fridge and appliance fronts appear nearly uniform gray with limited convincing metallic reflection/highlight behavior.",
+      "known_source_context": "Browser uses classic source materials; planar reflection and exact native specular behavior remain incomplete. Several original source appliance materials also carry specular/shininess values above the documented0..1 convention.",
+      "decision": "Determine actual native renderer handling and resolved source texture/material bindings before changing values. Do not silently clamp, infer PBR metalness/roughness, replace maps or recolor appliances."
+    },
+    {
+      "issue": "Fine appliance-edge artifacts",
+      "observed": "Some oven/microwave/fridge seams show bright or stippled fine edges at this view.",
+      "decision": "Needs a bounded close-up to distinguish raster aliasing, source coplanarity or transform/material translation. No inferred geometry offset, node deletion or polygon repair is approved from these images alone."
+    },
+    {
+      "issue": "Declared source-render differences",
+      "observed": "Flat source skybox color and omitted planar reflections remain; exact classic specular/light separation is not established.",
+      "decision": "Keep limitations visible and preserve original definitions. These frames establish useful source inspection, not exact native-render equivalence."
+    }
+  ],
+  "source_material_evidence": {
+    "export": ".robot-worlds/release-review-2026-10-31/source-scenes/robocasa-kitchen/source-preview.json",
+    "export_sha256": "c865c9385f87a6f8f03318b6c96745c0039e6fb9386784015ce663bb3192efd9",
+    "above_documented_convention": [
+      {
+        "name": "stool_1_room_Stool003_Prop_material",
+        "specular": 2.0,
+        "shininess": 0.10000000149011612,
+        "source_attributes": {
+          "name": "stool_1_room_Stool003_Prop_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "stool_1_room_Stool003_Prop_material",
+          "shininess": "0.1",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "stool_2_room_Stool003_Prop_material",
+        "specular": 2.0,
+        "shininess": 0.10000000149011612,
+        "source_attributes": {
+          "name": "stool_2_room_Stool003_Prop_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "stool_2_room_Stool003_Prop_material",
+          "shininess": "0.1",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "stool_3_room_Stool003_Prop_material",
+        "specular": 2.0,
+        "shininess": 0.10000000149011612,
+        "source_attributes": {
+          "name": "stool_3_room_Stool003_Prop_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "stool_3_room_Stool003_Prop_material",
+          "shininess": "0.1",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "stovetop_main_group_Body001_material",
+        "specular": 3.0,
+        "shininess": 0.4472135901451111,
+        "source_attributes": {
+          "name": "stovetop_main_group_Body001_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "stovetop_main_group_Body001_material",
+          "shininess": "0.4472135901451111",
+          "specular": "3"
+        }
+      },
+      {
+        "name": "fridge_main_group_Body001_material",
+        "specular": 2.0,
+        "shininess": 2.0,
+        "source_attributes": {
+          "name": "fridge_main_group_Body001_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "fridge_main_group_Body001_material",
+          "shininess": "2",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "fridge_main_group_freezer0_material",
+        "specular": 2.0,
+        "shininess": 2.0,
+        "source_attributes": {
+          "name": "fridge_main_group_freezer0_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "fridge_main_group_freezer0_material",
+          "shininess": "2",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "fridge_main_group_freezer1_material",
+        "specular": 2.0,
+        "shininess": 2.0,
+        "source_attributes": {
+          "name": "fridge_main_group_freezer1_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "fridge_main_group_freezer1_material",
+          "shininess": "2",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "fridge_main_group_fridge_left_door_material",
+        "specular": 2.0,
+        "shininess": 2.0,
+        "source_attributes": {
+          "name": "fridge_main_group_fridge_left_door_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "fridge_main_group_fridge_left_door_material",
+          "shininess": "2",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "fridge_main_group_fridge_right_door_material",
+        "specular": 2.0,
+        "shininess": 2.0,
+        "source_attributes": {
+          "name": "fridge_main_group_fridge_right_door_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "fridge_main_group_fridge_right_door_material",
+          "shininess": "2",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "paper_towel_main_group_PaperTowelHolder012_material",
+        "specular": 3.0,
+        "shininess": 0.14000000059604645,
+        "source_attributes": {
+          "name": "paper_towel_main_group_PaperTowelHolder012_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "paper_towel_main_group_PaperTowelHolder012_material",
+          "shininess": "0.14",
+          "specular": "3"
+        }
+      },
+      {
+        "name": "knife_block_main_group_KnifeBlock010_Prop_material",
+        "specular": 2.0,
+        "shininess": 0.10000000149011612,
+        "source_attributes": {
+          "name": "knife_block_main_group_KnifeBlock010_Prop_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "knife_block_main_group_KnifeBlock010_Prop_material",
+          "shininess": "0.1",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "toaster_main_group_Body002_material",
+        "specular": 8.0,
+        "shininess": 0.4472135901451111,
+        "source_attributes": {
+          "name": "toaster_main_group_Body002_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "toaster_main_group_Body002_material",
+          "shininess": "0.4472135901451111",
+          "specular": "8"
+        }
+      },
+      {
+        "name": "utensil_set_main_group_UtensilSet002_prop_material",
+        "specular": 2.0,
+        "shininess": 0.10000000149011612,
+        "source_attributes": {
+          "name": "utensil_set_main_group_UtensilSet002_prop_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "utensil_set_main_group_UtensilSet002_prop_material",
+          "shininess": "0.1",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "toaster_oven_main_group_rack0_material",
+        "specular": 5.0,
+        "shininess": 0.4472135901451111,
+        "source_attributes": {
+          "name": "toaster_oven_main_group_rack0_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "toaster_oven_main_group_rack0_material",
+          "shininess": "0.4472135901451111",
+          "specular": "5"
+        }
+      },
+      {
+        "name": "sink_left_group_Body001_material",
+        "specular": 2.0,
+        "shininess": 0.10000000149011612,
+        "source_attributes": {
+          "name": "sink_left_group_Body001_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "sink_left_group_Body001_material",
+          "shininess": "0.1",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "oven_left_group_Body001_material",
+        "specular": 5.0,
+        "shininess": 0.10000000149011612,
+        "source_attributes": {
+          "name": "oven_left_group_Body001_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "oven_left_group_Body001_material",
+          "shininess": "0.1",
+          "specular": "5"
+        }
+      },
+      {
+        "name": "oven_left_group_door_material",
+        "specular": 5.0,
+        "shininess": 0.10000000149011612,
+        "source_attributes": {
+          "name": "oven_left_group_door_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "oven_left_group_door_material",
+          "shininess": "0.1",
+          "specular": "5"
+        }
+      },
+      {
+        "name": "oven_left_group_door_Clear_material",
+        "specular": 5.0,
+        "shininess": 0.10000000149011612,
+        "source_attributes": {
+          "name": "oven_left_group_door_Clear_material",
+          "rgba": "1 1 1 0.800000011920929",
+          "texture": "oven_left_group_door_Clear_material",
+          "shininess": "0.1",
+          "specular": "5"
+        }
+      },
+      {
+        "name": "oven_left_group_knob_temp_material",
+        "specular": 5.0,
+        "shininess": 0.10000000149011612,
+        "source_attributes": {
+          "name": "oven_left_group_knob_temp_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "oven_left_group_knob_temp_material",
+          "shininess": "0.1",
+          "specular": "5"
+        }
+      },
+      {
+        "name": "oven_left_group_knob_time_material",
+        "specular": 5.0,
+        "shininess": 0.10000000149011612,
+        "source_attributes": {
+          "name": "oven_left_group_knob_time_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "oven_left_group_knob_time_material",
+          "shininess": "0.1",
+          "specular": "5"
+        }
+      },
+      {
+        "name": "oven_left_group_rack0_material",
+        "specular": 5.0,
+        "shininess": 0.10000000149011612,
+        "source_attributes": {
+          "name": "oven_left_group_rack0_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "oven_left_group_rack0_material",
+          "shininess": "0.1",
+          "specular": "5"
+        }
+      },
+      {
+        "name": "microwave_left_group_Body001_material",
+        "specular": 6.0,
+        "shininess": 0.4000000059604645,
+        "source_attributes": {
+          "name": "microwave_left_group_Body001_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "microwave_left_group_Body001_material",
+          "shininess": "0.4",
+          "specular": "6"
+        }
+      },
+      {
+        "name": "microwave_left_group_door_material",
+        "specular": 11.0,
+        "shininess": 0.5,
+        "source_attributes": {
+          "name": "microwave_left_group_door_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "microwave_left_group_door_material",
+          "shininess": "0.5",
+          "specular": "11"
+        }
+      },
+      {
+        "name": "dishwasher_left_group_Body001_material",
+        "specular": 2.0,
+        "shininess": 2.0,
+        "source_attributes": {
+          "name": "dishwasher_left_group_Body001_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "dishwasher_left_group_Body001_material",
+          "shininess": "2",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "dishwasher_left_group_button_power_material",
+        "specular": 2.0,
+        "shininess": 2.0,
+        "source_attributes": {
+          "name": "dishwasher_left_group_button_power_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "dishwasher_left_group_button_power_material",
+          "shininess": "2",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "dishwasher_left_group_door_material",
+        "specular": 2.0,
+        "shininess": 2.0,
+        "source_attributes": {
+          "name": "dishwasher_left_group_door_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "dishwasher_left_group_door_material",
+          "shininess": "2",
+          "specular": "2"
+        }
+      },
+      {
+        "name": "dishwasher_left_group_rack0_material",
+        "specular": 10.0,
+        "shininess": 10.0,
+        "source_attributes": {
+          "name": "dishwasher_left_group_rack0_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "dishwasher_left_group_rack0_material",
+          "shininess": "10",
+          "specular": "10"
+        }
+      },
+      {
+        "name": "dishwasher_left_group_rack1_material",
+        "specular": 10.0,
+        "shininess": 10.0,
+        "source_attributes": {
+          "name": "dishwasher_left_group_rack1_material",
+          "rgba": "1 1 1 1.0",
+          "texture": "dishwasher_left_group_rack1_material",
+          "shininess": "10",
+          "specular": "10"
+        }
+      }
+    ],
+    "reference": "https://mujoco.readthedocs.io/en/3.3.7/XMLreference.html#asset-material",
+    "interpretation": "Literal source values, not an assertion that the native compiler rejects them. Rendering semantics require engineering verification."
+  },
+  "next_stage": {
+    "current_scope": "Publish/review the bounded source-inspection path with explicit limitations, original source provenance and zero-step status.",
+    "fidelity_followup": "Resolve material/edge translation evidence first. A later separately authored presentation-lighting treatment may be needed to meet the Homebody visual bar.",
+    "physical_followup": "Preserve zero-step labels for kinematic joint inspection; native settling, collision sweeps, robot/gripper interaction and task execution remain separate gates."
+  },
+  "new_scene_changes_authorized": false
+}

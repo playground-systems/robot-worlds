@@ -265,6 +265,8 @@ def create_app(data_dir: str | Path = ".robot-worlds", *, executor_factory=None)
                 return JSONResponse({"detail": "Cross-origin mutations are disabled"}, status_code=403)
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
+        if request.url.path.startswith("/static/") and request.url.path.endswith((".js", ".css")):
+            response.headers["Cache-Control"] = "no-cache"
         return response
 
     def submit(kind: str, payload: dict) -> dict:
@@ -407,6 +409,40 @@ def create_app(data_dir: str | Path = ".robot-worlds", *, executor_factory=None)
             except (OSError, ValueError):
                 continue
         return items
+
+    @app.get("/api/source-scenes")
+    def source_scenes():
+        items = []
+        for path in (root / "source-scenes").glob("*/source-preview.json"):
+            try:
+                if not re.fullmatch(r"[a-z0-9-]{1,80}", path.parent.name):
+                    continue
+                checked = inside(root / "source-scenes", path.relative_to(root / "source-scenes"))
+                if checked.stat().st_size > 16 * 1024 * 1024:
+                    continue
+                data = read_json(checked)
+                items.append({"id": path.parent.name, "name": data["name"],
+                              "bodies": len(data.get("bodies", [])),
+                              "joints": sum(len(body.get("joints", [])) for body in data.get("bodies", [])),
+                              "status": "source_inspection"})
+            except (OSError, ValueError, KeyError, TypeError):
+                continue
+        return items
+
+    @app.get("/api/source-scenes/{source_id}/files/{member:path}")
+    def source_scene_file(source_id: str, member: str):
+        if not re.fullmatch(r"[a-z0-9-]{1,80}", source_id) or not (
+            member in {"source-preview.json", "geometry.bin"}
+            or re.fullmatch(r"textures/[a-f0-9]{64}\.(?:png|jpg|jpeg|webp)", member)
+        ):
+            raise HTTPException(404, "Source preview artifact not found")
+        try:
+            path = inside(root / "source-scenes", f"{source_id}/{member}")
+        except ValueError as exc:
+            raise HTTPException(404, "Source preview artifact not found") from exc
+        if not path.is_file():
+            raise HTTPException(404, "Source preview artifact not found")
+        return FileResponse(path)
 
     @app.get("/api/references/{reference_id}/{filename}")
     def reference_file(reference_id: str, filename: str):

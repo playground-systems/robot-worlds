@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "author": {
+    "model": "gpt-6-astra",
+    "reasoning": "high",
+    "date": "2026-11-02"
+  },
+  "image": ".robot-worlds/existing-scenes-2026-11-02/robocasa-kitchen/browser-review/interior-v1.jpg",
+  "image_sha256": "d09ce09baa0b1559ce4ae588e7743ecad4347f5ae576c35bbfe1a7f33c3435f8",
+  "method": "Actual local browser screenshot viewed by the scene author; source translation code and bundled Three shader inspected read-only.",
+  "verdict": "Source composition remains suitable and selected; visual fidelity requires correction/review. Not final visual, physical or release acceptance.",
+  "observed_strengths": [
+    "Complete L-shaped fitted kitchen and island/stools create coherent room-scale composition.",
+    "Original cabinet fronts, window/shutters, hood, sink, worktop appliances and utensils supply substantially more credible detail than the old sparse preset.",
+    "Brick, wood and floor texture patterns are visible; source materials must remain intact."
+  ],
+  "observed_gaps": [
+    "Diffuse and ambient illumination appear uniformly subdued and gray.",
+    "Weak contact/occlusion cues flatten the island and appliances; original castshadow=false is a source limit, not automatically an importer defect.",
+    "The near-square scene canvas crops lateral context, including much of the refrigerator/appliance stack, compared with the authored16:9 view.",
+    "The displayed Robot start label is an erroneous inspection UI annotation, not source geometry."
+  ],
+  "translation_finding": {
+    "evidence": [
+      "src/robot_worlds/static/vendor/three.module.js: BRDF_Lambert returns RECIPROCAL_PI*diffuseColor.",
+      "The bundled direct and indirect BlinnPhong diffuse evaluation both use BRDF_Lambert.",
+      "src/robot_worlds/static/scene.js passes source light diffuse and ambient coefficients directly, without compensating that renderer normalization."
+    ],
+    "interpretation": "The extra1/PI normalization changes the source classic ambient/diffuse coefficient convention and is a concrete contributor to this dim result. Exact pixel equivalence with native OpenGL remains unproven.",
+    "reference": "https://mujoco.readthedocs.io/en/latest/programming/rendering.html",
+    "approved_correction": "In source-inspection Phong materials only, remove or compensate the extra1/PI factor in direct diffuse and indirect/ambient diffuse evaluation. Preserve stored source light/material coefficients, specular evaluation, texture/color-space pipeline, cameras and source physics.",
+    "excluded": "No arbitrary exposure gain, source tint changes, material replacement, new lights, new shadows or environment map."
+  },
+  "next_evidence": {
+    "views": [
+      "interior_robot_height",
+      "overview"
+    ],
+    "actual_scene_canvas_aspect": "16:9",
+    "browser_capture_maximum": [
+      1280,
+      720
+    ],
+    "camera_changes": false,
+    "native_budget_changes": false,
+    "captures": "One static fully loaded browser frame per authored view after the scoped shader correction. Verify canvas dimensions, not just outer window dimensions."
+  },
+  "deeper_fidelity_direction": "Review corrected source shading before any presentation relighting. If source castshadow=false, missing planar reflections or classic materials still fall below Homebody, author a separately identified presentation treatment; do not silently describe relit or substituted content as unchanged source rendering.",
+  "physical_boundary": "563 visual geoms,249 native bodies,67 joints and successful zero-step export establish inspectable source contents. Kinematic hinge/drawer control is not settling/contact/grasp/task evidence."
+}
