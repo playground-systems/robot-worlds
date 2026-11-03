@@ -44,6 +44,38 @@ function fixture() {
   return { run, nodes, calls, events, context, shell };
 }
 
+test('source inspection never enables policy evaluation or substitutes a physical frame', () => {
+  const { run, nodes } = fixture();
+  run(`state.worldId = null;
+    state.sourceScene = {data:{name:'Imported kitchen',bodies:[],limitations:[]},values:new Map()};
+    state.viewer = new WorldViewer(); state.viewer.sourceInspection = {joints:new Map(),warnings:[]};
+    state.mode = 'layout'; state.tab = 'task';
+    controls(); syncViewControls(); renderInspector();`);
+  assert.equal(nodes.get('evaluate-button').disabled, true);
+  assert.equal(nodes.get('refine-button').disabled, true);
+  assert.equal(nodes.get('physical-tab').disabled, true);
+  assert.equal(nodes.get('view-state').textContent, 'SOURCE INSPECTION');
+  assert.match(nodes.get('viewport-caption').textContent, /without simulating forces/);
+  assert.match(nodes.get('inspector-body').children[1].textContent, /not connected/);
+  run('displaySpec(state.world.spec, false)');
+  assert.equal(run('state.sourceScene'), null);
+  assert.equal(nodes.get('source-view').hidden, true);
+});
+
+test('browser range rounding maps to the exact source joint limit', () => {
+  const {run,nodes} = fixture();
+  run(`const joint = {id:7,name:'microwave',type:'hinge',limited:true,range:[-Math.PI/2,0],reference:0};
+    state.sourceScene = {data:{name:'Kitchen',bodies:[{id:1,joints:[joint]}],limitations:[]},values:new Map(),selectedJointId:7};
+    state.viewer = {sourceInspection:{joints:new Map([[7,{supported:true}]]),warnings:[],setJointValue(id,value){if(value < joint.range[0])throw new Error('Outside native range');}},invalidate(){}};
+    state.tab='scene';renderInspector();`);
+  const control = nodes.get('inspector-body').children.find(node => node.children.some(child => child.type === 'range'));
+  const slider = control.children.find(node=>node.type==='range');
+  slider.value = '-1.5707963267949'; slider.oninput();
+  assert.equal(run('state.sourceScene.values.get(7)'), -Math.PI/2);
+  assert.notEqual(slider.disabled,true);
+  assert.equal(control.children[0].textContent,'-90.0°');
+});
+
 test('prepared asset progress names reuse without claiming a fresh search or physics pass', () => {
   const {run} = fixture();
   assert.equal(run("eventLabel({type:'asset_loading',message:'Reusing google-porcelain-bowl'})"), 'Reusing google-porcelain-bowl');

@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "author": {
+    "model": "gpt-6-astra",
+    "reasoning": "high",
+    "date": "2026-11-02",
+    "method": "Direct scene-author subagent decision from original assembled fixture metadata and XML; no native run by author"
+  },
+  "approved": true,
+  "source_xml": ".robot-worlds/existing-scenes-2026-11-02/robocasa-kitchen/assembly-output-relocated-v4/kitchen_layout004_style004_clutter1_seed0.xml",
+  "source_sha256": "53268191d328f1a8bf3676fb30d37bdbede60e6e9f85475a432dd4b2790ef2dc",
+  "basis": [
+    "Two native preview attempts exceeded the 600 MiB watchdog before frames or physics steps.",
+    "Exact texture deduplication reduced116 definitions to41 but did not meet the memory budget.",
+    "Image allocation is rendering data and can remain separate from native collision/dynamics compilation."
+  ],
+  "scope": "Source-preserving split preview. This does not approve new geometry, material design, physics parameters, camera changes, a source replacement, or final visual/physical acceptance.",
+  "native_derived_model": {
+    "allowed_changes": [
+      "Remove asset/texture definitions from a derived preview XML only.",
+      "Detach texture references from material texture attributes and texture-layer references in the derived model, retaining their complete original definitions/bindings in the browser sidecar.",
+      "Retain the already authored camera and lightweight render-budget settings for any untextured geometry diagnostic."
+    ],
+    "must_preserve": [
+      "all mesh files, mesh vertices/faces/normals/UVs and source mesh transforms",
+      "all bodies, inertial data, geoms, collision settings, contacts/exclusions, joints, constraints, actuators and source physics options",
+      "all material entries and non-texture material values",
+      "source body/geom/joint names and hierarchy",
+      "raw source XML, original images and all source asset hashes"
+    ],
+    "evidence": [
+      "derived XML hash and precise render-only edit manifest",
+      "canonical source-vs-derived comparison showing no non-render changes",
+      "original material-name/texture-role/image mapping and source material values",
+      "compiled geometry/body/joint inventory and transforms with stable name mapping",
+      "memory/watchdog result, zero-step count and explicit lack of physical-task acceptance"
+    ],
+    "native_image_label": "Untextured native geometry diagnostic; not original-source appearance."
+  },
+  "browser_material_translation": {
+    "model": "Classic source materials use a source-parameter Phong implementation; do not substitute invented PBR roughness/metalness values.",
+    "rgba": "Use original material RGBA with resolved source geom/default-class RGBA override precedence. Texture RGB modulates that resolved color. Preserve source alpha/transparency.",
+    "specular": "RGB=(source specular, source specular, source specular), with source/default scalar resolved from the source contract.",
+    "shininess": "Phong exponent=128*source shininess, including source default when omitted.",
+    "emission": "RGB=resolved source material/base RGB*source emission scalar; retain source/default emission. Do not add unrequested emissive lighting.",
+    "texture_mapping": [
+      "Restore the ORIGINAL source texture binding per material, not a nearest-looking texture.",
+      "Preserve mesh UVs, primitive mapping, texrepeat, texuniform, texture type, cube face layout/orientation, flips and source dimensions.",
+      "Keep original source files/resolution; browser sharing of an identical decoded image is allowed without rewriting the image.",
+      "Record source image/color-space metadata and the explicit display pipeline. Do not apply artistic tone mapping, exposure compensation, saturation or recoloring."
+    ],
+    "reflectance": "Preserve the source reflectance coefficient as metadata. Do not equate it with metallic, roughness or an invented environment map. If the source planar-reflection behavior is not implemented for this first browser preview, explicitly list that omission per affected material/geom and leave exact-render-equivalence unclaimed.",
+    "unsupported_source_features": "Report any texture mapping, transparency, reflection or shader limitation. Do not silently replace materials; return material changes to Astra.",
+    "documentation": [
+      "https://mujoco.readthedocs.io/en/3.3.7/XMLreference.html#asset-material",
+      "https://mujoco.readthedocs.io/en/latest/XMLreference.html#asset-texture"
+    ],
+    "classic_diffuse_normalization": {
+      "author": {
+        "model": "gpt-6-astra",
+        "reasoning": "high",
+        "date": "2026-11-02"
+      },
+      "decision": "In source-inspection Phong materials only, remove or compensate the extra1/PI factor in direct diffuse and indirect/ambient diffuse evaluation. Preserve stored source light/material coefficients, specular evaluation, texture/color-space pipeline, cameras and source physics.",
+      "reason": "The extra1/PI normalization changes the source classic ambient/diffuse coefficient convention and is a concrete contributor to this dim result. Exact pixel equivalence with native OpenGL remains unproven.",
+      "implementation_scope": "Source-inspection materials only; no other world renderer behavior changed.",
+      "remaining_limit": "Three specular BRDF and per-light specular behavior remain a reported approximation pending comparison."
+    }
+  },
+  "browser_scene_translation": {
+    "geometry": "Use native compiled mesh/body/geom transforms and original shape identity; no manual alignment corrections or collider-to-visual replacement.",
+    "visibility": {
+      "geomgroup0": false,
+      "geomgroup1": true,
+      "geomgroup2": false,
+      "other_geom_groups": "No other groups authored; preserve renderer defaults.",
+      "source_geom_group_counts": {
+        "0": 1182,
+        "1": 563,
+        "2": 4
+      },
+      "group2_names": [
+        "left_eef_target_box",
+        "left_eef_target_sphere",
+        "right_eef_target_box",
+        "right_eef_target_sphere"
+      ],
+      "reason": "Match original visual-only rendering contract and suppress non-room EEF debug targets. Physics geometry remains compiled and unchanged.",
+      "overlays": "No contact, joint-frame or site debug overlays."
+    },
+    "cameras": [
+      {
+        "id": "interior_robot_height",
+        "eye_m": [
+          4.55,
+          -5.1,
+          1.45
+        ],
+        "target_m": [
+          1.95,
+          -1.8,
+          1.05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "vertical_fov_degrees": 57,
+        "free_camera_lookat_m": [
+          1.95,
+          -1.8,
+          1.05
+        ],
+        "free_camera_distance_m": 4.220189569,
+        "free_camera_azimuth_degrees": 128.233825177,
+        "free_camera_elevation_degrees": -5.438799886,
+        "angle_convention": "Forward XY heading; eye/target are authoritative if renderer convention differs.",
+        "purpose": "Clear southeast circulation corner across the island toward L-counter, source cabinet fronts, hood, fridge and domestic details. Eye height is a scene-inspection proxy, not a calibrated robot sensor."
+      },
+      {
+        "id": "overview",
+        "eye_m": [
+          4.85,
+          -5.55,
+          3.8
+        ],
+        "target_m": [
+          2.2,
+          -2.35,
+          0.65
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "vertical_fov_degrees": 60,
+        "free_camera_lookat_m": [
+          2.2,
+          -2.35,
+          0.65
+        ],
+        "free_camera_distance_m": 5.213923666,
+        "free_camera_azimuth_degrees": 129.629005304,
+        "free_camera_elevation_degrees": -37.167811851,
+        "angle_convention": "Forward XY heading; eye/target are authoritative if renderer convention differs.",
+        "purpose": "Elevated southeast overview of whole L-counter/island relationship and source circulation. Source has no ceiling; do not hide walls or fixtures."
+      }
+    ],
+    "illumination": {
+      "position": [
+        2,
+        -2,
+        2
+      ],
+      "direction": [
+        0.01,
+        0.01,
+        -1
+      ],
+      "ambient": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "diffuse": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "specular": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "castshadow": false
+    },
+    "headlight": "Retain source/default headlight state and values; identify them in the derived record.",
+    "performance": "Begin with one authored view at640x360 and no continuous simulation. Retain the approved resource watchdog; report failure rather than silently reducing source geometry or texture quality.",
+    "temporary_background": {
+      "approved_by": {
+        "model": "gpt-6-astra",
+        "reasoning": "high",
+        "date": "2026-11-02"
+      },
+      "scope": "First browser inspection only; source procedural gradient implementation remains pending.",
+      "source_texture_definition": [
+        {
+          "builtin": "gradient",
+          "height": "256",
+          "rgb1": "0.98 0.98 1.00",
+          "rgb2": "0.06 0.08 0.12",
+          "type": "skybox",
+          "width": "256"
+        }
+      ],
+      "display": "Flat source rgb1 color [0.98,0.98,1.0] in the same recorded display color pipeline.",
+      "rgb": [
+        0.98,
+        0.98,
+        1.0
+      ],
+      "lighting_effect": "Background only. Do not use it as an environment/reflection map, add ambient light, change exposure or tint the original materials.",
+      "required_disclosure": "Source gradient skybox is temporarily shown as its flat upper color; lower gradient and horizon transition are not reproduced.",
+      "acceptance": "This temporary presentation does not establish exact source-render equivalence or final visual approval. Preserve the original gradient definition for faithful implementation."
+    },
+    "camera_clipping": {
+      "approved_by": {
+        "model": "gpt-6-astra",
+        "reasoning": "high",
+        "date": "2026-11-02"
+      },
+      "rule": "Use source resolved native znear*compiled model extent and zfar*compiled model extent from the exporter.",
+      "source_znear_explicit": "0.001",
+      "source_zfar": "Use resolved native source/default value from exporter; do not invent a replacement.",
+      "evidence": "Record resolved znear, zfar, compiled model extent and resulting near/far distances alongside each camera. Preserve existing eye/target/FOV.",
+      "if_invalid": "If clipping truncates useful source geometry or values are invalid, report exact evidence for authored revision; no silent override."
+    },
+    "review_capture": {
+      "actual_canvas_aspect": "16:9",
+      "maximum_browser_capture_pixels": [
+        1280,
+        720
+      ],
+      "cameras": "Use original authored eye/target/FOV unchanged.",
+      "scope": "Static browser review only; original native preview budgets and physics settings unchanged."
+    }
+  },
+  "source_inventory": {
+    "materials": 222,
+    "textures": 116,
+    "material_texture_attributes": 221
+  },
+  "acceptance_boundary": "A kinematic browser scene can establish appearance, source-transform fidelity and inspectable articulation. Compilation or displayed joint motion does not establish settling, contact validity, gripper interaction, task execution or policy success. Physical runtime integration remains required.",
+  "visual_review_records": [
+    "docs/robocasa-browser-visual-review-v1-2026-11-02.json",
+    "docs/robocasa-browser-visual-review-v2-2026-11-02.json"
+  ],
+  "current_stage_verdict": "V2 source-inspection presentation is useful and acceptable for bounded review. Final high-fidelity visual, native-render equivalence and physical acceptance remain open."
+}

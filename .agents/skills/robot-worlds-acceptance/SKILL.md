@@ -34,6 +34,8 @@ Starters: for bundled source scenes, offline import acceptance or starter packag
 
 Manipulation presets: for SimReady scene authoring, task catalogs, source-joint physics or preset freezing, read [references/manipulation-presets.md](references/manipulation-presets.md).
 
+Native source previews: for MJCF texture-memory failures, faithful browser import or kinematic joint inspection, read [references/source-previews.md](references/source-previews.md).
+
 ## Choose one bounded workflow
 
 Read the selected script and its CLI options before execution. Use a fresh output

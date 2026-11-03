@@ -41,7 +41,12 @@
       "dish_rack",
       "electric_kettle",
       "stand_mixer"
-    ]
+    ],
+    "preview_author_decisions": "docs/robocasa-preview-author-decisions-2026-11-02.json",
+    "assembly_status": "Exact original layout004/style004 clutter1 seed0 fixture assembly available in relocated v4; 83fixtures,67joints; native preview pending.",
+    "browser_rendering_contract": "docs/robocasa-browser-render-contract-2026-11-02.json",
+    "preview_status": "Actual16:9 interior and overview v2 reviewed after source diffuse-compatibility correction. Complete source kitchen remains selected and usable for bounded source inspection. Shadowless depth, appliance response and minor seams remain fidelity questions; no final visual or physical approval.",
+    "visual_review": "docs/robocasa-browser-visual-review-v2-2026-11-02.json"
   },
   "living_room": {
     "source": "MolmoSpaces iTHOR",
@@ -334,7 +339,9 @@
       "factory_bolt_m20_tight",
       "equipment_bench_vise_a01"
     ],
-    "selected_glb_bytes": 13960236
+    "selected_glb_bytes": 13960236,
+    "geometry_review_plan": "docs/factory-v3-geometry-review-plan-2026-11-02.json",
+    "acquisition_status": "All15selected original GLBs and source physics/instance layers acquired; source masses reviewed. Geometry, material preview, cavity, grasp and placement acceptance remain pending."
   },
   "homebody_reference": {
     "url": "https://tml.stanford.edu/homebody/",

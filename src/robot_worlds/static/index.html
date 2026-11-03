@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Robot Worlds</title><link rel="stylesheet" href="/static/styles.css?v=starters-2">
+  <title>Robot Worlds</title><link rel="stylesheet" href="/static/styles.css?v=source-inspection-2">
   <script type="importmap">{"imports":{"three":"/static/vendor/three.module.js"}}</script>
 </head>
 <body>
@@ -21,6 +21,7 @@
       <div class="panel-section panel-heading"><strong>World versions</strong><button class="icon-button" id="new-world" title="New environment" aria-label="New environment">＋</button><span id="world-count" class="count">0</span></div>
       <div class="starter-entry"><button class="button" id="open-starters">Browse starter environments <span>↗</span></button><p>Four source scenes · no model key needed</p></div>
       <nav id="world-list" class="item-list version-list" aria-label="World versions"></nav>
+      <div id="source-scene-section" hidden><div class="panel-section panel-heading"><strong>Source scenes</strong></div><nav id="source-scene-list" class="item-list" aria-label="Imported source scene inspections"></nav></div>
       <div class="panel-section panel-heading"><strong>Layers</strong><span id="layer-count" class="count">0</span></div>
       <label class="layer-search"><span class="sr-only">Find an object</span><input id="layer-filter" type="search" placeholder="Find an object…"></label>
       <div id="layer-list" class="layer-list" role="list" aria-label="Scene components"></div>
@@ -49,7 +50,7 @@
       <div class="empty-state" id="empty-state"><span class="empty-cross" aria-hidden="true">＋</span><p>Start from a place, or describe your own.</p><button class="button primary" id="empty-starters">Choose a starter environment</button></div>
       <div class="viewport-caption" id="viewport-caption" hidden></div><div class="selection-label" id="selection-label" hidden></div>
       <section id="live-status" class="live-status" hidden aria-label="Live robot activity"><span class="live-dot" aria-hidden="true"></span><strong id="live-phase">Robot starting</strong><span id="live-time">0.0 sim s</span><p id="live-action">Waiting for the first camera frame</p><div id="live-progress" hidden><progress id="live-progress-bar" max="1" value="0" aria-label="Provisional task checks"></progress><small id="live-progress-label" aria-live="polite"></small></div></section>
-      <div class="stage-toolbar"><div class="segmented" aria-label="World view"><button id="physical-tab" class="active" disabled>Physical</button><button id="layout-tab" disabled>3D layout</button></div><span class="toolbar-divider"></span><button class="icon-button" id="fit-view" title="Fit the 3D scene" aria-label="Fit the 3D scene" disabled>⤢</button><button class="icon-button" id="focus-object" title="Fit selected object" aria-label="Fit selected object" disabled>⌖</button><button class="toolbar-button" id="top-view" title="View from above" disabled>Top</button><button class="toolbar-button" id="cutaway-view" aria-pressed="false" title="Hide detected walls in layout only" disabled>Cutaway</button><span class="orbit-hint" id="orbit-hint" hidden>Drag to orbit</span></div>
+      <div class="stage-toolbar"><div class="segmented" aria-label="World view"><button id="physical-tab" class="active" disabled>Physical</button><button id="layout-tab" disabled>3D layout</button></div><span class="toolbar-divider"></span><button class="icon-button" id="fit-view" title="Fit the 3D scene" aria-label="Fit the 3D scene" disabled>⤢</button><button class="icon-button" id="focus-object" title="Fit selected object" aria-label="Fit selected object" disabled>⌖</button><button class="toolbar-button" id="top-view" title="View from above" disabled>Top</button><button class="toolbar-button" id="cutaway-view" aria-pressed="false" title="Hide detected walls in layout only" disabled>Cutaway</button><button class="toolbar-button" id="canvas-focus" aria-pressed="false" title="Hide workspace panels">Hide panels</button><select id="source-view" aria-label="Source scene camera" hidden></select><span class="orbit-hint" id="orbit-hint" hidden>Drag to orbit</span></div>
     </div></section></div>
     <section id="report-area" class="report-area" hidden><div class="report-toolbar"><span>Evaluation report</span><a class="text-button" id="report-new-tab" target="_blank" rel="noopener">Open in new tab ↗</a></div><iframe id="report-frame" title="Evaluation report and recorded replay"></iframe></section>
   </main>
@@ -62,5 +63,5 @@
     <p id="starter-error" class="notice" role="alert" hidden></p>
   </dialog>
   <dialog id="evaluate-dialog"><form id="evaluate-form"><div class="dialog-eyebrow">RUN YOUR AGENT</div><h2>Evaluate this world.</h2><p>The agent sees camera and robot observations. Its tools execute through controllers; the rubric grades recorded state.</p><div class="policy-card"><span class="policy-icon">↗</span><div><strong>LLM robot-use agent</strong><small id="policy-model-label">gpt-6-astra · high reasoning</small></div><span class="badge ready">LOCAL SIMULATION</span></div><div class="form-grid"><label>Episodes<input id="episodes" type="number" value="1" min="1" max="20" required></label><label>Decisions per episode<input id="max-steps" type="number" value="30" min="1" max="300" required></label><label>Simulation budget (s)<input id="max-sim-seconds" type="number" value="120" min="1" max="3600" required></label><label>Initial seed<input id="seed" type="number" value="0" min="0" required></label><label>Model spend per episode (USD)<input id="policy-cost" type="number" value="5" min="0.1" max="1000" step="0.1" required></label><label>Model time per episode (s)<input id="policy-seconds" type="number" value="600" min="10" max="3600" required></label></div><p class="small muted">Spend and time limits apply to each episode. One episode is a diagnostic attempt. Every episode resets the simulation, controller and policy memory.</p><div class="dialog-footer"><button type="button" class="button" id="close-evaluate">Cancel</button><button type="submit" class="button primary" id="start-evaluate">Evaluate 1 episode ↗</button></div></form></dialog>
-  <script type="module" src="/static/app.js?v=starters-2"></script>
+  <script type="module" src="/static/app.js?v=source-inspection-2"></script>
 </body></html>

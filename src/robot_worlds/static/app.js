@@ -1,4 +1,4 @@
-import { WorldViewer } from './scene.js?v=starters-2';
+import { WorldViewer } from './scene.js?v=source-inspection-2';
 
 const $ = id => document.getElementById(id);
 const state = { world: null, navigation: 0, worldId: null, worlds: [], runs: [], tab: 'scene', panel: 'agent', selectedObject: null, layerLimit: 120, mode: 'physical', jobId: null, eventSeen: new Set(), key: false, editing: false, isPreview: false, viewer: null, viewerSpec: null, reference: false, editMode: null, scope: [], lineage: [], lineageLoading: false, lineageError: '', submitting: false, jobContext: null, assets: [] };
@@ -32,7 +32,8 @@ function controls() {
   $('prompt').disabled = busy; $('asset-files').disabled = busy;
 }
 async function refreshLists() {
-  const [worlds, runs, references, starters] = await Promise.all([api('/api/worlds'), api('/api/runs'), api('/api/references'), api('/api/starters')]);
+  const [worlds, runs, references, starters, sources] = await Promise.all([api('/api/worlds'), api('/api/runs'), api('/api/references'), api('/api/starters'), api('/api/source-scenes').catch(() => [])]);
+  state.sourceScenes = sources;
   state.starters = starters; renderStarters();
   state.references = references;
   state.worlds = Array.isArray(worlds) ? worlds : worlds.worlds || [];
@@ -73,6 +74,14 @@ $('close-starters').onclick = () => $('starter-dialog').close();
 function renderLists() {
   $('world-count').textContent = state.worlds.length; $('run-count').textContent = state.runs.length;
   $('world-list').replaceChildren(); $('run-list').replaceChildren();
+  $('source-scene-list').replaceChildren(); $('source-scene-section').hidden = !state.sourceScenes?.length;
+  for (const source of state.sourceScenes || []) {
+    const item = el('button', 'list-item'), copy = el('span');
+    copy.append(el('strong', '', source.name), el('small', '', `${source.joints} joints · inspection`));
+    item.append(el('span', 'item-icon', '◈'), copy);
+    item.onclick = () => openSourceScene(source.id).catch(error => notice(error.message));
+    $('source-scene-list').append(item);
+  }
   $('reference-list').replaceChildren(); $('reference-section').hidden = !state.references?.length;
   for (const reference of state.references || []) { const item = el('button', 'list-item'), copy = el('span'); copy.append(el('strong', '', reference.name), el('small', '', 'Source geometry · static study')); item.append(el('span', 'item-icon', '◈'), copy); item.onclick = () => openReference(reference.id).catch(e => notice(e.message)); $('reference-list').append(item); }
   if (!state.worlds.length) $('world-list').append(el('p', 'sidebar-empty', 'No generated worlds yet.'));
@@ -93,7 +102,7 @@ function renderLists() {
 }
 function disposeViewer() { state.viewer?.dispose(); state.viewer = null; state.viewerSpec = null; }
 window.addEventListener('pagehide', disposeViewer);
-window.addEventListener('pageshow', event => { if (!event.persisted || !currentSpec()) return; if (state.reference) { const id = new URLSearchParams(location.search).get('reference'); if (id) openReference(id).catch(error => notice(error.message)); } else if ($('report-area').hidden) setView(state.mode); });
+window.addEventListener('pageshow', event => { if (!event.persisted || !currentSpec()) return; if (state.sourceScene) { openSourceScene(state.sourceScene.id).catch(error => notice(error.message)); } else if (state.reference) { const id = new URLSearchParams(location.search).get('reference'); if (id) openReference(id).catch(error => notice(error.message)); } else if ($('report-area').hidden) setView(state.mode); });
 function getViewer() {
   if (state.viewer) return state.viewer;
   try { state.viewer = new WorldViewer($('scene-canvas'), $('scene-labels'), object => selectObject(object)); }
@@ -101,6 +110,7 @@ function getViewer() {
   return state.viewer;
 }
 function displaySpec(spec, preview = false) {
+  state.sourceScene = null; $('source-view').hidden = true;
   state.isPreview = preview || statusOf(state.world) !== 'ready'; state.reference = false;
   const hasNativePreview = !preview && (statusOf(state.world) === 'ready' || state.world?.manifest?.validation?.checks?.some(check => check.check === 'render' && check.passed));
   document.querySelector('.app-shell').classList.remove('showing-report');
@@ -118,6 +128,14 @@ function displaySpec(spec, preview = false) {
 }
 function syncViewControls() {
   const layout = state.mode === 'layout', viewer = state.viewer, interactive = layout && !!viewer;
+  if (state.sourceScene) {
+    $('fit-view').disabled = !interactive;
+    for (const id of ['focus-object', 'top-view', 'cutaway-view', 'physical-tab']) $(id).disabled = true;
+    $('source-view').hidden = !interactive; $('orbit-hint').hidden = !interactive;
+    $('view-state').hidden = false; $('view-state').textContent = 'SOURCE INSPECTION';
+    $('viewport-caption').textContent = 'Original source geometry and textures · joint controls inspect motion without simulating forces.';
+    return;
+  }
   $('fit-view').disabled = !interactive; $('focus-object').disabled = !interactive || !state.selectedObject || state.reference;
   $('top-view').disabled = !interactive || state.reference; $('cutaway-view').disabled = !interactive || !viewer?.shellCount || state.reference;
   $('cutaway-view').setAttribute('aria-pressed', String(!!viewer?.cutaway));
@@ -187,8 +205,19 @@ $('inspector-toggle').onclick = showInspector;
 $('close-inspector').onclick = () => { document.querySelector('.app-shell').classList.remove('show-inspector'); $('inspector-toggle').setAttribute('aria-expanded', 'false'); };
 $('assets-to-agent').onclick = () => { setPanel('agent'); $('prompt').focus(); };
 $('layer-filter').oninput = () => { state.layerLimit = 120; renderLayers(); };
+function setCanvasFocus(enabled) {
+  document.querySelector('.app-shell').classList.toggle('canvas-focus', enabled);
+  $('canvas-focus').textContent = enabled ? 'Show panels' : 'Hide panels';
+  $('canvas-focus').setAttribute('aria-pressed', String(enabled));
+  state.viewer?.invalidate?.();
+}
+$('canvas-focus').onclick = () => setCanvasFocus(!document.querySelector('.app-shell').classList.contains('canvas-focus'));
+window.addEventListener('keydown', event => { if (event.key === 'Escape') setCanvasFocus(false); });
 function renderLayers() {
-  const root = $('layer-list'), objects = currentSpec()?.objects || [], query = $('layer-filter').value.trim().toLowerCase(); root.replaceChildren();
+  const root = $('layer-list'), objects = state.sourceScene
+    ? state.sourceScene.data.bodies.filter(body => body.joints.length).map(body => ({ id: `source-body-${body.id}`, body_id: body.id, name: body.name, label: body.name?.replaceAll('_', ' ') || `Body ${body.id}`, movable: true }))
+    : currentSpec()?.objects || [];
+  const query = $('layer-filter').value.trim().toLowerCase(); root.replaceChildren();
   const collisions = objects.filter(object => object.visible === false);
   const matches = objects.filter(object => (query || state.collisionLayers || object.visible !== false) && `${object.id} ${object.label || ''}`.toLowerCase().includes(query));
   $('layer-count').textContent = matches.length;
@@ -251,6 +280,7 @@ function renderAgentHistory() {
 
 function renderInspector() {
   const root = $('inspector-body'); root.replaceChildren(); const spec = currentSpec();
+  if (state.sourceScene) { renderSourceInspector(root); return; }
   if (!spec) { root.append(el('h3', '', 'World'), el('p', 'small muted', 'Create a world in the Agent panel, then select an object to inspect its properties.')); return; }
   if (state.tab === 'task') {
     root.append(el('h3', '', 'The mission'));
@@ -324,6 +354,15 @@ function renderInspector() {
   }
 }
 function selectObject(object) {
+  if (state.sourceScene) {
+    const bodies = new Map(state.sourceScene.data.bodies.map(body => [body.id, body]));
+    let body = bodies.get(object.body_id);
+    while (body && !body.joints.length) body = bodies.get(body.parent_id);
+    state.sourceScene.selectedJointId = body?.joints.find(joint => joint.limited && ['hinge', 'slide'].includes(joint.type))?.id;
+    state.selectedObject = object; state.tab = 'scene'; syncTabs(); renderInspector(); renderLayers();
+    $('selection-label').hidden = false; $('selection-label').textContent = object.name || object.label || String(object.id);
+    return;
+  }
   state.selectedObject = object; state.viewer?.select(object); syncViewControls();
   if (window.innerWidth <= 900) { const shell = document.querySelector('.app-shell'); shell.classList.add('show-inspector'); shell.classList.remove('show-left'); $('inspector-toggle').setAttribute('aria-expanded', 'true'); }
   state.tab = 'scene'; syncTabs(); renderInspector(); renderLayers();
@@ -387,7 +426,7 @@ function resetWorkspace() {
   if (state.jobId || state.submitting) return;
   notice(''); state.jobContext = null; $('job-panel').hidden = true; $('job-events').replaceChildren();
   $('live-status').hidden = true;
-  state.navigation++; disposeViewer(); state.reference = false; $('report-frame').src = 'about:blank';
+  state.navigation++; disposeViewer(); state.reference = false; state.sourceScene = null; $('source-view').hidden = true; $('report-frame').src = 'about:blank';
   document.querySelector('.app-shell').classList.remove('showing-report');
   $('layer-filter').value = ''; state.layerLimit = 120;
   state.world = null; state.worldId = null; state.editing = false; state.selectedObject = null; state.editMode = null; state.selectedObject = null; state.scope = []; state.lineage = []; state.assets = []; renderAssets(); $('edit-context').hidden = true; $('prompt').required = true;
@@ -687,10 +726,11 @@ $('evaluate-form').onsubmit = async event => {
   catch (error) { notice(error.message); }
 };
 async function start() {
-  try { const health = await api('/api/health'); state.key = !!health.key_configured; $('connection').textContent = state.key ? 'Key configured' : 'No model key'; $('connection').title = state.key ? 'Local runtime · model key configured' : 'Starter environments are available; configure a model key for generation and agent runs'; $('connection').classList.remove('error'); if (!state.key) notice('Set OPENAI_API_KEY in the server environment, then restart the local server to generate worlds or run the agent. Starter environments, saved worlds and reports are available without a key.'); if (health.model) $('model').value = health.model; await refreshLists(); const params = new URLSearchParams(location.search); if (params.get('reference')) await openReference(params.get('reference'));
+  let connected = false;
+  try { const health = await api('/api/health'); connected = true; state.key = !!health.key_configured; $('connection').textContent = state.key ? 'Key configured' : 'No model key'; $('connection').title = state.key ? 'Local runtime · model key configured' : 'Starter environments are available; configure a model key for generation and agent runs'; $('connection').classList.remove('error'); if (!state.key) notice('Set OPENAI_API_KEY in the server environment, then restart the local server to generate worlds or run the agent. Starter environments, saved worlds and reports are available without a key.'); if (health.model) $('model').value = health.model; await refreshLists(); const params = new URLSearchParams(location.search); if (params.get('source')) await openSourceScene(params.get('source')); else if (params.get('reference')) await openReference(params.get('reference'));
     else if (params.get('job')) { notice(''); const job = await api(`/api/jobs/${encodeURIComponent(params.get('job'))}`); trackJob(job, 'Live robot mission'); }
     else if (params.get('run')) openReport(params.get('run')); else if (params.get('world')) await openWorld(params.get('world')); }
-  catch (error) { notice(error.message); $('connection').textContent = 'Local server unavailable'; $('connection').classList.add('error'); }
+  catch (error) { notice(error.message); if (!connected) { $('connection').textContent = 'Local server unavailable'; $('connection').classList.add('error'); } }
   if (!state.world && !state.jobId) renderAgentHistory();
   controls();
 }
@@ -737,4 +777,85 @@ async function openReference(id) {
   $('physical-tab').disabled = true; state.tab = 'scene'; syncTabs(); renderInspector();
   const note = el('div', 'notice', 'Source-derived geometry, including visual-only screens and effects. This view is not a policy rollout or a physics-validation result.'); $('inspector-body').prepend(note);
   controls(); history.replaceState(null, '', `/?reference=${encodeURIComponent(id)}`);
+}
+
+async function openSourceScene(id) {
+  if (state.jobId || state.submitting) return;
+  const navigation = ++state.navigation, base = `/api/source-scenes/${encodeURIComponent(id)}/files/`;
+  notice('Loading the original scene meshes and textures…');
+  const data = await api(base + 'source-preview.json');
+  if (navigation !== state.navigation) return;
+  disposeViewer();
+  const spec = { name: data.name, objects: [], regions: [], rubric: [], task: 'Source scene inspection' };
+  state.world = { spec, manifest: { validation: { status: 'source_inspection', checks: [] } } };
+  state.worldId = null; state.selectedObject = null; state.lineage = []; state.editing = false;
+  state.editMode = null; state.scope = []; $('edit-context').hidden = true;
+  displaySpec(spec, true);
+  const viewer = getViewer();
+  if (!viewer) throw new Error('WebGL is required to inspect the source scene.');
+  const loaded = await viewer.setSourceScene(data, base);
+  if (navigation !== state.navigation || !loaded) return;
+  state.sourceScene = { id, data, values: new Map() }; state.viewerSpec = spec;
+  state.tab = 'scene'; state.mode = 'layout';
+  $('world-title').textContent = data.name; $('workspace-eyebrow').textContent = 'Imported source · inspection';
+  $('world-status').textContent = 'Inspection'; $('world-status').className = 'badge preview';
+  $('viewport-info').textContent = `${data.objects.length} visual components · ${data.bodies.reduce((sum, body) => sum + body.joints.length, 0)} source joints`;
+  $('source-view').replaceChildren();
+  for (const view of data.views) {
+    const option = el('option', '', view.id.replaceAll('_', ' ')); option.value = view.id; $('source-view').append(option);
+  }
+  $('source-view').onchange = () => viewer.setSourceView($('source-view').value);
+  notice(''); setPanel('world'); syncTabs(); renderLayers(); renderInspector(); syncViewControls(); controls();
+  history.replaceState(null, '', `/?source=${encodeURIComponent(id)}`);
+}
+
+function renderSourceInspector(root) {
+  const { data, values } = state.sourceScene, loaded = state.viewer?.sourceInspection;
+  if (state.tab === 'task') {
+    root.append(el('h3', '', 'Robot tasks'), el('p', 'small muted', 'Robot evaluation is not connected to this source scene yet. Joint inspection does not establish grasping, contact stability or task completion.'));
+    return;
+  }
+  if (state.tab === 'changes') {
+    root.append(el('h3', '', 'Original source'), el('p', 'small muted', 'Inspecting a joint changes only this view. The packaged scene and its source files stay unchanged.'));
+    return;
+  }
+  root.append(el('h3', '', state.selectedObject?.name || data.name));
+  if (state.tab === 'validation') {
+    root.append(el('p', 'small muted', 'Source geometry compiled; meshes and textures are retained. Settling, contacts, robot reachability and task completion still require validation.'));
+  } else {
+    root.append(el('p', 'small muted', 'Inspect a door, drawer or other joint through its source range. This moves the view without simulating forces.'));
+    const joints = data.bodies.flatMap(body => body.joints).filter(joint => joint.limited && ['hinge', 'slide'].includes(joint.type));
+    const select = el('select'); select.id = 'source-joint'; select.setAttribute('aria-label', 'Source joint'); select.style.width = '100%';
+    for (const joint of joints) { const option = el('option', '', joint.name?.replaceAll('_', ' ') || `Joint ${joint.id}`); option.value = String(joint.id); option.title = joint.name || ''; select.append(option); }
+    if (state.sourceScene.selectedJointId != null) select.value = String(state.sourceScene.selectedJointId);
+    root.append(select);
+    const control = el('section', 'property-section'); root.append(control);
+    function showJoint() {
+      control.replaceChildren();
+      const joint = joints.find(item => item.id === Number(select.value));
+      if (!joint) { control.append(el('p', 'small muted', 'No bounded hinge or slider is available.')); return; }
+      const supported = loaded?.joints?.get(joint.id);
+      if (!supported || supported.supported === false) { control.append(el('p', 'small muted', 'This joint needs native inspection; its motion is not approximated here.')); return; }
+      const slider = el('input'); slider.type = 'range'; slider.min = joint.range[0]; slider.max = joint.range[1]; slider.step = 'any';
+      slider.value = values.get(joint.id) ?? joint.reference; slider.style.width = '100%'; slider.setAttribute('aria-label', 'Joint inspection position');
+      const value = el('output', 'mono');
+      const label = number => joint.type === 'hinge' ? `${(number * 180 / Math.PI).toFixed(1)}°` : `${number.toFixed(3)} m`;
+      value.textContent = label(Number(slider.value));
+      slider.oninput = () => {
+        try { const next = Math.min(joint.range[1], Math.max(joint.range[0], Number(slider.value))); loaded.setJointValue(joint.id, next); values.set(joint.id, next); value.textContent = label(next); state.viewer.invalidate(); }
+        catch (error) { slider.disabled = true; control.append(el('p', 'small muted', error.message)); }
+      };
+      const reset = el('button', 'text-button', 'Reset inspection');
+      reset.onclick = () => { slider.value = joint.reference; slider.oninput(); };
+      control.append(value, slider, reset);
+    }
+    select.onchange = () => { state.sourceScene.selectedJointId = Number(select.value); showJoint(); }; showJoint();
+  }
+  const warnings = [...(data.limitations || []), ...(loaded?.warnings || [])];
+  if (warnings.length) {
+    const details = el('details', 'property-section'); details.append(el('summary', '', 'Preview differences'));
+    const list = el('ul', 'small muted');
+    for (const warning of [...new Set(warnings.map(item => typeof item === 'string' ? item : item.message || item.reason || JSON.stringify(item)))].slice(0, 12)) list.append(el('li', '', warning));
+    details.append(list); root.append(details);
+  }
 }
